@@ -1,7 +1,6 @@
 # 使用官方的 .NET 8 runtime 作為基礎鏡像
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-EXPOSE 8080
 
 # 使用 .NET 8 SDK 進行建置
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
@@ -25,8 +24,8 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# 設定環境變數
-ENV ASPNETCORE_URLS=http://+:8080
+# Railway 會自動設定 PORT 環境變數
+EXPOSE 8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-ENTRYPOINT ["dotnet", "Team.API.dll"]
+ENTRYPOINT ["dotnet", "Team.API.dll"]ENTRYPOINT ["dotnet", "Team.API.dll"]

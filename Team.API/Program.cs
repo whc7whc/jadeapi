@@ -16,9 +16,9 @@ namespace Team.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // 配置監聽的端口 - 支援雲端部署
+            // 配置監聽的端口 - Railway 會設定 PORT 環境變數
             var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-            builder.WebHost.UseUrls($"http://*:{port}");
+            builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
             // Gmail SMTP 設定
             builder.Services.AddSingleton(new SmtpEmailService(

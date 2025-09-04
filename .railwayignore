@@ -1,0 +1,22 @@
+# 忽略不需要部署的文件
+.git
+.gitignore
+.vs
+.vscode
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/*.user
+**/*.log
+**/publish
+**/out
+**/.toolstarget
+README.md
+DEPLOYMENT_GUIDE.md
+deploy.sh
+deploy.bat
+railway.toml
+Team.Backend/
+Tests/
+**/*.md
