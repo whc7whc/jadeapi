@@ -16,6 +16,10 @@ namespace Team.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // 配置監聽的端口 - 支援雲端部署
+            var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+            builder.WebHost.UseUrls($"http://*:{port}");
+
             // Gmail SMTP 設定
             builder.Services.AddSingleton(new SmtpEmailService(
                 smtpHost: "smtp.gmail.com",
@@ -96,12 +100,24 @@ namespace Team.API
             builder.Services.Configure<Team.API.Payments.EcpayOptions>(builder.Configuration.GetSection("Ecpay"));
             builder.Services.AddHttpClient<Team.API.Payments.IPaymentGateway, Team.API.Payments.EcpaySandboxGateway>();
 
-            // 配置 CORS 策略
+            // 配置 CORS 策略 - 支援您的 Netlify 前端網站
             builder.Services.AddCors(options =>
             {
+                options.AddPolicy("AllowSpecificOrigins", policy =>
+                {
+                    policy.WithOrigins(
+                        "https://moonlit-klepon-a78f8c.netlify.app",
+                        "http://localhost:8087",
+                        "http://localhost:3000"
+                    )
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials();
+                });
+
+                // 保留原本的 AllowAll 作為備用
                 options.AddPolicy("AllowAll", policy =>
                 {
-
                     policy.AllowAnyOrigin()
                           .AllowAnyMethod()
                           .AllowAnyHeader();
@@ -111,26 +127,32 @@ namespace Team.API
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            // 在生產環境也啟用 Swagger (可選)
+            if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            // 只在開發環境使用 HTTPS 重定向
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
+
             app.UseStaticFiles();
             app.UseRouting();
           
             
-            // 啟用 CORS - 確保它在身份驗證前啟用
-            app.UseCors("AllowAll");
+            // 啟用 CORS - 使用更安全的配置
+            app.UseCors("AllowSpecificOrigins");
 
             // 啟用 Authentication 和 Authorization 中介軟體
             app.UseAuthentication();
             app.UseAuthorization();
        
             app.MapControllers();
-                app.Run();
+            app.Run();
         }
     }
 }

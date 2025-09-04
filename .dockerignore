@@ -1,0 +1,16 @@
+# 忽略不需要複製到容器的文件
+.dockerignore
+.env
+.git
+.gitignore
+.vs
+.vscode
+**/bin
+**/obj
+**/out
+**/publish
+**/.toolstarget
+Dockerfile*
+README.md
+**/Tests
+**/*.md
