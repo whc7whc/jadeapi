@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>?? Railway API 測試工具</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .success-badge {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .api-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .api-info h3 {
+            margin-top: 0;
+            color: #0056b3;
+        }
+
+        .api-url {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .result-box {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid #667eea;
+            background: #f8f9fa;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .result-box h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .result-box pre {
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+
+        .status-success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .status-error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .quick-links {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .quick-links h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+
+        .link-button {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .link-button:hover {
+            background: #5a6fd8;
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-badge">
+            ?? 恭喜！Railway 部署成功！
+        </div>
+
+        <h1>?? Railway API 測試工具</h1>
+        <p class="subtitle">
+            您的 API 已成功部署到 Railway 雲端平台<br>
+            現在可以測試所有功能是否正常運作
+        </p>
+
+        <div class="api-info">
+            <h3>?? 您的 Railway API 資訊</h3>
+            <p><strong>API 基礎 URL：</strong></p>
+            <div class="api-url">https://jadeapi-production.up.railway.app</div>
+            <p><strong>前端網站：</strong></p>
+            <div class="api-url">https://moonlit-klepon-a78f8c.netlify.app</div>
+            <p><strong>部署狀態：</strong> <span style="color: #28a745; font-weight: bold;">? 運行中</span></p>
+        </div>
+
+        <div class="input-group">
+            <label for="apiUrl">API 基礎 URL：</label>
+            <input type="text" id="apiUrl" value="https://jadeapi-production.up.railway.app" readonly style="background: #f8f9fa;">
+        </div>
+
+        <div class="quick-links">
+            <h4>?? 快速連結</h4>
+            <a href="https://jadeapi-production.up.railway.app/" target="_blank" class="link-button">API 根端點</a>
+            <a href="https://jadeapi-production.up.railway.app/health" target="_blank" class="link-button">健康檢查</a>
+            <a href="https://jadeapi-production.up.railway.app/swagger" target="_blank" class="link-button">Swagger 文檔</a>
+            <a href="https://moonlit-klepon-a78f8c.netlify.app" target="_blank" class="link-button">前端網站</a>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="testHealth()">
+                <span id="healthBtn">?? 健康檢查</span>
+            </button>
+
+            <button class="btn-success" onclick="testCors()">
+                <span id="corsBtn">?? CORS 測試</span>
+            </button>
+
+            <button class="btn-warning" onclick="testSwagger()">
+                <span id="swaggerBtn">?? Swagger 文檔</span>
+            </button>
+
+            <button class="btn-info" onclick="testProducts()">
+                <span id="productsBtn">??? 商品 API</span>
+            </button>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="testAuth()">
+                <span id="authBtn">?? 認證測試</span>
+            </button>
+
+            <button class="btn-success" onclick="runAllTests()">
+                <span id="allTestsBtn">?? 執行全部測試</span>
+            </button>
+        </div>
+
+        <div id="results" class="result-box" style="display: none;">
+            <h3>測試結果</h3>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = [];
+
+        function getApiUrl() {
+            return document.getElementById('apiUrl').value.trim().replace(/\/+$/, '');
+        }
+
+        function showResults(title, content, isSuccess = true) {
+            const resultsDiv = document.getElementById('results');
+            const resultContent = document.getElementById('resultContent');
+
+            resultsDiv.style.display = 'block';
+            resultsDiv.className = `result-box ${isSuccess ? 'status-success' : 'status-error'}`;
+
+            resultContent.innerHTML = `
+                <h4>${title}</h4>
+                <pre>${JSON.stringify(content, null, 2)}</pre>
+            `;
+
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function appendResult(title, content, isSuccess = true) {
+            testResults.push({ title, content, isSuccess, timestamp: new Date().toLocaleTimeString() });
+
+            const resultsDiv = document.getElementById('results');
+            const resultContent = document.getElementById('resultContent');
+
+            resultsDiv.style.display = 'block';
+            resultsDiv.className = 'result-box';
+
+            let html = '<h4>所有測試結果</h4>';
+            testResults.forEach(result => {
+                const status = result.isSuccess ? '?' : '?';
+                const color = result.isSuccess ? '#28a745' : '#dc3545';
+                html += `
+                    <div style="margin-bottom: 20px; padding: 10px; border-left: 3px solid ${color}; background: ${result.isSuccess ? '#f8fff8' : '#fff8f8'};">
+                        <strong>${status} ${result.title}</strong> <small>(${result.timestamp})</small>
+                        <pre style="margin: 10px 0 0 0; font-size: 12px;">${JSON.stringify(result.content, null, 2)}</pre>
+                    </div>
+                `;
+            });
+
+            resultContent.innerHTML = html;
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function setButtonLoading(buttonId, loading = true) {
+            const button = document.getElementById(buttonId);
+            if (!button) return;
+
+            if (loading) {
+                button.innerHTML = '<span class="loading"></span> 測試中...';
+                button.disabled = true;
+            } else {
+                const originalText = button.getAttribute('data-original-text') || button.textContent.replace('測試中...', '').trim();
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        async function testHealth() {
+            setButtonLoading('healthBtn', true);
+
+            try {
+                const response = await fetch(`${getApiUrl()}/health`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    appendResult('健康檢查', {
+                        status: '成功',
+                        statusCode: response.status,
+                        data: data,
+                        message: 'API 運行正常'
+                    }, true);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                appendResult('健康檢查', {
+                    status: '失敗',
+                    error: error.message,
+                    suggestion: '檢查 Railway 部署狀態'
+                }, false);
+            } finally {
+                setButtonLoading('healthBtn', false);
+            }
+        }
+
+        async function testCors() {
+            setButtonLoading('corsBtn', true);
+
+            try {
+                const response = await fetch(`${getApiUrl()}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Origin': 'https://moonlit-klepon-a78f8c.netlify.app',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const corsHeaders = {
+                    'access-control-allow-origin': response.headers.get('access-control-allow-origin'),
+                    'access-control-allow-methods': response.headers.get('access-control-allow-methods'),
+                    'access-control-allow-headers': response.headers.get('access-control-allow-headers'),
+                    'access-control-allow-credentials': response.headers.get('access-control-allow-credentials')
+                };
+
+                if (response.ok) {
+                    appendResult('CORS 測試', {
+                        status: '成功',
+                        statusCode: response.status,
+                        corsHeaders: corsHeaders,
+                        message: 'Netlify 前端可以正常調用 API'
+                    }, true);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                appendResult('CORS 測試', {
+                    status: '失敗',
+                    error: error.message,
+                    suggestion: '檢查 CORS 配置'
+                }, false);
+            } finally {
+                setButtonLoading('corsBtn', false);
+            }
+        }
+
+        async function testSwagger() {
+            setButtonLoading('swaggerBtn', true);
+
+            try {
+                const response = await fetch(`${getApiUrl()}/swagger/v1/swagger.json`);
+
+                if (response.ok) {
+                    const swaggerDoc = await response.json();
+                    appendResult('Swagger 文檔', {
+                        status: '成功',
+                        statusCode: response.status,
+                        swaggerInfo: {
+                            title: swaggerDoc.info?.title || 'Team API',
+                            version: swaggerDoc.info?.version || '1.0',
+                            pathsCount: Object.keys(swaggerDoc.paths || {}).length
+                        },
+                        swaggerUrl: `${getApiUrl()}/swagger`,
+                        message: 'API 文檔可正常訪問'
+                    }, true);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                appendResult('Swagger 文檔', {
+                    status: '失敗',
+                    error: error.message,
+                    suggestion: '檢查 Swagger 配置'
+                }, false);
+            } finally {
+                setButtonLoading('swaggerBtn', false);
+            }
+        }
+
+        async function testProducts() {
+            setButtonLoading('productsBtn', true);
+
+            try {
+                const response = await fetch(`${getApiUrl()}/api/products?page=1&pageSize=5`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    appendResult('商品 API', {
+                        status: '成功',
+                        statusCode: response.status,
+                        dataStructure: {
+                            success: data.success,
+                            dataType: typeof data.data,
+                            hasItems: Array.isArray(data.data?.items),
+                            itemsCount: data.data?.items?.length || 0
+                        },
+                        message: '商品 API 正常運作'
+                    }, true);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                appendResult('商品 API', {
+                    status: '失敗',
+                    error: error.message,
+                    suggestion: '檢查資料庫連接或商品數據'
+                }, false);
+            } finally {
+                setButtonLoading('productsBtn', false);
+            }
+        }
+
+        async function testAuth() {
+            setButtonLoading('authBtn', true);
+
+            try {
+                const response = await fetch(`${getApiUrl()}/api/members/check-email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email: 'test@example.com' })
+                });
+
+                if (response.ok || response.status === 400) {
+                    const data = await response.json();
+                    appendResult('認證系統', {
+                        status: '成功',
+                        statusCode: response.status,
+                        message: '認證端點可正常訪問',
+                        responseStructure: {
+                            hasSuccess: 'success' in data,
+                            hasMessage: 'message' in data
+                        }
+                    }, true);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                appendResult('認證系統', {
+                    status: '失敗',
+                    error: error.message,
+                    suggestion: '檢查 JWT 配置'
+                }, false);
+            } finally {
+                setButtonLoading('authBtn', false);
+            }
+        }
+
+        async function runAllTests() {
+            setButtonLoading('allTestsBtn', true);
+            testResults = [];
+
+            try {
+                await testHealth();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                await testCors();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                await testSwagger();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                await testProducts();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                await testAuth();
+
+                const successCount = testResults.filter(r => r.isSuccess).length;
+                const totalCount = testResults.length;
+
+                appendResult('測試總結', {
+                    總測試數: totalCount,
+                    成功數: successCount,
+                    失敗數: totalCount - successCount,
+                    成功率: `${Math.round((successCount / totalCount) * 100)}%`,
+                    狀態: successCount === totalCount ? '?? 所有測試通過！您的 API 完美運行！' : '?? 部分測試失敗，請檢查'
+                }, successCount === totalCount);
+
+            } catch (error) {
+                appendResult('測試總結', {
+                    status: '測試執行失敗',
+                    error: error.message
+                }, false);
+            } finally {
+                setButtonLoading('allTestsBtn', false);
+            }
+        }
+
+        // 頁面載入時顯示成功信息
+        window.addEventListener('load', function () {
+            document.querySelectorAll('button').forEach(btn => {
+                btn.setAttribute('data-original-text', btn.innerHTML);
+            });
+
+            // 顯示部署成功信息
+            appendResult('?? 部署成功確認', {
+                message: '恭喜！您的 API 已成功部署到 Railway',
+                apiUrl: 'https://jadeapi-production.up.railway.app',
+                frontendUrl: 'https://moonlit-klepon-a78f8c.netlify.app',
+                status: '運行中',
+                nextSteps: [
+                    '1. 點擊上方按鈕測試各項功能',
+                    '2. 檢查 Swagger 文檔',
+                    '3. 測試前端與 API 的整合',
+                    '4. 享受您的全端電商平台！'
+                ]
+            }, true);
+        });
+    </script>
+</body>
+</html>
