@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+Ôªø<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API ≥s±µ¥˙∏’§u®„</title>
+    <title>API Connection Test Tool</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -13,31 +13,31 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
-        
+
         .container {
             background: white;
             border-radius: 15px;
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-        
+
         h1 {
             text-align: center;
             color: #333;
             margin-bottom: 30px;
         }
-        
+
         .input-group {
             margin-bottom: 20px;
         }
-        
+
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
             color: #555;
         }
-        
+
         input {
             width: 100%;
             padding: 12px;
@@ -46,19 +46,19 @@
             font-size: 16px;
             box-sizing: border-box;
         }
-        
+
         input:focus {
             outline: none;
             border-color: #667eea;
         }
-        
+
         .button-group {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin: 25px 0;
         }
-        
+
         button {
             padding: 12px 20px;
             border: none;
@@ -68,39 +68,39 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        
+
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
-        
+
         .btn-success {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
         }
-        
+
         .btn-warning {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
         }
-        
+
         .btn-info {
             background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
             color: white;
         }
-        
+
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
-        
+
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
-        
+
         .result-box {
             margin-top: 25px;
             padding: 20px;
@@ -110,12 +110,12 @@
             max-height: 400px;
             overflow-y: auto;
         }
-        
+
         .result-box h3 {
             margin-top: 0;
             color: #333;
         }
-        
+
         .result-box pre {
             background: #fff;
             padding: 15px;
@@ -124,17 +124,17 @@
             overflow-x: auto;
             font-size: 14px;
         }
-        
+
         .status-success {
             border-left-color: #28a745;
             background: #d4edda;
         }
-        
+
         .status-error {
             border-left-color: #dc3545;
             background: #f8d7da;
         }
-        
+
         .loading {
             display: inline-block;
             width: 20px;
@@ -144,12 +144,16 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-        
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
         }
-        
+
         .cors-info {
             background: #e7f3ff;
             border: 1px solid #b3d7ff;
@@ -157,62 +161,104 @@
             padding: 15px;
             margin: 20px 0;
         }
-        
+
         .cors-info h4 {
             margin-top: 0;
             color: #0056b3;
+        }
+
+        .url-examples {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .url-examples h5 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .url-example {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin: 5px 0;
+            font-family: monospace;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .url-example:hover {
+            background: #e9ecef;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>?? API ≥s±µ¥˙∏’§u®„</h1>
+        <h1>üöÄ API Connection Test Tool</h1>
         <p style="text-align: center; color: #666; margin-bottom: 30px;">
-            ¥˙∏’±z™∫ Railway API ¨Oß_•ø±`πBß@®√ªP Netlify ´e∫›¨€Æe
+            Test your Railway API and verify compatibility with Netlify frontend
         </p>
-        
+
         <div class="input-group">
-            <label for="apiUrl">API ∞Ú¬¶ URL:</label>
-            <input type="text" id="apiUrl" placeholder="https://your-app.up.railway.app" 
+            <label for="apiUrl">API Base URL:</label>
+            <input type="text" id="apiUrl" placeholder="https://your-app.up.railway.app"
                    value="https://localhost:7106">
         </div>
-        
-        <div class="cors-info">
-            <h4>?? CORS ∞t∏m∏Í∞T</h4>
-            <p><strong>±z™∫´e∫›∞Ï¶W:</strong> https://moonlit-klepon-a78f8c.netlify.app</p>
-            <p><strong>§π≥\™∫®”∑Ω:</strong> API §w∞t∏m§π≥\¶π∞Ï¶W™∫∏Û∞ÏΩ–®D</p>
+
+        <div class="url-examples">
+            <h5>üîó Quick URL Examples:</h5>
+            <div class="url-example" onclick="setApiUrl('https://localhost:7106')">
+                üìç Local Development: https://localhost:7106
+            </div>
+            <div class="url-example" onclick="setApiUrl('https://your-app.up.railway.app')">
+                üöÇ Railway: https://your-app.up.railway.app
+            </div>
+            <div class="url-example" onclick="setApiUrl('https://your-app.onrender.com')">
+                üé® Render: https://your-app.onrender.com
+            </div>
         </div>
-        
+
+        <div class="cors-info">
+            <h4>üì° CORS Configuration Info</h4>
+            <p><strong>Your Frontend Domain:</strong> https://moonlit-klepon-a78f8c.netlify.app</p>
+            <p><strong>Allowed Origins:</strong> API is configured to allow cross-origin requests from this domain</p>
+        </div>
+
         <div class="button-group">
             <button class="btn-primary" onclick="testHealth()">
-                <span id="healthBtn">?? ∞∑±d¿À¨d</span>
+                <span id="healthBtn">üîç Health Check</span>
             </button>
-            
+
             <button class="btn-success" onclick="testCors()">
-                <span id="corsBtn">?? CORS ¥˙∏’</span>
+                <span id="corsBtn">üåê CORS Test</span>
             </button>
-            
+
             <button class="btn-warning" onclick="testSwagger()">
-                <span id="swaggerBtn">?? Swagger §Â¿…</span>
+                <span id="swaggerBtn">üìö Swagger Docs</span>
             </button>
-            
+
             <button class="btn-info" onclick="testProducts()">
-                <span id="productsBtn">??? ∞”´~ API</span>
+                <span id="productsBtn">üõçÔ∏è Products API</span>
             </button>
         </div>
-        
+
         <div class="button-group">
             <button class="btn-primary" onclick="testAuth()">
-                <span id="authBtn">?? ª{√“¥˙∏’</span>
+                <span id="authBtn">üîê Auth Test</span>
             </button>
-            
+
             <button class="btn-success" onclick="runAllTests()">
-                <span id="allTestsBtn">?? ∞ı¶Ê©“¶≥¥˙∏’</span>
+                <span id="allTestsBtn">üß™ Run All Tests</span>
             </button>
         </div>
-        
+
         <div id="results" class="result-box" style="display: none;">
-            <h3>¥˙∏’µ≤™G</h3>
+            <h3>Test Results</h3>
             <div id="resultContent"></div>
         </div>
     </div>
@@ -224,33 +270,39 @@
             return document.getElementById('apiUrl').value.trim().replace(/\/+$/, '');
         }
 
+        function setApiUrl(url) {
+            document.getElementById('apiUrl').value = url;
+            testResults = []; // Clear previous results
+            document.getElementById('results').style.display = 'none';
+        }
+
         function showResults(title, content, isSuccess = true) {
             const resultsDiv = document.getElementById('results');
             const resultContent = document.getElementById('resultContent');
-            
+
             resultsDiv.style.display = 'block';
             resultsDiv.className = `result-box ${isSuccess ? 'status-success' : 'status-error'}`;
-            
+
             resultContent.innerHTML = `
                 <h4>${title}</h4>
                 <pre>${JSON.stringify(content, null, 2)}</pre>
             `;
-            
+
             resultsDiv.scrollIntoView({ behavior: 'smooth' });
         }
 
         function appendResult(title, content, isSuccess = true) {
             testResults.push({ title, content, isSuccess, timestamp: new Date().toLocaleTimeString() });
-            
+
             const resultsDiv = document.getElementById('results');
             const resultContent = document.getElementById('resultContent');
-            
+
             resultsDiv.style.display = 'block';
             resultsDiv.className = 'result-box';
-            
-            let html = '<h4>©“¶≥¥˙∏’µ≤™G</h4>';
+
+            let html = '<h4>All Test Results</h4>';
             testResults.forEach(result => {
-                const status = result.isSuccess ? '?' : '?';
+                const status = result.isSuccess ? '‚úÖ' : '‚ùå';
                 const color = result.isSuccess ? '#28a745' : '#dc3545';
                 html += `
                     <div style="margin-bottom: 20px; padding: 10px; border-left: 3px solid ${color}; background: ${result.isSuccess ? '#f8fff8' : '#fff8f8'};">
@@ -259,19 +311,21 @@
                     </div>
                 `;
             });
-            
+
             resultContent.innerHTML = html;
             resultsDiv.scrollIntoView({ behavior: 'smooth' });
         }
 
         function setButtonLoading(buttonId, loading = true) {
             const button = document.getElementById(buttonId);
-            const originalText = button.textContent;
-            
+            if (!button) return;
+
             if (loading) {
-                button.innerHTML = '<span class="loading"></span> ¥˙∏’§§...';
+                button.innerHTML = '<span class="loading"></span> Testing...';
                 button.disabled = true;
             } else {
+                // Restore original text
+                const originalText = button.getAttribute('data-original-text') || button.textContent.replace('Testing...', '').trim();
                 button.innerHTML = originalText;
                 button.disabled = false;
             }
@@ -279,14 +333,14 @@
 
         async function testHealth() {
             setButtonLoading('healthBtn', true);
-            
+
             try {
                 const response = await fetch(`${getApiUrl()}/health`);
                 const data = await response.json();
-                
+
                 if (response.ok) {
-                    appendResult('∞∑±d¿À¨d', {
-                        status: '¶®•\',
+                    appendResult('Health Check', {
+                        status: 'Success',
                         statusCode: response.status,
                         data: data
                     }, true);
@@ -294,10 +348,10 @@
                     throw new Error(`HTTP ${response.status}`);
                 }
             } catch (error) {
-                appendResult('∞∑±d¿À¨d', {
-                    status: '•¢±—',
+                appendResult('Health Check', {
+                    status: 'Failed',
                     error: error.message,
-                    suggestion: 'ΩTª{ API URL ¨Oß_•øΩT°A©Œ¿À¨d Railway ≥°∏p™¨∫A'
+                    suggestion: 'Check if API URL is correct, or verify Railway deployment status'
                 }, false);
             } finally {
                 setButtonLoading('healthBtn', false);
@@ -306,9 +360,9 @@
 
         async function testCors() {
             setButtonLoading('corsBtn', true);
-            
+
             try {
-                // º“¿¿±q Netlify ∞Ï¶Wµo∞_™∫Ω–®D
+                // Simulate request from Netlify domain
                 const response = await fetch(`${getApiUrl()}/health`, {
                     method: 'GET',
                     headers: {
@@ -316,29 +370,29 @@
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 const corsHeaders = {
                     'access-control-allow-origin': response.headers.get('access-control-allow-origin'),
                     'access-control-allow-methods': response.headers.get('access-control-allow-methods'),
                     'access-control-allow-headers': response.headers.get('access-control-allow-headers'),
                     'access-control-allow-credentials': response.headers.get('access-control-allow-credentials')
                 };
-                
+
                 if (response.ok) {
-                    appendResult('CORS ¥˙∏’', {
-                        status: '¶®•\',
+                    appendResult('CORS Test', {
+                        status: 'Success',
                         statusCode: response.status,
                         corsHeaders: corsHeaders,
-                        message: 'API §π≥\®”¶€ Netlify ™∫∏Û∞ÏΩ–®D'
+                        message: 'API allows cross-origin requests from Netlify'
                     }, true);
                 } else {
                     throw new Error(`HTTP ${response.status}`);
                 }
             } catch (error) {
-                appendResult('CORS ¥˙∏’', {
-                    status: '•¢±—',
+                appendResult('CORS Test', {
+                    status: 'Failed',
                     error: error.message,
-                    suggestion: '¿À¨d API ™∫ CORS ∞t∏m¨Oß_•]ßt±z™∫ Netlify ∞Ï¶W'
+                    suggestion: 'Check if API CORS configuration includes your Netlify domain'
                 }, false);
             } finally {
                 setButtonLoading('corsBtn', false);
@@ -347,14 +401,14 @@
 
         async function testSwagger() {
             setButtonLoading('swaggerBtn', true);
-            
+
             try {
                 const response = await fetch(`${getApiUrl()}/swagger/v1/swagger.json`);
-                
+
                 if (response.ok) {
                     const swaggerDoc = await response.json();
-                    appendResult('Swagger §Â¿…', {
-                        status: '¶®•\',
+                    appendResult('Swagger Documentation', {
+                        status: 'Success',
                         statusCode: response.status,
                         swaggerInfo: {
                             title: swaggerDoc.info?.title || 'Team API',
@@ -367,10 +421,10 @@
                     throw new Error(`HTTP ${response.status}`);
                 }
             } catch (error) {
-                appendResult('Swagger §Â¿…', {
-                    status: '•¢±—',
+                appendResult('Swagger Documentation', {
+                    status: 'Failed',
                     error: error.message,
-                    suggestion: '¿À¨d Swagger ¨Oß_¶b•Õ≤£¿Ùπ“§§±“•Œ'
+                    suggestion: 'Check if Swagger is enabled in production environment'
                 }, false);
             } finally {
                 setButtonLoading('swaggerBtn', false);
@@ -379,14 +433,14 @@
 
         async function testProducts() {
             setButtonLoading('productsBtn', true);
-            
+
             try {
                 const response = await fetch(`${getApiUrl()}/api/products?page=1&pageSize=5`);
-                
+
                 if (response.ok) {
                     const data = await response.json();
-                    appendResult('∞”´~ API', {
-                        status: '¶®•\',
+                    appendResult('Products API', {
+                        status: 'Success',
                         statusCode: response.status,
                         dataStructure: {
                             success: data.success,
@@ -399,10 +453,10 @@
                     throw new Error(`HTTP ${response.status}`);
                 }
             } catch (error) {
-                appendResult('∞”´~ API', {
-                    status: '•¢±—',
+                appendResult('Products API', {
+                    status: 'Failed',
                     error: error.message,
-                    suggestion: '¿À¨d∏ÍÆ∆Æw≥s±µ©Œ∞”´~º∆æ⁄¨Oß_¶s¶b'
+                    suggestion: 'Check database connection or if product data exists'
                 }, false);
             } finally {
                 setButtonLoading('productsBtn', false);
@@ -411,9 +465,9 @@
 
         async function testAuth() {
             setButtonLoading('authBtn', true);
-            
+
             try {
-                // ¥˙∏’µLª›ª{√“™∫∑|≠˚¨€√ˆ∫›¬I
+                // Test authentication endpoints that don't require authentication
                 const response = await fetch(`${getApiUrl()}/api/members/check-email`, {
                     method: 'POST',
                     headers: {
@@ -421,14 +475,14 @@
                     },
                     body: JSON.stringify({ email: 'test@example.com' })
                 });
-                
+
                 if (response.ok || response.status === 400) {
-                    // 400 ¨Oπw¥¡™∫°A¶]¨∞≥o•iØ‡¨O≈Á√“ø˘ª~
+                    // 400 is expected as this might be a validation error
                     const data = await response.json();
-                    appendResult('ª{√“®t≤Œ', {
-                        status: '¶®•\',
+                    appendResult('Authentication System', {
+                        status: 'Success',
                         statusCode: response.status,
-                        message: 'ª{√“∫›¬I•i•ø±`≥X∞›',
+                        message: 'Authentication endpoints are accessible',
                         responseStructure: {
                             hasSuccess: 'success' in data,
                             hasMessage: 'message' in data
@@ -438,10 +492,10 @@
                     throw new Error(`HTTP ${response.status}`);
                 }
             } catch (error) {
-                appendResult('ª{√“®t≤Œ', {
-                    status: '•¢±—',
+                appendResult('Authentication System', {
+                    status: 'Failed',
                     error: error.message,
-                    suggestion: '¿À¨dª{√“¨€√ˆ™∫™A∞»©M JWT ∞t∏m'
+                    suggestion: 'Check authentication related services and JWT configuration'
                 }, false);
             } finally {
                 setButtonLoading('authBtn', false);
@@ -450,38 +504,38 @@
 
         async function runAllTests() {
             setButtonLoading('allTestsBtn', true);
-            testResults = []; // ≤M∞£§ß´e™∫µ≤™G
-            
+            testResults = []; // Clear previous results
+
             try {
                 await testHealth();
-                await new Promise(resolve => setTimeout(resolve, 1000)); // ©µø1¨Ì
-                
+                await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
+
                 await testCors();
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                
+
                 await testSwagger();
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                
+
                 await testProducts();
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                
+
                 await testAuth();
-                
-                // ≈„•‹¡`µ≤
+
+                // Show summary
                 const successCount = testResults.filter(r => r.isSuccess).length;
                 const totalCount = testResults.length;
-                
-                appendResult('¥˙∏’¡`µ≤', {
-                    ¡`¥˙∏’º∆: totalCount,
-                    ¶®•\º∆: successCount,
-                    •¢±—º∆: totalCount - successCount,
-                    ¶®•\≤v: `${Math.round((successCount / totalCount) * 100)}%`,
-                    ™¨∫A: successCount === totalCount ? '?? ©“¶≥¥˙∏’≥qπL°I' : '?? ≥°§¿¥˙∏’•¢±—'
+
+                appendResult('Test Summary', {
+                    totalTests: totalCount,
+                    successCount: successCount,
+                    failedCount: totalCount - successCount,
+                    successRate: `${Math.round((successCount / totalCount) * 100)}%`,
+                    status: successCount === totalCount ? 'üéâ All tests passed!' : '‚ö†Ô∏è Some tests failed'
                 }, successCount === totalCount);
-                
+
             } catch (error) {
-                appendResult('¥˙∏’¡`µ≤', {
-                    status: '¥˙∏’∞ı¶Ê•¢±—',
+                appendResult('Test Summary', {
+                    status: 'Test execution failed',
                     error: error.message
                 }, false);
             } finally {
@@ -489,18 +543,23 @@
             }
         }
 
-        // ≠∂≠±∏¸§JÆ…™∫¥£•‹
-        window.addEventListener('load', function() {
+        // Page load instructions
+        window.addEventListener('load', function () {
             const apiUrlInput = document.getElementById('apiUrl');
-            
-            // ¶p™G¨O localhost°A¥£•‹•Œ§·ßÛ∑s¨∞ Railway URL
+
+            // Store original button texts
+            document.querySelectorAll('button').forEach(btn => {
+                btn.setAttribute('data-original-text', btn.innerHTML);
+            });
+
+            // If localhost, show instructions for user to update to Railway URL
             if (apiUrlInput.value.includes('localhost')) {
-                appendResult('?? ®œ•Œª°©˙', {
-                    ®B∆J1: '±N API ≥°∏p®Ï Railway',
-                    ®B∆J2: '±N§W§Ë™∫ URL ßÛ¥´¨∞±z™∫ Railway URL',
-                    ®B∆J3: '¬I¿ª¶U≠”¥˙∏’´ˆ∂s≈Á√“•\Ø‡',
-                    Railway_URL_ÆÊ¶°: 'https://your-app-name.up.railway.app',
-                    ™`∑N®∆∂µ: 'ΩT´O Railway ≥°∏p¶®•\´·¶A∂i¶Ê¥˙∏’'
+                appendResult('üìù Instructions', {
+                    step1: 'Deploy your API to Railway',
+                    step2: 'Update the URL above to your Railway URL',
+                    step3: 'Click test buttons to verify functionality',
+                    railwayUrlFormat: 'https://your-app-name.up.railway.app',
+                    note: 'Make sure Railway deployment is successful before testing'
                 }, true);
             }
         });

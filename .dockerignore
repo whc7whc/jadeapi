@@ -1,4 +1,4 @@
-# 忽略不需要複製到容器的文件
+# Ignore files that don't need to be copied to container
 .dockerignore
 .env
 .git
@@ -14,3 +14,10 @@ Dockerfile*
 README.md
 **/Tests
 **/*.md
+railway.toml
+.railwayignore
+api-test-tool.html
+deploy.sh
+deploy.bat
+DEPLOYMENT_GUIDE.md
+FRONTEND_INTEGRATION_GUIDE.md
