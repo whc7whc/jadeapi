@@ -7,6 +7,8 @@ using Team.Backend.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Globalization;
+using Microsoft.AspNetCore.Diagnostics;
 
 namespace Team.API
 {
@@ -14,6 +16,17 @@ namespace Team.API
     {
         public static void Main(string[] args)
         {
+            // 🔧 修復全球化不變模式問題
+            try
+            {
+                CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+                CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Culture setting warning (can be ignored): {ex.Message}");
+            }
+
             var builder = WebApplication.CreateBuilder(args);
 
             // 配置監聽的端口 - Railway 會設定 PORT 環境變數
@@ -111,9 +124,18 @@ namespace Team.API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // 註冊 DbContext 到 DI 容器
+            // 註冊 DbContext 到 DI 容器 - 修復全球化問題
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            {
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOptions =>
+                {
+                    // 設定連接選項以避免文化相關問題
+                    sqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 3,
+                        maxRetryDelay: TimeSpan.FromSeconds(10),
+                        errorNumbersToAdd: null);
+                });
+            });
 
             // === 註冊購物車相關服務 ===
             builder.Services.AddScoped<ICartService, CartService>();
@@ -151,14 +173,49 @@ namespace Team.API
 
             var app = builder.Build();
 
-            // 添加全域異常處理
+            // 改善全域異常處理 - 提供更詳細的錯誤資訊
             app.UseExceptionHandler(appBuilder =>
             {
                 appBuilder.Run(async context =>
                 {
+                    var exceptionHandlerFeature = context.Features.Get<IExceptionHandlerFeature>();
+                    var exception = exceptionHandlerFeature?.Error;
+
                     context.Response.StatusCode = 500;
                     context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsync("{\"error\":\"Internal server error occurred\"}");
+
+                    var isDevelopment = app.Environment.IsDevelopment();
+                    
+                    // 記錄錯誤到控制台
+                    Console.WriteLine($"[ERROR] {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} - Unhandled exception occurred:");
+                    Console.WriteLine($"Request Path: {context.Request.Path}");
+                    Console.WriteLine($"Request Method: {context.Request.Method}");
+                    Console.WriteLine($"Exception Type: {exception?.GetType().Name}");
+                    Console.WriteLine($"Exception Message: {exception?.Message}");
+                    Console.WriteLine($"Exception StackTrace: {exception?.StackTrace}");
+
+                    var errorResponse = new
+                    {
+                        error = "Internal server error occurred",
+                        timestamp = DateTime.UtcNow,
+                        path = context.Request.Path.Value,
+                        method = context.Request.Method,
+                        // 在開發環境或生產環境都提供一些錯誤資訊
+                        details = new
+                        {
+                            type = exception?.GetType().Name,
+                            message = exception?.Message,
+                            // 只在開發環境顯示完整堆疊追蹤
+                            stackTrace = isDevelopment ? exception?.StackTrace : "Stack trace hidden in production"
+                        }
+                    };
+
+                    var json = System.Text.Json.JsonSerializer.Serialize(errorResponse, new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    });
+
+                    await context.Response.WriteAsync(json);
                 });
             });
 

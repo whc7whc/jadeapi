@@ -14,6 +14,7 @@ using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
 using System.IdentityModel.Tokens.Jwt;
+using System.Globalization;
 
 
 namespace Team.API.Controllers
@@ -26,14 +27,15 @@ namespace Team.API.Controllers
         private readonly IEmailService _emailService;
         private readonly Cloudinary _cloudinary;
         private readonly JwtService _jwtService;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(AppDbContext context, IEmailService emailService, Cloudinary cloudinary, JwtService jwtService)
+        public AuthController(AppDbContext context, IEmailService emailService, Cloudinary cloudinary, JwtService jwtService, ILogger<AuthController> logger)
         {
             _context = context;
             _emailService = emailService;
             _cloudinary = cloudinary;
             _jwtService = jwtService;
-
+            _logger = logger;
         }
         // 1. 寄送驗證碼
         [HttpPost("send-code")]
@@ -200,29 +202,81 @@ namespace Team.API.Controllers
         [HttpGet("{memberId}/profile")]
         public async Task<IActionResult> GetProfile(int memberId)
         {
-            var member = await _context.Members.FindAsync(memberId);
-            if (member == null)
-                return NotFound("找不到會員");
-
-            var profile = await _context.MemberProfiles
-                .FirstOrDefaultAsync(p => p.MembersId == memberId);
-
-            if (profile == null)
-                return NotFound("找不到會員資料");
-
-            // 回傳前端需要的資料，可以用 DTO 包裝
-            var result = new MemberProfileDto
+            try
             {
-                Email = member.Email,
-                IsEmailVerified = member.IsEmailVerified,
-                Name = profile.Name,
-                Gender = profile.Gender,
-                BirthDate = profile.BirthDate.ToDateTime(new TimeOnly(0, 0)),
-                ProfileImg = profile.ProfileImg,
-                Level = member.Level
-            };
+                _logger.LogInformation("開始查詢會員 {MemberId} 的資料", memberId);
 
-            return Ok(result);
+                // 使用不變文化進行資料庫查詢
+                var originalCulture = CultureInfo.CurrentCulture;
+                var originalUICulture = CultureInfo.CurrentUICulture;
+
+                try
+                {
+                    CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+                    CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+
+                    var member = await _context.Members.FindAsync(memberId);
+                    if (member == null)
+                    {
+                        _logger.LogWarning("找不到會員 {MemberId}", memberId);
+                        return NotFound("找不到會員");
+                    }
+
+                    var profile = await _context.MemberProfiles
+                        .FirstOrDefaultAsync(p => p.MembersId == memberId);
+
+                    if (profile == null)
+                    {
+                        _logger.LogWarning("找不到會員 {MemberId} 的資料", memberId);
+                        return NotFound("找不到會員資料");
+                    }
+
+                    // 安全地轉換 BirthDate，避免文化相關問題
+                    DateTime birthDateTime;
+                    try
+                    {
+                        birthDateTime = profile.BirthDate.ToDateTime(TimeOnly.MinValue);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "轉換生日日期時發生錯誤，使用預設值");
+                        birthDateTime = DateTime.MinValue;
+                    }
+
+                    // 回傳前端需要的資料，可以用 DTO 包裝
+                    var result = new MemberProfileDto
+                    {
+                        Email = member.Email ?? "",
+                        IsEmailVerified = member.IsEmailVerified,
+                        Name = profile.Name ?? "",
+                        Gender = profile.Gender ?? "",
+                        BirthDate = birthDateTime,
+                        ProfileImg = profile.ProfileImg ?? "",
+                        Level = member.Level
+                    };
+
+                    _logger.LogInformation("成功取得會員 {MemberId} 的資料", memberId);
+                    return Ok(result);
+                }
+                finally
+                {
+                    // 恢復原始文化設定
+                    try
+                    {
+                        CultureInfo.CurrentCulture = originalCulture;
+                        CultureInfo.CurrentUICulture = originalUICulture;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "恢復文化設定時發生錯誤");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "查詢會員 {MemberId} 資料時發生錯誤", memberId);
+                return StatusCode(500, new { error = "查詢會員資料時發生錯誤", detail = ex.Message });
+            }
         }
 
 
