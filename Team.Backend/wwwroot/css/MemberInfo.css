@@ -1,0 +1,179 @@
+﻿:root {
+    --primary-color: #022c5c;
+    --danger-color: #eb5757;
+    --secondary-color: #e4dcd1;
+    --bg-light: #faf6eb;
+    --success-color: #1e7e34;
+}
+
+.custom-text-color {
+    color: var(--primary-color) !important;
+}
+
+
+/* Button styles */
+.btn-primary {
+
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+.submitBtn {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+
+.btn-primary:hover {
+    background-color: #011a36;
+    border-color: #011a36;
+    color: #fff;
+}
+
+.submitBtn:hover {
+    background-color: #011a36;
+    border-color: #011a36;
+    color: #fff;
+}
+
+.btn-secondary {
+    background-color: #1e7e34;
+    border-color: #1e7e34;
+    color: #fff;
+}
+
+.select-checkbox {
+    transform: scale(1.2);
+    margin-right: 5px;
+}
+
+
+.table thead th {
+    background-color: var(--primary-color);
+    color: #fff !important;
+    border: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 1rem 0.75rem;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: var(--bg-light);
+}
+
+.table-striped > tbody > tr:nth-of-type(even) {
+    background-color: var(--secondary-color);
+}
+
+.card-header h6 {
+    color: var(--primary-color) !important;
+    font-weight: 600;
+}
+
+.table tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+    .table tbody tr:hover {
+        background-color: #d6e0ef !important;
+    }
+
+.table tbody td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    color: var(--primary-color);
+    font-size: 0.875rem;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+}
+
+.status-active {
+    background-color: var(--success-color);
+    color: #fff;
+}
+
+.status-inactive {
+    background-color: var(--danger-color);
+    color: #fff;
+}
+
+.status-verified {
+    background-color: #17a2b8;
+    color: #fff;
+}
+
+.status-unverified {
+    background-color: #ffc107;
+    color: #856404;
+}
+
+.modal-header {
+    background-color: var(--primary-color);
+    color: white;
+    border-bottom: none;
+}
+
+    .modal-header .btn-close {
+        filter: invert(1);
+    }
+
+
+.batch-actions {
+    display: none;
+    animation: fadeIn 0.3s ease-in;
+}
+
+    .batch-actions.show {
+        display: block;
+    }
+
+
+.table-responsive {
+    border-radius: 0.375rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.pagination .page-link {
+    color: var(--primary-color);
+    border-color: #dee2e6;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.pagination .page-link:hover {
+    color: #011a36;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.search-section {
+    margin-left: 10px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+    .search-section .form-control,
+    .search-section .form-select {
+        font-size: 0.875rem;
+    }
+
+.card {
+    border: none;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}

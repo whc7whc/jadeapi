@@ -1,0 +1,677 @@
+﻿@using Team.Backend.Models.EfModel
+@model List<ContentPublishingSchedule>
+
+@{
+    ViewData["Title"] = "優惠券排程管理";
+    var pageTitle = ViewBag.PageTitle ?? "優惠券排程管理";
+    var systemType = ViewBag.SystemType ?? "排程系統";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-gift text-primary mr-2"></i>@pageTitle
+        </h1>
+        <div class="d-flex">
+            <button class="btn btn-success mr-2" onclick="showAddScheduleModal()">
+                <i class="fas fa-plus"></i> 新增排程
+            </button>
+            <a href="@Url.Action("CouponsManager")" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> 返回優惠券管理
+            </a>
+        </div>
+    </div>
+
+    <!-- 系統資訊卡片 -->
+    <div class="card border-left-primary shadow mb-4">
+        <div class="card-body">
+            <div class="row no-gutters align-items-center">
+                <div class="col mr-2">
+                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                        排程系統狀態
+                    </div>
+                    <div class="h6 mb-0 font-weight-bold text-gray-800">
+                        <i class="fas fa-server text-success mr-1"></i>@systemType - 運行中
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <i class="fas fa-cogs fa-2x text-gray-300"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 排程列表卡片 -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list mr-2"></i>優惠券排程列表
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>排程編號</th>
+                            <th>優惠券名稱</th>
+                            <th>發送對象</th>
+                            <th>排程時間</th>
+                            <th>狀態</th>
+                            <th>執行時間</th>
+                            <th>建立時間</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var schedule in Model)
+                            {
+                                <tr>
+                                    <td class="text-center">
+                                        <span class="badge badge-secondary">#@schedule.Id</span>
+                                    </td>
+                                    <td>
+                                        <div class="font-weight-bold">優惠券 ID: @schedule.ContentId</div>
+                                        <small class="text-muted">點擊查看詳情</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-@GetTargetBadgeClass(schedule.ActionType)">
+                                            @GetTargetDisplayName(schedule.ActionType)
+                                        </span>
+                                    </td>
+                                    <td class="font-weight-bold text-primary">
+                                        @schedule.ScheduledTime.ToString("yyyy/MM/dd HH:mm")
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-@GetStatusBadgeClass(schedule.Status) badge-pill">
+                                            @GetStatusDisplayName(schedule.Status)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (schedule.ExecutedAt.HasValue)
+                                        {
+                                            <span class="text-success">@schedule.ExecutedAt.Value.ToString("yyyy/MM/dd HH:mm")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-muted">
+                                        @(schedule.CreatedAt?.ToString("MM/dd HH:mm") ?? "-")
+                                    </td>
+                                    <td>
+                                        @if (schedule.Status == "pending")
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    onclick="cancelSchedule(@schedule.Id)"
+                                                    title="取消排程">
+                                                <i class="fas fa-times"></i> 取消
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            @if (!string.IsNullOrEmpty(schedule.ErrorMessage))
+                                            {
+                                                <button class="btn btn-sm btn-outline-warning"
+                                                        onclick="showErrorDetail('@schedule.ErrorMessage')"
+                                                        title="查看錯誤">
+                                                    <i class="fas fa-exclamation-triangle"></i> 錯誤
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">
+                                    <i class="fas fa-calendar-times fa-2x mb-3"></i>
+                                    <br>目前沒有優惠券排程資料
+                                    <br><small>點擊上方「新增排程」按鈕來建立第一個排程</small>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增排程Modal -->
+<div class="modal fade" id="addScheduleModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle mr-2"></i>新增優惠券排程
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">
+                                    <i class="fas fa-gift text-primary mr-1"></i>選擇優惠券
+                                </label>
+                                <select id="couponSelect" class="form-control" required>
+                                    <option value="">請選擇優惠券...</option>
+                                </select>
+                                <small class="form-text text-muted">只顯示啟用中的優惠券</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">
+                                    <i class="fas fa-users text-warning mr-1"></i>發送對象
+                                </label>
+                                <select id="memberLevelSelect" class="form-control" required>
+                                    <option value="">請選擇發送對象...</option>
+                                    <option value="all">🌟 全部會員</option>
+                                </select>
+                                <small class="form-text text-muted">選擇要發送優惠券的會員等級</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="font-weight-bold">
+                                    <i class="fas fa-clock text-info mr-1"></i>排程執行時間
+                                </label>
+                                <input type="datetime-local" id="scheduledTime" class="form-control" required>
+                                <small class="form-text text-muted">請選擇未來的時間點</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <strong>注意事項：</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>排程時間必須是未來時間</li>
+                            <li>系統將在指定時間自動發送優惠券給選擇的會員等級</li>
+                            <li>已經擁有該優惠券的會員將被跳過</li>
+                            <li>排程建立後可以在執行前取消</li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-primary" onclick="submitSchedule()">
+                    <i class="fas fa-save mr-1"></i>建立排程
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 顯示狀態消息（增強版，支援 HTML）
+        function showStatus(message, type = 'info') {
+            // 尋找或創建狀態顯示區域
+            let statusDiv = document.getElementById('loadingStatus');
+            if (!statusDiv) {
+                statusDiv = document.createElement('div');
+                statusDiv.id = 'loadingStatus';
+                statusDiv.className = 'mt-3';
+                
+                // 插入到 modal body 中
+                const modalBody = document.querySelector('#addScheduleModal .modal-body');
+                if (modalBody) {
+                    modalBody.appendChild(statusDiv);
+                }
+            }
+            
+            const alertClass = {
+                'success': 'alert-success',
+                'warning': 'alert-warning', 
+                'danger': 'alert-danger',
+                'info': 'alert-info'
+            }[type] || 'alert-info';
+            
+            statusDiv.innerHTML = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            `;
+            
+            // 成功消息5秒後自動移除，其他類型不自動移除
+            if (type === 'success') {
+                setTimeout(() => {
+                    if (statusDiv.querySelector('.alert')) {
+                        statusDiv.innerHTML = '';
+                    }
+                }, 5000);
+            }
+        }
+
+        // ✅ 载入優惠券選項
+        async function loadCouponOptions() {
+            try {
+                console.log('開始載入優惠券選項...');
+                showStatus('🔄 正在載入優惠券選項...', 'info');
+                
+                const response = await fetch('/Coupons/GetCouponOptions?ts=' + Date.now());
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('API 回應:', result);
+
+                if (result.success) {
+                    const select = document.getElementById('couponSelect');
+                    select.innerHTML = '<option value="">請選擇優惠券...</option>';
+
+                    if (result.data && result.data.length > 0) {
+                        result.data.forEach(coupon => {
+                            const option = document.createElement('option');
+                            option.value = coupon.id;
+                            
+                            // 顯示優惠券名稱和狀態
+                            const statusIcon = getStatusIcon(coupon.status);
+                            option.textContent = `${statusIcon} ${coupon.title} - ${coupon.status}`;
+                            
+                            // 如果是未啟用的優惠券，用不同顏色標示
+                            if (!coupon.isActive) {
+                                option.style.color = '#6c757d';
+                            }
+                            
+                            select.appendChild(option);
+                        });
+                        
+                        console.log(`成功載入 ${result.data.length} 張未過期優惠券`);
+                        showStatus(`✅ 成功載入 ${result.data.length} 張未過期優惠券`, 'success');
+                    } else {
+                        // 沒有優惠券時，提供診斷選項
+                        const option = document.createElement('option');
+                        option.disabled = true;
+                        option.textContent = '⚠️ 目前沒有可用的優惠券';
+                        option.style.color = '#dc3545';
+                        select.appendChild(option);
+                        
+                        // 顯示診斷選項
+                        showNoCouponsMessage();
+                    }
+                } else {
+                    throw new Error(result.message || '載入優惠券失敗');
+                }
+            } catch (error) {
+                console.error('載入優惠券選項失敗:', error);
+                
+                const select = document.getElementById('couponSelect');
+                select.innerHTML = '<option value="">載入失敗，請重試</option>';
+                
+                showStatus('❌ 載入優惠券資料失敗：' + error.message, 'danger');
+                
+                // 顯示重試和診斷選項
+                showLoadingErrorOptions(error.message);
+            }
+        }
+
+        // ✅ 新增：沒有優惠券時的訊息處理
+        function showNoCouponsMessage() {
+            showStatus(`
+                ⚠️ 目前沒有可用的優惠券！<br><br>
+                <strong>可能原因：</strong><br>
+                • 所有優惠券都未啟用<br>
+                • 所有優惠券都已過期<br>
+                • 所有優惠券都還未開始<br><br>
+                <button class="btn btn-sm btn-primary mt-2" onclick="runDiagnosis()">
+                    🔍 執行診斷檢查
+                </button>
+                <a href="/Coupons/CouponsManager" class="btn btn-sm btn-outline-primary mt-2 ml-2">
+                    ➕ 前往優惠券管理
+                </a>
+            `, 'warning');
+        }
+
+        // ✅ 新增：載入錯誤時的選項
+        function showLoadingErrorOptions(errorMessage) {
+            showStatus(`
+                ❌ 載入失敗：${errorMessage}<br><br>
+                <button class="btn btn-sm btn-secondary mt-2" onclick="loadCouponOptions()">
+                    🔄 重新載入
+                </button>
+                <button class="btn btn-sm btn-info mt-2 ml-2" onclick="runDiagnosis()">
+                    🔍 執行診斷
+                </button>
+                <a href="/Coupons/CouponsManager" class="btn btn-sm btn-outline-primary mt-2 ml-2">
+                    ⚙️ 前往優惠券管理
+                </a>
+            `, 'danger');
+        }
+
+        // ✅ 載入會員等級選項
+        async function loadMemberLevelOptions() {
+            try {
+                console.log('開始載入會員等級選項...');
+                
+                const response = await fetch('/Coupons/GetMemberLevelOptions?ts=' + Date.now());
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('會員等級 API 回應:', result);
+
+                const select = document.getElementById('memberLevelSelect');
+                select.innerHTML = '<option value="">請選擇發送對象...</option>';
+                
+                // 添加全部會員選項
+                select.innerHTML += '<option value="all">🌟 全部會員</option>';
+
+                if (result.success && result.data && result.data.length > 0) {
+                    result.data.forEach(level => {
+                        const option = document.createElement('option');
+                        option.value = level.id;
+                        option.textContent = `${getLevelIcon(level.name)} ${level.name}`;
+                        select.appendChild(option);
+                    });
+                    
+                    console.log(`成功載入 ${result.data.length} 個會員等級`);
+                } else {
+                    console.warn('沒有找到啟用的會員等級');
+                    const option = document.createElement('option');
+                    option.disabled = true;
+                    option.textContent = '⚠️ 目前沒有啟用的會員等級';
+                    option.style.color = '#dc3545';
+                    select.appendChild(option);
+                }
+            } catch (error) {
+                console.error('載入會員等級選項失敗:', error);
+                const select = document.getElementById('memberLevelSelect');
+                select.innerHTML = '<option value="">載入失敗，請重試</option>';
+            }
+        }
+
+        // ✅ 新增：根據等級名稱返回對應圖示
+        function getLevelIcon(levelName) {
+            const name = levelName.toLowerCase();
+            if (name.includes('銅') || name.includes('bronze')) return '🥉';
+            if (name.includes('銀') || name.includes('silver')) return '🥈';
+            if (name.includes('金') || name.includes('gold')) return '🥇';
+            if (name.includes('鑽') || name.includes('diamond')) return '💎';
+            if (name.includes('白金') || name.includes('platinum')) return '🏆';
+            return '👤'; // 預設圖示
+        }
+
+        // ✅ 新增：根據優惠券狀態返回對應圖示
+        function getStatusIcon(status) {
+            switch(status) {
+                case '進行中': return '✅';
+                case '進行中(未啟用)': return '⚠️';
+                case '未開始(已啟用)': return '⏰';
+                case '未開始(未啟用)': return '⏳';
+                case '已過期': return '❌';
+                default: return '🎫';
+            }
+        }
+
+        // ✅ 新增：執行診斷檢查
+        async function runDiagnosis() {
+            try {
+                showStatus('🔍 正在執行診斷檢查...', 'info');
+                
+                const response = await fetch('/Coupons/DiagnoseCouponLoading?ts=' + Date.now());
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('診斷結果:', result);
+
+                if (result.success) {
+                    const summary = result.summary;
+                    const recommendation = result.recommendation;
+                    
+                    let diagnosisHtml = `
+                        <strong>📊 診斷結果：</strong><br>
+                        • 總優惠券數：${summary.totalCoupons} 張<br>
+                        • 已啟用：${summary.activeCoupons} 張<br>
+                        • 已開始：${summary.startedCoupons} 張<br>
+                        • 未過期：${summary.notExpiredCoupons} 張<br>
+                        • 有效優惠券：${summary.validCoupons} 張<br><br>
+                        <strong>💡 建議：</strong><br>
+                        ${recommendation}<br><br>
+                        <button class="btn btn-sm btn-primary mt-2" onclick="loadCouponOptions()">
+                            🔄 重新載入優惠券
+                        </button>
+                        <a href="/Coupons/CouponsManager" class="btn btn-sm btn-outline-primary mt-2 ml-2">
+                            ⚙️ 前往優惠券管理
+                        </a>
+                    `;
+
+                    // 根據診斷結果顯示不同的狀態
+                    const statusType = summary.validCoupons > 0 ? 'info' : 'warning';
+                    showStatus(diagnosisHtml, statusType);
+                    
+                } else {
+                    showStatus('❌ 診斷失敗：' + result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('診斷時發生錯誤:', error);
+                showStatus('❌ 診斷時發生錯誤：' + error.message, 'danger');
+            }
+        }
+
+        // ✅ 顯示新增排程Modal
+        function showAddScheduleModal() {
+            console.log('開啟新增排程 Modal');
+            
+            // 清除之前的狀態消息
+            const statusDiv = document.getElementById('loadingStatus');
+            if (statusDiv) {
+                statusDiv.innerHTML = '';
+            }
+            
+            // 載入優惠券和會員等級選項
+            loadCouponOptions();
+            loadMemberLevelOptions();
+
+            // 設定最小時間為現在+5分鐘
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 5);
+            const minDateTime = now.toISOString().slice(0, 16);
+            document.getElementById('scheduledTime').min = minDateTime;
+            document.getElementById('scheduledTime').value = minDateTime;
+
+            $('#addScheduleModal').modal('show');
+        }
+
+        // ✅ 提交排程
+        async function submitSchedule() {
+            const couponId = document.getElementById('couponSelect').value;
+            const memberLevel = document.getElementById('memberLevelSelect').value;
+            const scheduledTime = document.getElementById('scheduledTime').value;
+
+            // 驗證輸入
+            if (!couponId) {
+                showStatus('❌ 請選擇優惠券', 'danger');
+                return;
+            }
+            
+            if (!memberLevel) {
+                showStatus('❌ 請選擇發送對象', 'danger');
+                return;
+            }
+            
+            if (!scheduledTime) {
+                showStatus('❌ 請設定排程時間', 'danger');
+                return;
+            }
+
+            const requestData = {
+                couponId: parseInt(couponId),
+                memberLevel: memberLevel,
+                scheduledTime: scheduledTime
+            };
+
+            console.log('提交排程資料:', requestData);
+
+            try {
+                showStatus('⏳ 正在建立排程...', 'info');
+                
+                const response = await fetch('/Coupons/ScheduleCouponDispatch', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('排程建立結果:', result);
+
+                if (result.success) {
+                    showStatus('✅ ' + result.message, 'success');
+                    
+                    setTimeout(() => {
+                        $('#addScheduleModal').modal('hide');
+                        location.reload();
+                    }, 2000);
+                } else {
+                    showStatus('❌ 設定失敗：' + result.message, 'danger');
+                    
+                    // 如果有詳細錯誤信息，也顯示出來
+                    if (result.detail) {
+                        console.error('詳細錯誤:', result.detail);
+                    }
+                }
+            } catch (error) {
+                console.error('提交排程失敗:', error);
+                showStatus('❌ 提交失敗：' + error.message, 'danger');
+            }
+        }
+
+        // 取消排程
+        async function cancelSchedule(scheduleId) {
+            if (!confirm('確定要取消這個排程嗎？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/Coupons/CancelSchedule', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ scheduleId: scheduleId })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    location.reload();
+                } else {
+                    alert('❌ 取消失敗：' + result.message);
+                }
+            } catch (error) {
+                console.error('取消排程失敗:', error);
+                alert('❌ 取消失敗：' + error.message);
+            }
+        }
+
+        // 顯示錯誤詳情
+        function showErrorDetail(errorMessage) {
+            alert('執行錯誤：\n' + errorMessage);
+        }
+        
+        // 頁面載入時的診斷
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('優惠券排程管理頁面已載入');
+        });
+    </script>
+}
+
+@functions {
+    // ✅ 修改：發送對象顯示名稱
+    string GetTargetDisplayName(string actionType)
+    {
+        if (actionType == "all")
+        {
+            return "全部會員";
+        }
+        
+        if (int.TryParse(actionType, out int levelId))
+        {
+            // 這裡可以根據需要從 ViewBag 或其他方式獲取等級名稱
+            // 暫時顯示等級ID
+            return $"等級 {levelId}";
+        }
+        
+        return actionType ?? "";
+    }
+
+    // ✅ 修改：發送對象徽章樣式
+    string GetTargetBadgeClass(string actionType)
+    {
+        if (actionType == "all")
+        {
+            return "info";
+        }
+        
+        if (int.TryParse(actionType, out int levelId))
+        {
+            return "primary";
+        }
+        
+        return "secondary";
+    }
+
+    string GetStatusDisplayName(string status)
+    {
+        return status switch
+        {
+            "pending" => "等待執行",
+            "executed" => "已執行",
+            "failed" => "執行失敗",
+            "cancelled" => "已取消",
+            _ => status ?? ""
+        };
+    }
+
+    string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "pending" => "warning",
+            "executed" => "success",
+            "failed" => "danger",
+            "cancelled" => "secondary",
+            _ => "secondary"
+        };
+    }
+}}

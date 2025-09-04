@@ -1,0 +1,448 @@
+﻿@model IEnumerable<Team.Backend.Models.EfModel.Banner>
+@{
+    ViewData["Title"] = "彈出式廣告管理";
+}
+
+<style>
+    :root {
+        --primary-color: #022c5c;
+        --danger-color: #eb5757;
+        --secondary-color: #e4dcd1;
+        --bg-light: #faf6eb;
+    }
+    /* 你原有的 CSS 樣式保持不變 */
+    .custom-text-color {
+        color: var(--primary-color) !important;
+    }
+
+    .btn-custom {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: #fff;
+    }
+
+        .btn-custom:hover {
+            background-color: #011a36;
+            border-color: #011a36;
+            color: #fff;
+        }
+
+    .table thead th {
+        background-color: var(--primary-color);
+        color: #fff !important;
+    }
+
+    .table-striped > tbody > tr:nth-of-type(odd) {
+        background-color: var(--bg-light);
+    }
+
+    .table-striped > tbody > tr:nth-of-type(even) {
+        background-color: var(--secondary-color);
+    }
+
+    .table tbody tr:hover {
+        background-color: #d6e0ef;
+    }
+
+    .image-preview {
+        width: 60px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+        .image-preview:hover {
+            transform: scale(1.1);
+        }
+
+    .status-toggle {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .content-preview {
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .quick-actions {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+    }
+    /* 新增：統計卡片樣式 */
+    .stats-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border-left: 4px solid var(--primary-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+
+        .stats-card:hover {
+            transform: translateY(-2px);
+        }
+
+    .stats-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .stats-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- 成功/錯誤訊息 -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-12">
+            <!-- 頁面標題 -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="custom-text-color">
+                    <i class="fas fa-window-restore me-2"></i>彈出式廣告管理
+                </h2>
+                <a href="@Url.Action("CreateSplash")" class="btn btn-custom">
+                    <i class="fas fa-plus me-1"></i>新增彈出式廣告
+                </a>
+            </div>
+
+            <!-- 統計卡片 -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-number">@Model.Count()</div>
+                        <p class="stats-label">總廣告數</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-number">@Model.Count(b => b.IsActive == true)</div>
+                        <p class="stats-label">啟用中</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-number">@Model.Sum(b => b.ClickCount ?? 0)</div>
+                        <p class="stats-label">總點擊數</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-number">@Model.Count(b => b.StartTime <= DateTime.Now && (b.EndTime == null || b.EndTime >= DateTime.Now) && b.IsActive == true)</div>
+                        <p class="stats-label">進行中</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 廣告列表 -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th class="sortable">ID</th>
+                                    <th>圖片</th>
+                                    <th class="sortable">標題</th>
+                                    <th>內容預覽</th>
+                                    <th>觸發頁面</th>
+                                    <th>彈窗類型</th>
+                                    <th>狀態</th>
+                                    <th class="sortable">點擊次數</th>
+                                    <th>時間範圍</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td><strong>@item.Id</strong></td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                            {
+                                                <img src="@item.ImageUrl"
+                                                     class="image-preview"
+                                                     alt="廣告圖片"
+                                                     title="點擊查看大圖"
+                                                     onclick="showImageModal('@item.ImageUrl', '@item.Title')">
+                                            }
+                                            else
+                                            {
+                                                <div class="image-preview bg-light d-flex align-items-center justify-content-center">
+                                                    <i class="fas fa-image text-muted"></i>
+                                                </div>
+                                            }
+                                        </td>
+                                        <td>
+                                            <strong>@item.Title</strong>
+                                            @if (item.StartTime <= DateTime.Now && (item.EndTime == null || item.EndTime >= DateTime.Now) && item.IsActive == true)
+                                            {
+                                                <span class="badge bg-success ms-1" title="正在進行中">
+                                                    <i class="fas fa-circle fa-xs"></i>
+                                                </span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="content-preview" title="@item.Description">
+                                                @(string.IsNullOrEmpty(item.Description) ? "無內容" : item.Description)
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">@item.Page</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning">@item.Position</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge status-toggle @(item.IsActive == true ? "bg-success" : "bg-secondary")"
+                                                  onclick="toggleStatus(@item.Id, @(item.IsActive == true ? "true" : "false"))"
+                                                  title="點擊切換狀態">
+                                                @(item.IsActive == true ? "啟用" : "停用")
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary" title="總點擊次數">
+                                                <i class="fas fa-mouse-pointer me-1"></i>@(item.ClickCount ?? 0)
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                @if (item.StartTime.HasValue)
+                                                {
+                                                    <div><i class="fas fa-play text-success"></i> @item.StartTime.Value.ToString("MM/dd HH:mm")</div>
+                                                }
+                                                @if (item.EndTime.HasValue)
+                                                {
+                                                    <div><i class="fas fa-stop text-danger"></i> @item.EndTime.Value.ToString("MM/dd HH:mm")</div>
+                                                }
+                                                @if (!item.StartTime.HasValue && !item.EndTime.HasValue)
+                                                {
+                                                    <span class="text-success">永久有效</span>
+                                                }
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <div class="quick-actions">
+                                                <a href="@Url.Action("EditSplash", new { id = item.Id })"
+                                                   class="btn btn-warning btn-sm"
+                                                   title="編輯">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="@Url.Action("Details", new { id = item.Id })"
+                                                   class="btn btn-info btn-sm"
+                                                   title="查看詳情">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <button type="button"
+                                                        class="btn btn-success btn-sm"
+                                                        title="預覽廣告"
+                                                        onclick="previewBanner(@item.Id, '@item.Title', '@item.Description', '@item.ImageUrl')">
+                                                    <i class="fas fa-search"></i>
+                                                </button>
+                                                <form asp-action="Delete" method="post" class="d-inline">
+                                                    <input type="hidden" name="id" value="@item.Id" />
+                                                    <button type="submit"
+                                                            class="btn btn-danger btn-sm"
+                                                            title="刪除"
+                                                            onclick="return confirm('確定要刪除「@item.Title」嗎？')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        @if (!Model.Any())
+                        {
+                            <div class="text-center py-5">
+                                <i class="fas fa-window-restore fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">還沒有建立任何彈出廣告</h5>
+                                <p class="text-muted">點擊上方「新增彈出式廣告」按鈕開始建立</p>
+                                <a href="@Url.Action("CreateSplash")" class="btn btn-custom">
+                                    <i class="fas fa-plus me-1"></i>立即建立
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 圖片預覽 Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalTitle">廣告圖片</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" style="max-height: 500px;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 廣告預覽 Modal -->
+<div class="modal fade" id="bannerPreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: var(--primary-color); color: white;">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>廣告預覽
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="bannerPreviewContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 🔥 添加調試信息
+    console.log('Splash 頁面 JavaScript 載入完成');
+
+    // 顯示圖片 Modal
+    function showImageModal(imageUrl, title) {
+        console.log('顯示圖片 Modal:', title);
+        document.getElementById('modalImage').src = imageUrl;
+        document.getElementById('imageModalTitle').textContent = title;
+        new bootstrap.Modal(document.getElementById('imageModal')).show();
+    }
+
+    // 切換廣告狀態
+    async function toggleStatus(id, currentStatus) {
+        console.log('切換狀態:', id, currentStatus);
+
+        try {
+            // 🔥 使用更明確的 URL
+            const url = '/Splash/ToggleStatus';
+            console.log('發送請求到:', url);
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: `id=${id}`
+            });
+
+            console.log('響應狀態:', response.status);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('響應結果:', result);
+
+            if (result.success) {
+                alert(result.message || '狀態更新成功');
+                location.reload(); // 重新載入頁面以更新狀態
+            } else {
+                alert('操作失敗：' + (result.message || '未知錯誤'));
+            }
+        } catch (error) {
+            console.error('toggleStatus 錯誤:', error);
+            alert('操作失敗，請重試：' + error.message);
+        }
+    }
+
+    // 預覽廣告
+    function previewBanner(id, title, description, imageUrl) {
+        console.log('預覽廣告:', id, title);
+
+        // 🔥 防止 XSS 攻擊的 HTML 轉義
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        const previewHtml = `
+            <div style="background: rgba(0,0,0,0.6); padding: 20px; min-height: 400px; display: flex; align-items: center; justify-content: center;">
+                <div class="card" style="max-width: 600px; width: 100%; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+                    <div class="row g-0">
+                        ${imageUrl ? `
+                            <div class="col-md-6">
+                                <img src="${escapeHtml(imageUrl)}" style="width: 100%; height: 300px; object-fit: cover;" onerror="this.style.display='none'">
+                            </div>
+                        ` : ''}
+                        <div class="col-md-${imageUrl ? '6' : '12'}">
+                            <div class="card-body" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; height: 300px; display: flex; flex-direction: column; justify-content: center; padding: 2rem;">
+                                <h3 class="mb-3" style="font-weight: 700;">${escapeHtml(title || '無標題')}</h3>
+                                <p class="mb-4" style="opacity: 0.9; line-height: 1.6;">${escapeHtml(description || '無內容描述')}</p>
+                                <button class="btn btn-light align-self-start" style="color: #333; font-weight: 600; padding: 10px 24px; border-radius: 25px;">
+                                    立即查看
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const previewElement = document.getElementById('bannerPreviewContent');
+        if (previewElement) {
+            previewElement.innerHTML = previewHtml;
+            new bootstrap.Modal(document.getElementById('bannerPreviewModal')).show();
+        } else {
+            console.error('找不到 bannerPreviewContent 元素');
+        }
+    }
+
+    // 🔥 頁面載入完成後的檢查
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM 載入完成');
+
+        // 檢查必要的元素是否存在
+        const requiredElements = ['bannerPreviewModal', 'bannerPreviewContent', 'imageModal', 'modalImage', 'imageModalTitle'];
+
+        requiredElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (!element) {
+                console.warn(`找不到元素: ${id}`);
+            }
+        });
+    });
+
+    // 🔥 全域錯誤處理
+    window.addEventListener('error', function(e) {
+        console.error('全域錯誤:', e.error);
+    });
+
+</script>

@@ -1,0 +1,858 @@
+﻿@RenderSection("Styles", required: false)
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>後台管理系統</title>
+
+    <!-- Custom fonts for this template-->
+    <link href="~/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+          rel="stylesheet">
+
+    <!-- Custom styles for this template-->
+    <link href="~/css/sb-admin-2.min.css" rel="stylesheet">
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap4.min.css">
+
+    <!-- 客服系統樣式 -->
+    <link rel="stylesheet" href="~/css/customer-service.css" />
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+    <!-- 通知系統自定義樣式 -->
+    <style>
+        /* 通知下拉選單主容器 */
+        .notifications-dropdown {
+            width: 380px !important;
+            max-width: 90vw;
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 0;
+            /* 確保在所有頁面都有一致的樣式，優先級更高 */
+            position: absolute !important;
+            top: 100% !important;
+            left: auto !important;
+            right: 0 !important;
+            z-index: 9999 !important;
+        }
+
+        /* 固定標題區域 */
+        .notifications-header {
+            background: linear-gradient(135deg, #033570, #0056b3);
+            color: white;
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .notifications-header .dropdown-header {
+            background: transparent;
+            color: white;
+            padding: 15px 20px;
+            margin: 0;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        /* 可滾動的通知內容區域 */
+        .notifications-body {
+            max-height: 350px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: #fff;
+            padding: 0;
+        }
+
+        /* 自定義滾動條 */
+        .notifications-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .notifications-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .notifications-body::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .notifications-body::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* 通知項目樣式 */
+        .notification-item {
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: white;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-item:hover {
+            background: linear-gradient(to right, #f8f9ff, #fff);
+            transform: translateX(2px);
+        }
+
+        .notification-content-wrapper {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px 20px;
+            gap: 12px;
+        }
+
+        /* 通知圖示 */
+        .notification-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 通知詳細內容 */
+        .notification-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notification-message {
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .notification-category {
+            font-weight: 600;
+            color: #033570;
+            display: block;
+            margin-bottom: 2px;
+            font-size: 0.85rem;
+        }
+
+        .notification-text {
+            color: #333;
+            font-size: 0.9rem;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .notification-time {
+            font-size: 0.8rem;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .notification-date {
+            opacity: 0.7;
+        }
+
+        /* 空狀態樣式 */
+        .notification-empty {
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .empty-state {
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .empty-state small {
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        /* 固定底部操作區域 */
+        .notifications-footer {
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            padding: 12px 20px;
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+        }
+
+        .notification-actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .notification-actions .btn {
+            border-radius: 8px;
+            font-size: 0.9rem;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .notification-actions .btn-primary {
+            background: linear-gradient(135deg, #033570, #0056b3);
+            border: none;
+            color: white;
+            box-shadow: 0 2px 4px rgba(3, 53, 112, 0.2);
+            min-width: 200px;
+        }
+
+        .notification-actions .btn-primary:hover {
+            background: linear-gradient(135deg, #022a4a, #004494);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(3, 53, 112, 0.3);
+        }
+
+        /* 通知計數器動畫 */
+        .badge-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
+        }
+
+        /* 響應式設計 */
+        @@media (max-width: 768px) {
+            .notifications-dropdown {
+                width: 320px !important;
+            }
+            
+            .notification-content-wrapper {
+                padding: 12px 15px;
+                gap: 10px;
+            }
+            
+            .notification-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
+            }
+        }
+
+        /* 載入狀態樣式 */
+        .notification-loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .notification-loading i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* SignalR Hub 連接狀態樣式 */
+        .hub-status {
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .hub-status i {
+            font-size: 8px;
+        }
+        
+        .status-connected {
+            color: #28a745;
+        }
+        
+        .status-disconnected {
+            color: #dc3545;
+        }
+        
+        .status-reconnecting {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body id="page-top">
+    @Html.AntiForgeryToken()
+
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+        <!-- Sidebar 側邊條-->
+        <ul class="navbar-nav sidebar sidebar-light accordion" id="accordionSidebar"
+            style="background-color: #efe9dd; padding: 5px; border: 2px solid #033570; border-radius: 10px;">
+
+
+            <!-- Sidebar - Brand -->
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" asp-controller="Home" asp-action="Index" title="後台首頁" style="border: 2px solid #033570; border-radius: 10px; padding: 5px;">
+                <div class="sidebar-brand-icon">
+                    <img src="~/img/logo.png" alt="品牌 Logo" style="width: 90px; height: 60px; object-fit: cover; border-radius: 10px;">
+                </div>
+                <div class="sidebar-brand-text mx-2">後台管理</div>
+            </a>
+
+            <!-- 分隔線 -->
+            <li class="sidebar-divider d-none d-md-block"
+                style="height: 4px; background-color: #033570; border-radius: 10px; margin: 10px 0;"></li>
+
+
+            <!-- 帳號管理 -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" id="headingTwo" data-toggle="collapse" data-target="#collapseTwo"
+                   aria-expanded="false" aria-controls="collapseTwo">
+                    <i class="fas fa-fw fa-user-tie"></i>
+                    <span>帳號管理</span>
+                </a>
+                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="py-2 collapse-inner rounded">
+                        <a class="collapse-item" asp-controller="AccountManage" asp-action="MemberInfo">買家管理</a>
+                        <a class="collapse-item" asp-controller="SellerManage" asp-action="SellerInfo">賣家管理</a>
+                        <a class="collapse-item" asp-controller="AdminManage" asp-action="AdminList">管理員管理</a>
+                    </div>
+                </div>
+            </li>
+
+
+            <!-- 商品管理 -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" id="headingProduct" data-toggle="collapse" data-target="#collapseProduct"
+                   aria-expanded="false" aria-controls="collapseProduct">
+                    <i class="fas fa-fw fa-dolly"></i>
+                    <span>商品管理</span>
+                </a>
+                <div id="collapseProduct" class="collapse" aria-labelledby="headingProduct" data-parent="#accordionSidebar">
+                    <div class="py-2 collapse-inner rounded">
+                        <a class="collapse-item" asp-controller="Categories" asp-action="Index">分類管理</a>
+                        <a class="collapse-item" asp-controller="Product" asp-action="Products">庫存管理</a>
+                        <!-- 新增：商品評價管理 -->
+                        <a class="collapse-item" asp-controller="ProductReviews" asp-action="Index">評價管理</a>
+                    </div>
+                </div>
+            </li>
+            <!-- 訂單管理 -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" id="headingOrder" data-toggle="collapse" data-target="#collapseOrder"
+                   aria-expanded="false" aria-controls="collapseOrder">
+                    <i class="fas fa-fw fa-receipt"></i>
+                    <span>訂單管理</span>
+                </a>
+                <div id="collapseOrder" class="collapse" aria-labelledby="headingOrder" data-parent="#accordionSidebar">
+                    <div class="py-2 collapse-inner rounded">
+                        <a class="collapse-item" asp-controller="AdminOrders" asp-action="Index">訂單總覽</a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- Divider -->
+            <li class="sidebar-divider"></li>
+
+            <!-- 物流管理 -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" id="headingShipment" data-toggle="collapse" data-target="#collapseShipment"
+                   aria-expanded="false" aria-controls="collapseShipment">
+                    <i class="fas fa-fw fa-truck"></i>
+                    <span>物流管理</span>
+                </a>
+                <div id="collapseShipment" class="collapse" aria-labelledby="headingShipment" data-parent="#accordionSidebar">
+                    <div class="py-2 collapse-inner rounded">
+                        <a class="collapse-item" asp-controller="AdminLogistics" asp-action="Index">物流總覽</a>
+                        <a class="collapse-item" asp-controller="AdminLogistics" asp-action="Statistics">物流統計</a>
+                        <a class="collapse-item" asp-controller="AdminLogistics" asp-action="Settings">運費設定</a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- 廣告管理 -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseAds"
+                   aria-expanded="true" aria-controls="collapseAds">
+                    <i class="fas fa-fw fa-bullhorn"></i>
+                    <span>廣告管理</span>
+                </a>
+                <div id="collapseAds" class="collapse" aria-labelledby="headingAds" data-parent="#accordionSidebar">
+                    <div class="py-2 collapse-inner rounded">
+                        <a class="collapse-item" asp-controller="AdManage" asp-action="Banner">橫幅廣告設定</a>
+                        <div class="collapse-divider"></div>
+                        <a class="collapse-item" asp-controller="Splash" asp-action="Splash">彈出式廣告設定</a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- 優惠管理 -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseCoupons"
+                   aria-expanded="false" aria-controls="collapseCoupons">
+                    <i class="fas fa-fw fa-gift"></i>
+                    <span>優惠券中心</span>
+                </a>
+                <div id="collapseCoupons" class="collapse" aria-labelledby="headingCoupons" data-parent="#accordionSidebar">
+                    <div class="py-2 collapse-inner rounded">
+                        <a class="collapse-item" asp-controller="Coupons" asp-action="CouponsManager">優惠券管理</a>
+                        <a class="collapse-item" asp-controller="MembershipLevels" asp-action="Index">適用會員管理</a>
+                        <a class="collapse-item" asp-controller="Coupons" asp-action="ScheduleManagement">優惠券排程</a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- 通知中心 -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseNotices"
+                   aria-expanded="false" aria-controls="collapseNotices">
+                    <i class="fas fa-fw fa-bell"></i>
+                    <span>通知中心</span>
+                </a>
+                <div id="collapseNotices" class="collapse" aria-labelledby="headingNotices" data-parent="#accordionSidebar">
+                    <div class="py-2 collapse-inner rounded">
+                        <a class="collapse-item" asp-controller="Notification" asp-action="MainNotification">官方通知</a>
+                        <a class="collapse-item" asp-controller="ChartNotification" asp-action="ChartNotification">通知報表</a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- 部落格管理 -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseBlog"
+                   aria-expanded="false" aria-controls="collapseBlog">
+                    <i class="fas fa-fw fa-newspaper"></i>
+                    <span>部落格管理</span>
+                </a>
+                <div id="collapseBlog" class="collapse" aria-labelledby="headingBlog" data-parent="#accordionSidebar">
+                    <div class="py-2 collapse-inner rounded">
+                        <a class="collapse-item" asp-controller="OfficialPost" asp-action="PostManagement">文章管理</a>
+                        <a class="collapse-item" asp-controller="MemberPost" asp-action="MemberPosts">會員貼文管理</a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- 財務管理 -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseFinance"
+                   aria-expanded="false" aria-controls="collapseFinance">
+                    <i class="fas fa-fw fa-dollar-sign"></i>
+                    <span>財務中心</span>
+                </a>
+                <div id="collapseFinance" class="collapse" aria-labelledby="headingFinance" data-parent="#accordionSidebar">
+                    <div class="py-2 collapse-inner rounded">
+                        <a class="collapse-item" asp-controller="AdminFinance" asp-action="Index">
+                            <i class="fas fa-chart-line mr-1"></i>財務儀表板
+                        </a>
+                        <a class="collapse-item" asp-controller="AdminFinance" asp-action="Revenue">
+                            <i class="fas fa-money-bill-wave mr-1"></i>營收分析
+                        </a>
+                        <a class="collapse-item" asp-controller="AdminFinance" asp-action="Orders">
+                            <i class="fas fa-shopping-cart mr-1"></i>訂單統計
+                        </a>
+                        <a class="collapse-item" asp-controller="AdminFinance" asp-action="Points">
+                            <i class="fas fa-coins mr-1"></i>點數管理
+                        </a>
+                    </div>
+                </div>
+            </li>
+
+
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseSystem"
+                   aria-expanded="true" aria-controls="collapseSystem">
+                    <i class="fas fa-cogs"></i>
+                    <span>系統管理</span>
+                </a>
+                <div id="collapseSystem" class="collapse" aria-labelledby="headingSystem" data-parent="#accordionSidebar">
+                    <div class="py-2 collapse-inner rounded">
+                        <a class="collapse-item" href="@Url.Action("ScheduleManagement", "OfficialPost")">
+                            <i class="fas fa-clock"></i> 排程管理
+                        </a>
+                        <a class="collapse-item" href="/hangfire" target="_blank">
+                            <i class="fas fa-tasks"></i> 任務監控 (Hangfire)
+                        </a>
+                    </div>
+                </div>
+            </li>
+            <!-- 圖片上傳 -->
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Image" asp-action="Upload">
+                    <i class="fas fa-images"></i>
+                    <span>圖片上傳</span>
+                </a>
+            </li>
+
+            <!-- Divider -->
+            <li class="sidebar-divider d-none d-md-block"
+                style="height: 4px; background-color: #033570; border-radius: 10px; margin: 10px 0;"></li>
+
+            <!-- Sidebar Toggler (Sidebar) -->
+            <li class="text-center d-none d-md-inline">
+                <button class="rounded-circle border-0" id="sidebarToggle" style="background-color:#033570; width: 40px; height: 40px;"></button>
+            </li>
+
+
+        </ul>
+
+        <!-- Content Wrapper -->
+
+        <div id="content-wrapper" class="d-flex flex-column" style="border: 2px solid #033570; border-radius: 10px; padding: 5px;">
+            <header>
+                <!-- 上條區塊Topbar -->
+                <nav class="navbar navbar-expand navbar-light topbar mb-2" style="background-color: #efe9dd;  border: 2px solid #033570; border-radius: 10px; padding: 5px;">
+
+
+                    <!-- Sidebar Toggle (Topbar) -->
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                        <i class="fa fa-bars"></i>
+                    </button>
+
+
+                    <!-- Topbar Navbar -->
+                    <ul class="navbar-nav ml-auto">
+
+                        <!-- Nav Item - Search Dropdown (Visible Only XS) -->
+                        <li class="nav-item dropdown no-arrow d-sm-none">
+                            <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
+                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-search fa-fw"></i>
+                            </a>
+                            <!-- Dropdown - Messages -->
+                            <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
+                                 aria-labelledby="searchDropdown">
+                                <form class="form-inline mr-auto w-100 navbar-search">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control bg-light border-0 small"
+                                               placeholder="Search for..." aria-label="Search"
+                                               aria-describedby="basic-addon2">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-primary" type="button">
+                                                <i class="fas fa-search fa-sm"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </li>
+
+                        <!-- 官方通知 -->
+                        <li class="nav-item dropdown no-arrow mx-1">
+                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
+                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-bell fa-fw" style="color:#033570;"></i>
+                                @{
+                                    var notificationData = ViewBag.NotificationData as dynamic;
+                                    var unreadCount = notificationData?.UnreadCount ?? "0";
+                                    var hasNotifications = notificationData?.HasNotifications ?? false;
+                                    var notifications = notificationData?.Notifications ?? new List<object>();
+                                }
+                                <span class="badge badge-danger badge-counter badge-pulse" id="notificationCounter" style="@(unreadCount != "0" ? "display: inline;" : "display: none;")">@unreadCount</span>
+                            </a>
+
+                            <!-- 改進的通知下拉選單 -->
+                            <div class="notifications-dropdown dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                                 aria-labelledby="alertsDropdown" id="notificationsDropdown">
+
+                                <!-- 固定標題區域 -->
+                                <div class="notifications-header">
+                                    <h6 class="dropdown-header d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <i class="fas fa-bullhorn mr-2"></i>推播通知
+                                        </span>
+                                        <small class="text-muted">@unreadCount 則未讀</small>
+                                    </h6>
+                                </div>
+
+                                <!-- 可滾動的通知內容區域 -->
+                                <div class="notifications-body" id="notificationsContainer">
+                                    @if (hasNotifications && notifications != null)
+                                    {
+                                        foreach (var notification in notifications)
+                                        {
+                                            var notificationObj = notification as dynamic;
+                                            <div class="notification-item">
+                                                <div class="notification-content-wrapper">
+                                                    <div class="notification-icon @(notificationObj?.CategoryColor ?? "bg-primary")">
+                                                        <i class="@(notificationObj?.CategoryIcon ?? "fas fa-bell")"></i>
+                                                    </div>
+                                                    <div class="notification-details">
+                                                        <div class="notification-message">
+                                                            <span class="notification-category">@(notificationObj?.CategoryLabel ?? "通知")</span>
+                                                            <span class="notification-text">@(notificationObj?.Message ?? "系統通知")</span>
+                                                        </div>
+                                                        <div class="notification-time">
+                                                            <i class="fas fa-clock mr-1"></i>
+                                                            @(notificationObj?.RelativeTime ?? "")
+                                                            @if (notificationObj?.FormattedSentAt != null)
+                                                            {
+                                                                <span class="notification-date">(@notificationObj.FormattedSentAt)</span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="notification-empty">
+                                            <div class="empty-state">
+                                                <i class="fas fa-bell-slash"></i>
+                                                <p>目前沒有新通知</p>
+                                                <small>當有新通知時會顯示在這裡</small>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- 固定底部操作區域 -->
+                                <div class="notifications-footer">
+                                    <div class="notification-actions">
+                                        <a class="btn btn-primary btn-block" asp-controller="Notification" asp-action="MainNotification">
+                                            <i class="fas fa-eye mr-1"></i>查看全部通知
+                                        </a>
+                                    </div>
+                                    <!-- SignalR 連接狀態 (隱藏) -->
+                                    <div class="text-center mt-2" style="display: none;">
+                                        <small id="notificationHubStatus" class="hub-status status-disconnected">
+                                            <i class="fas fa-circle"></i> 未連接
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <!-- 線上客服 -->
+                        <li class="nav-item no-arrow mx-1">
+                            <a class="nav-link" href="javascript:void(0)" onclick="openLiveChat()" title="線上客服">
+                                <i class="fas fa-headset fa-fw" style="color:#033570;"></i>
+                            </a>
+                        </li>
+                        
+                        <!-- 使用者登出 -->
+                        <li class="nav-item dropdown no-arrow text-blue">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                @* <span class="mr-2 d-none d-lg-inline small">Admin</span> *@
+                                <img class="img-profile rounded-circle" src="~/img/account.svg">
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
+                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2"></i>
+                                    登出
+                                </a>
+                                <div class="dropdown-divider"></div>
+
+                            </div>
+                        </li>
+                    </ul>
+                </nav>
+            </header>
+
+            <!-- Main Content -->
+            <div class="container-fluid p-0" id="content">
+                <main role="main">
+                    @RenderBody()
+                </main>
+            </div>
+
+            <!-- Footer -->
+            <footer class="footer text-center py-3">
+                <div class="container">
+                    <span>2025 Jade &copy; Fashion Meets Function &copy;</span>
+                </div>
+            </footer>
+
+        </div>
+    </div>
+
+    <!-- End of Footer -->
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top" style="background-color:  #033570;">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- Logout Modal-->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">登出</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">如果您準備結束，請選擇下面的登出</div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">取消</button>
+
+                    <form id="logoutForm" asp-controller="Account" asp-action="Logout" method="post" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-primary">登出</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 客服聊天對話框 Modal -->
+    <div class="modal fade" id="customerServiceModal" tabindex="-1" role="dialog" aria-labelledby="customerServiceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="customerServiceModalLabel">
+                        <i class="fas fa-headset"></i>
+                        線上客服
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- 聊天記錄區域 -->
+                    <div id="customerChatContainer" class="chat-container mb-3" style="height: 350px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 5px; padding: 15px; background-color: #f8f9fa;">
+                        <div class="text-muted text-center">
+                            <i class="fas fa-headset fa-2x mb-2"></i>
+                            <p>歡迎使用線上客服！我們將在最短時間內回覆您。</p>
+                        </div>
+                    </div>
+
+                    <!-- 輸入區域 -->
+                    <div class="input-group">
+                        <input type="text" id="customerMessageInput" class="form-control" placeholder="請輸入您的問題..." autocomplete="off">
+                        <button class="btn btn-primary" type="button" id="customerSendButton">
+                            <i class="fas fa-paper-plane"></i>
+                            發送
+                        </button>
+                    </div>
+
+                    <!-- 客服狀態指示 -->
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-circle text-success"></i>
+                            客服人員線上中 - 平均回覆時間：2-5分鐘
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+                    <button type="button" class="btn btn-warning" id="clearCustomerChat">
+                        <i class="fas fa-trash"></i>
+                        清除對話
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="~/vendor/jquery/jquery.min.js"></script>
+    <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="~/vendor/jquery-easing/jquery.easing.min.js"></script>
+
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap4.min.js"></script>
+
+    <!-- Page level plugins -->
+    <script src="~/vendor/chart.js/Chart.min.js"></script>
+
+    <!-- Custom scripts for all pages-->
+    <script src="~/js/sb-admin-2.min.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+    <script>
+        document.querySelector("#sidebarToggle")?.addEventListener("click", function () {
+            document.body.classList.toggle("sidebar-toggled");
+            document.querySelector("#wrapper")?.classList.toggle("toggled");
+        });
+
+        document.querySelector("#sidebarToggleTop")?.addEventListener("click", function () {
+            document.body.classList.toggle("sidebar-toggled");
+            document.querySelector("#wrapper")?.classList.toggle("toggled");
+        });
+    </script>
+
+    <!-- 客服系統 JavaScript -->
+    <script src="~/js/customer-service.js"></script>
+
+    <!-- 通知系統 JavaScript-->
+    <script>
+        // 簡化的通知系統 - 只保留基本功能
+        $(document).ready(function() {
+            console.log('通知系統已使用 Controller 方式載入');
+            
+            // 通知項目點擊事件
+            $('.notification-item').on('click', function() {
+                console.log('通知項目被點擊');
+                // 可以添加點擊通知的處理邏輯，例如跳轉到詳細頁面
+            });
+
+            // 添加通知計數器動畫效果
+            var counter = $('#notificationCounter');
+            if (counter.is(':visible') && counter.text() !== '0') {
+                counter.addClass('badge-pulse');
+            }
+
+            // 處理下拉選單開啟事件
+            $('#alertsDropdown').on('show.bs.dropdown', function () {
+                console.log('通知下拉選單開啟');
+            });
+
+            // 處理下拉選單關閉事件
+            $('#alertsDropdown').on('hide.bs.dropdown', function () {
+                console.log('通知下拉選單關閉');
+            });
+        });
+
+        // 手動刷新通知功能（可選）
+        function refreshNotifications() {
+            console.log('手動刷新通知');
+            setTimeout(function() {
+                window.location.reload();
+            }, 1000);
+        }
+    </script>
+    
+</body>
+</html>

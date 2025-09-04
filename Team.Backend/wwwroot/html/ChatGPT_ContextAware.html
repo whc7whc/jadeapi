@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <title>ChatGPT API</title>
+    <style>
+        input[type=text] {
+            width: 60%;
+        }
+
+        img {
+            width: 38px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="text-bg-info p-3 mb-4">
+        <h1><img id="logo">Web串接ChatGPT API做互動式聊天問答 - 加入能夠理解問題前後文功能</h1>
+        <div>
+            <article>
+                <p>如果要實現ChatGPT發問能夠理解前後文, 需要:</p>
+                <p>1.將問題及回答的歷史資料保存起來(但需要考量持久性,localStorage)</p>
+                <p>2.再將歷史問題從localStorage取出,然後一併當成前後文傳給OpenAI API</p>
+            </article>
+        </div>
+    </div>
+
+    <input type="text" id="question" placeholder="請輸入你的問題" value="">
+    <input type="submit" id="btnSubmit" value="送出">
+    <input type="button" id="btnClearStorage" value="清除localStorage">
+    <input type="button" id="btnClearResult" value="清除畫面結果">
+
+    <div id="spinner"></div>
+    <div id="container" class="mb-5"></div>
+    <div id="resultJson" class="text-bg-warning p-3 mb-4"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
+        crossorigin="anonymous"></script>
+    <script>
+        const chatgpt_icon = "https://raw.githubusercontent.com/apprunner/FileStorage/master/chatgpt_icon.png";
+        // NOTE: Do NOT include OpenAI API keys in frontend code.
+        // Use a backend proxy that injects the OpenAI API key server-side.
+        // Backend example endpoint (adjust to your implementation):
+        // POST /api/OpenAI/SendMessage  -> expects { model, messages }
+        const chatgpt_ApiUrl = "/api/OpenAI/SendMessage";
+
+        let history_messages = []; //保存ChatGPT歷史問題記錄的物件
+        let current_messages = []; //最新問題(含之前的歷史問題)
+
+        let input, btnSubmit, btnClearStorage, spinner, container, responseJson;
+
+        const br = document.createElement("br");
+        const hr = document.createElement("hr");
+
+        let requestData = {
+            "model": "gpt-3.5-turbo",
+            "messages": []
+            // "messages": [{ "role": "user", "content": "Hello!" }]
+        };
+
+        let responseData = {};
+
+        window.onload = function () {
+            document.getElementById("logo").src = chatgpt_icon;
+
+            questionInput = document.getElementById("question");
+            btnSubmit = document.getElementById("btnSubmit");
+            btnClearStorage = document.getElementById("btnClearStorage");
+            spinner = document.getElementById("spinner");
+            container = document.getElementById("container");
+            responseJson = document.getElementById("resultJson");
+
+            //localStorage中chatgpt指派空的陣列初始化
+            //同時意謂每次程式重新執行, 皆會清除之前的問題記錄
+            localStorage.setItem("chatgpt", "[]");
+
+            //當input按下Enter按鈕後,觸發Submit事件
+            questionInput.addEventListener("keypress", (event) => {
+                if (event.key == "Enter") {
+                    event.preventDefault();
+                    btnSubmit.click();
+                }
+            });
+
+
+            //Submit按鈕的Click事件
+            btnSubmit.addEventListener("click", () => {
+                spinner.innerHTML = `
+                    <div class="spinner-border text-danger" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                    </div>`;
+
+                //從Input取得發問的value文字
+                let question = questionInput.value;
+                //檢查input內容是否為空?
+
+                if (question.length > 0) {
+                    //1.從localStorage取出history歷史問題及回答
+                    //2.如果有歷史問題及回答, 則將它們指派current_messages陣列中
+                    //3.然後將新的問題也push到current_messages陣列中
+                    //4.將current_messages指定到requestData.messages物件屬性
+                    //5.發送問題給chatgpt後, 將回傳的答案亦push到current_messages陣列中
+                    //6.將最終的current_messages儲存到localStorage
+
+                    //1.
+                    if (localStorage.getItem("chatgpt") != "[]") {
+                        //從localStorage取出chatgpt歷史對話記錄
+                        history_messages = JSON.parse(localStorage.getItem("chatgpt"));
+                        //判斷其[]陣列元素內容>0, 表示有歷史對話記錄
+                        if (history_messages.length > 0) {
+                            //2.將歷史對話記錄push到current_messages,製造前後文Context
+                            current_messages = history_messages;
+                        }
+                    }
+
+                    //3.再將最新一筆問題push到current_messages
+                    //{ "role": "user", "content": "Hello!" }
+                    current_messages.push({ "role": "user", "content": question });
+
+                    //4.將current_messages指定到requestData.messages物件屬性
+                    requestData.messages = current_messages;
+                }
+
+                // Send the request to the backend proxy; the server should add
+                // Authorization: Bearer <OPENAI_KEY> when calling OpenAI.
+                let request = new Request(chatgpt_ApiUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-type": "application/json; charset=UTF-8"
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                btnSubmit.disabled = true;
+
+                //發出請求給ChatGPT API
+                fetch(request)
+                    .then(response => {
+                        //檢查response是否ok ?
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            throw new Error(`發生錯誤: ${response.status}, ${response.statusText}`);
+                        }
+                    })
+                    .then(responseData => {
+                        spinner.innerHTML = "";
+
+                        //5.將回答的問題push到current_message,然後再儲存到localStorage
+                        current_messages.push({ "role": "assistant", "content": responseData.choices[0].message.content });
+                        localStorage.setItem("chatgpt", JSON.stringify(current_messages));
+
+                        let question = `問題 : ${questionInput.value}`;
+
+                        container.append(question, br.cloneNode());
+
+                        //解析ChatGPT回傳資訊格式
+                        let answer = "回答 : \n\n" + responseData.choices[0].message.content;
+                        let newAnswer = answer.replaceAll("\n\n", "<br>");
+
+                        let div = document.createElement("div");
+                        div.innerHTML = newAnswer;
+
+                        container.append(div, br.cloneNode(), hr.cloneNode());
+
+                        responseJson.innerText = JSON.stringify(responseData);
+                    })
+                    .catch(ex => {
+                        console.log(ex.response);
+                    })
+                    .finally(() => {
+                        console.log(current_messages);
+                        //6.
+                        localStorage.setItem("chatgpt", JSON.stringify(current_messages));
+
+                        questionInput.value = "";
+                        btnSubmit.disabled = false;
+
+                        history_messages = [];
+                        current_messages = [];
+                    });
+            });
+
+            //清除localStorage中chatgpt內容
+            btnClearStorage.addEventListener("click", () => {
+                localStorage.setItem("chatgpt", "[]");
+            });
+
+            btnClearResult.addEventListener("click", () => {
+                container.innerHTML = "";
+                responseJson.innerHTML = "";
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,306 @@
+﻿/* 客服聊天對話框樣式 */
+.chat-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.chat-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+    .chat-container::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+/* 客服輸入動畫效果 */
+@keyframes blink {
+    0%, 20% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* 客服對話框相關樣式 */
+.dropdown-list {
+    width: 20rem;
+}
+
+.dropdown-list-image {
+    position: relative;
+    height: 2.5rem;
+    width: 2.5rem;
+}
+
+    .dropdown-list-image img {
+        height: 2.5rem;
+        width: 2.5rem;
+    }
+
+.status-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    height: 0.75rem;
+    width: 0.75rem;
+    border: 2px solid #fff;
+    border-radius: 50%;
+}
+
+.icon-circle {
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badge-counter {
+    position: absolute;
+    transform: scale(0.9);
+    transform-origin: top right;
+    right: 0.25rem;
+    margin-top: -0.25rem;
+}
+
+/* 客服聊天容器樣式 */
+.chat-container {
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+/* 客服訊息樣式 */
+.customer-message {
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+/* 客服模態框自定義樣式 - 調整位置和大小 */
+#customerServiceModal {
+    z-index: 1055;
+}
+
+    #customerServiceModal .modal-dialog {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        margin: 0;
+        width: 450px;
+        max-width: 90vw;
+        height: auto;
+        max-height: calc(100vh - 100px);
+    }
+
+    #customerServiceModal .modal-content {
+        height: 600px;
+        max-height: calc(100vh - 100px);
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    #customerServiceModal .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-bottom: none;
+        border-radius: 10px 10px 0 0;
+        padding: 15px 20px;
+    }
+
+    #customerServiceModal .modal-body {
+        padding: 20px;
+        height: calc(600px - 140px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    #customerServiceModal .modal-footer {
+        border-top: 1px solid #eee;
+        border-radius: 0 0 10px 10px;
+        padding: 15px 20px;
+    }
+
+    /* 聊天容器調整 */
+    #customerServiceModal .chat-container {
+        flex: 1;
+        height: auto !important;
+        max-height: 400px;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        overflow-y: auto;
+    }
+
+    /* 輸入區域樣式 */
+    #customerServiceModal .input-group {
+        margin-top: 15px;
+        display: flex;
+    }
+
+        #customerServiceModal .input-group input {
+            flex: 1;
+            border-radius: 25px;
+            border: 1px solid #ddd;
+            padding: 12px 15px;
+            margin-right: 10px;
+            outline: none;
+        }
+
+            #customerServiceModal .input-group input:focus {
+                border-color: #667eea;
+                box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+            }
+
+        #customerServiceModal .input-group .input-group-append {
+            margin-left: 0;
+        }
+
+        #customerServiceModal .input-group button {
+            border-radius: 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 20px;
+            font-weight: 500;
+            color: white;
+            min-width: 80px;
+            white-space: nowrap;
+        }
+
+            #customerServiceModal .input-group button:hover {
+                background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            }
+
+            #customerServiceModal .input-group button:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
+            }
+
+/* 簡化的輸入區域 - 如果上面的不行，用這個 */
+.customer-input-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    align-items: center;
+}
+
+    .customer-input-container input {
+        flex: 1;
+        border-radius: 25px;
+        border: 1px solid #ddd;
+        padding: 12px 15px;
+        outline: none;
+    }
+
+    .customer-input-container button {
+        border-radius: 25px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 12px 20px;
+        color: white;
+        font-weight: 500;
+        min-width: 80px;
+        flex-shrink: 0;
+    }
+
+/* 正在輸入指示器樣式 */
+#typingIndicator .fas.fa-circle {
+    font-size: 0.5rem;
+    margin-right: 2px;
+}
+
+/* 客服按鈕hover效果 */
+.nav-link[title="線上客服"]:hover {
+    background-color: rgba(3, 53, 112, 0.1);
+    border-radius: 0.375rem;
+}
+
+/* 客服狀態指示樣式 */
+.customer-status {
+    background: #e8f5e8;
+    border: 1px solid #d4edda;
+    border-radius: 20px;
+    padding: 8px 15px;
+    margin-top: 10px;
+    font-size: 0.875rem;
+}
+
+/* 聊天訊息氣泡樣式 */
+.customer-message {
+    max-width: 85%;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 用戶訊息樣式 */
+.user-message {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 18px 18px 4px 18px;
+}
+
+/* 客服訊息樣式 */
+.agent-message {
+    background: white;
+    color: #333;
+    border: 1px solid #e9ecef;
+    border-radius: 18px 18px 18px 4px;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    #customerServiceModal .modal-dialog {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+        height: calc(100vh - 20px);
+        max-height: calc(100vh - 20px);
+    }
+
+    #customerServiceModal .modal-content {
+        height: 100%;
+    }
+
+    .chat-container {
+        height: auto !important;
+        max-height: 300px !important;
+    }
+
+    .customer-message {
+        max-width: 90%;
+    }
+}
+
+/* 關閉按鈕樣式 */
+#customerServiceModal .close {
+    color: white;
+    opacity: 0.8;
+    font-size: 1.5rem;
+    text-shadow: none;
+}
+
+    #customerServiceModal .close:hover {
+        opacity: 1;
+        color: white;
+    }

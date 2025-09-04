@@ -1,0 +1,251 @@
+﻿@using Team.Backend.Models.ViewModels.Logistics
+@model ShippingSettingsVm
+
+@{
+    ViewData["Title"] = "運費設定";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="m-0">
+        <i class="fas fa-cog text-info"></i>
+        運費設定
+    </h3>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> 返回列表
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    </div>
+}
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-money-bill-wave"></i>
+                    運費規則設定
+                </h5>
+            </div>
+            
+            <form asp-action="Settings" method="post">
+                <div class="card-body">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            請檢查輸入的資料是否正確
+                        </div>
+                    }
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="FreeShippingThreshold" class="form-label">
+                                    免運門檻 (元) <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="FreeShippingThreshold" type="number" class="form-control" 
+                                       min="0" step="100" placeholder="1000">
+                                <span asp-validation-for="FreeShippingThreshold" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    購物車金額達到此金額時免收運費
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="VipMemberDiscount" class="form-label">
+                                    金牌會員優惠 (元) <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="VipMemberDiscount" type="number" class="form-control" 
+                                       min="0" step="10" placeholder="20">
+                                <span asp-validation-for="VipMemberDiscount" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    金牌會員運費折扣金額
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="StandardShippingFee" class="form-label">
+                                    標準運費 (元) <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="StandardShippingFee" type="number" class="form-control" 
+                                       min="0" step="10" placeholder="60">
+                                <span asp-validation-for="StandardShippingFee" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    一般宅配運費
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="ExpressShippingFee" class="form-label">
+                                    快速配送運費 (元) <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="ExpressShippingFee" type="number" class="form-control" 
+                                       min="0" step="10" placeholder="120">
+                                <span asp-validation-for="ExpressShippingFee" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    急件或當日配送運費
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label asp-for="RemoteAreaSurcharge" class="form-label">
+                            離島加收費用 (元) <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="RemoteAreaSurcharge" type="number" class="form-control" 
+                               min="0" step="10" placeholder="100">
+                        <span asp-validation-for="RemoteAreaSurcharge" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            澎湖、金門、馬祖等離島地區額外加收費用
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 儲存設定
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="resetToDefault()">
+                        <i class="fas fa-undo"></i> 恢復預設值
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> 取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    設定說明
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <strong>免運門檻</strong>
+                        <br>
+                        <small class="text-muted">
+                            購物車金額達到門檻時，所有配送方式免收運費
+                        </small>
+                    </div>
+                    <div class="list-group-item">
+                        <strong>金牌會員優惠</strong>
+                        <br>
+                        <small class="text-muted">
+                            金牌會員享有運費折扣，從原運費中扣除此金額
+                        </small>
+                    </div>
+                    <div class="list-group-item">
+                        <strong>離島加收</strong>
+                        <br>
+                        <small class="text-muted">
+                            離島地區配送時，在標準運費基礎上加收此費用
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calculator"></i>
+                    運費計算範例
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-light">
+                    <strong>範例計算：</strong>
+                    <br>
+                    <ul class="mb-0 mt-2">
+                        <li>購物車金額：$800</li>
+                        <li>一般會員黑貓宅配：$@Model.StandardShippingFee</li>
+                        <li>金牌會員黑貓宅配：$@(Model.StandardShippingFee - Model.VipMemberDiscount)</li>
+                        <li>離島地區加收：+$@Model.RemoteAreaSurcharge</li>
+                        <li>購物車 ≥ $@Model.FreeShippingThreshold：免運費</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    注意事項
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <ul class="mb-0">
+                        <li>修改設定會立即生效</li>
+                        <li>建議在低峰時段修改</li>
+                        <li>超商取貨不支援離島配送</li>
+                        <li>設定值需為正數</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        function resetToDefault() {
+            if (confirm('確定要恢復預設值嗎？這將會覆蓋目前的設定。')) {
+                $('#FreeShippingThreshold').val(1000);
+                $('#VipMemberDiscount').val(20);
+                $('#RemoteAreaSurcharge').val(100);
+                $('#StandardShippingFee').val(60);
+                $('#ExpressShippingFee').val(120);
+            }
+        }
+        
+        // 即時計算範例
+        function updateExample() {
+            var threshold = $('#FreeShippingThreshold').val() || 1000;
+            var discount = $('#VipMemberDiscount').val() || 20;
+            var surcharge = $('#RemoteAreaSurcharge').val() || 100;
+            var standard = $('#StandardShippingFee').val() || 60;
+            
+            // 這裡可以更新範例計算顯示
+        }
+        
+        // 監聽輸入變化
+        $('input[type="number"]').on('input', updateExample);
+    </script>
+}

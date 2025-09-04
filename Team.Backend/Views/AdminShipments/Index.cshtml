@@ -1,0 +1,270 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物流管理</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #022c5c;
+            --danger-color: #eb5757;
+            --secondary-color: #e4dcd1;
+            --bg-light: #faf6eb;
+        }
+
+        .custom-text-color {
+            color: var(--primary-color) !important;
+        }
+
+        .btn-custom {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: #fff;
+        }
+
+            .btn-custom:hover {
+                background-color: #011a36;
+                border-color: #011a36;
+                color: #fff;
+            }
+
+        .btn-approve {
+            background-color: #1e7e34;
+            border-color: #1e7e34;
+            color: #fff;
+        }
+
+            .btn-approve:hover {
+                background-color: #155724;
+                border-color: #155724;
+            }
+
+        .btn-reject {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+            color: #fff;
+        }
+
+            .btn-reject:hover {
+                background-color: #b92d2d;
+                border-color: #b92d2d;
+            }
+
+        .select-checkbox {
+            transform: scale(1.2);
+            margin-right: 5px;
+        }
+
+        .table thead th {
+            color: #225c5c !important;
+            background-color: var(--primary-color);
+            color: #fff !important;
+        }
+
+        .table-striped > tbody > tr:nth-of-type(odd) {
+            background-color: var(--bg-light);
+        }
+
+        .table-striped > tbody > tr:nth-of-type(even) {
+            background-color: var(--secondary-color);
+        }
+
+        .card-header h6 {
+            color: var(--primary-color) !important;
+        }
+
+        .table tbody tr {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+            .table tbody tr:hover {
+                background-color: #d6e0ef;
+            }
+
+        .status-badge {
+            font-size: 0.875rem;
+            padding: 0.375rem 0.75rem;
+        }
+
+        .status-pending {
+            background-color: #ffc107;
+            color: #856404;
+        }
+
+        .status-approved {
+            background-color: #1e7e34;
+            color: #fff;
+        }
+
+        .status-rejected {
+            background-color: var(--danger-color);
+            color: #fff;
+        }
+
+        .modal-header {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .article-content {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            padding: 1rem;
+            background-color: #f8f9fa;
+        }
+
+        .article-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.375rem;
+        }
+
+        .batch-actions {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+            .batch-actions.show {
+                display: block;
+            }
+
+
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+
+
+        .table-responsive {
+            border-radius: 0.375rem;
+        }
+
+        .pagination .page-link {
+            color: var(--primary-color);
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container my-4">
+        <h3 class="custom-text-color mb-4">物流管理</h3>
+
+        <div class="mb-3">
+            <button class="btn btn-custom me-2" onclick="batchAssignCarrier()"><i class="fas fa-truck"></i> 批次指派物流公司</button>
+            <button class="btn btn-success me-2" onclick="batchUpdateStatus()"><i class="fas fa-sync-alt"></i> 批次更新配送狀態</button>
+            <button class="btn btn-secondary" onclick="clearSelection()"><i class="fas fa-times"></i> 清除選取</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                        <th>物流單編號</th>
+                        <th>訂單編號</th>
+                        <th>物流公司</th>
+                        <th>配送狀態</th>
+                    </tr>
+                </thead>
+                <tbody id="shipmentTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+    <script>
+        const shipments = [
+            { id: 1, orderId: 1001, carrier: "未指派", status: "待出貨" },
+            { id: 2, orderId: 1002, carrier: "黑貓宅急便", status: "配送中" },
+            { id: 3, orderId: 1003, carrier: "宅配通", status: "已送達" }
+        ];
+
+        const carriers = ["未指派", "黑貓宅急便", "宅配通", "7-11超商"];
+        const statuses = ["待出貨", "配送中", "已送達"];
+
+        function renderTable() {
+            const tbody = document.getElementById("shipmentTableBody");
+            tbody.innerHTML = "";
+            shipments.forEach((s, index) => {
+                let badgeClass = s.status === "待出貨" ? "status-pending" :
+                                 s.status === "配送中" ? "status-shipping" : "status-delivered";
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><input type="checkbox" class="select-item" data-index="${index}"></td>
+                        <td>${s.id}</td>
+                        <td>${s.orderId}</td>
+                        <td>${s.carrier}</td>
+                        <td><span class="status-badge ${badgeClass}">${s.status}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById("selectAll");
+            document.querySelectorAll(".select-item").forEach(chk => chk.checked = selectAll.checked);
+        }
+
+        function getSelectedIndexes() {
+            const selected = [];
+            document.querySelectorAll(".select-item").forEach(chk => {
+                if (chk.checked) selected.push(Number(chk.getAttribute("data-index")));
+            });
+            return selected;
+        }
+
+        function batchAssignCarrier() {
+            const selected = getSelectedIndexes();
+            if (selected.length === 0) return alert("請先選擇物流單");
+
+            const carrier = prompt("請輸入物流公司（黑貓宅急便 / 宅配通 / 7-11超商）：", "黑貓宅急便");
+            if (!carrier || !carriers.includes(carrier)) return alert("物流公司錯誤");
+
+            selected.forEach(i => shipments[i].carrier = carrier);
+            renderTable();
+        }
+
+        function batchUpdateStatus() {
+            const selected = getSelectedIndexes();
+            if (selected.length === 0) return alert("請先選擇物流單");
+
+            const status = prompt("請輸入配送狀態（待出貨 / 配送中 / 已送達）：", "配送中");
+            if (!status || !statuses.includes(status)) return alert("配送狀態錯誤");
+
+            selected.forEach(i => shipments[i].status = status);
+            renderTable();
+        }
+
+        function clearSelection() {
+            document.querySelectorAll(".select-item").forEach(chk => chk.checked = false);
+            document.getElementById("selectAll").checked = false;
+        }
+
+        renderTable();
+    </script>
+</body>
+
+</html>

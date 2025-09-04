@@ -1,0 +1,139 @@
+﻿<!-- Views/MemberPost/EditMemberPost.cshtml -->
+@model Team.Backend.Models.EfModel.Post
+
+@{
+    ViewData["Title"] = "編輯會員貼文";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">編輯會員貼文</h1>
+        <a asp-controller="MemberPost" asp-action="MemberPosts" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> 返回列表
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">編輯貼文內容</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-controller="MemberPost" asp-action="UpdateMemberPost" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="MembersId" />
+                        <input type="hidden" asp-for="CreatedAt" />
+                        <input type="hidden" asp-for="Image" />
+
+                        <div class="form-group">
+                            <label asp-for="Title">標題 <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" placeholder="請輸入貼文標題" required />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Content">內容 <span class="text-danger">*</span></label>
+                            <textarea asp-for="Content" class="form-control" rows="10" placeholder="請輸入貼文內容" required></textarea>
+                            <span asp-validation-for="Content" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Status">狀態</label>
+                            <select asp-for="Status" class="form-control">
+                                <option value="pending">待審核</option>
+                                <option value="published">已發布</option>
+                                <option value="rejected">已退回</option>
+                                <option value="draft">草稿</option>
+                            </select>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.Image))
+                        {
+                            <div class="form-group">
+                                <label>目前圖片</label>
+                                <div class="text-center">
+                                    <img src="@Model.Image" alt="貼文圖片" class="img-fluid rounded" style="max-height: 300px;">
+                                </div>
+                            </div>
+                        }
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 儲存變更
+                            </button>
+                            <a asp-controller="MemberPost" asp-action="MemberPostDetails" asp-route-id="@Model.Id" class="btn btn-secondary">
+                                取消
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- 作者資訊 -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">作者資訊</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>姓名：</strong></td>
+                            <td>@(Model.Members?.Profile?.Name ?? "未知用戶")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Email：</strong></td>
+                            <td>@(Model.Members?.Email ?? "N/A")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>會員ID：</strong></td>
+                            <td>@Model.MembersId</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 貼文資訊 -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">貼文資訊</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>建立時間：</strong></td>
+                            <td>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>更新時間：</strong></td>
+                            <td>@(Model.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? "未更新")</td>
+                        </tr>
+                        @if (Model.PublishedAt.HasValue)
+                        {
+                            <tr>
+                                <td><strong>發布時間：</strong></td>
+                                <td>@Model.PublishedAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                            </tr>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.RejectedReason))
+                        {
+                            <tr>
+                                <td><strong>退回原因：</strong></td>
+                                <td class="text-danger">@Model.RejectedReason</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+}

@@ -1,0 +1,44 @@
+﻿@model Team.Backend.Models.ViewModels.EditAdminViewModel
+
+<form id="editAdminForm">
+    <input type="hidden" name="UserId" value="@Model.UserId" />
+
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-control" value="@Model.Email" readonly />
+    </div>
+
+    @if (User.IsInRole("SuperAdmin")) // 只有超管能改角色
+    {
+        <div class="mb-3">
+            <label class="form-label">角色</label>
+            @{
+                var selected1 = Model.Role == 1 ? "selected" : "";
+                var selected2 = Model.Role == 2 ? "selected" : "";
+            }
+            <option value="1" selected="@selected1">超級管理員</option>
+            <option value="2" selected="@selected2">一般管理員</option>
+        </div>
+    }
+    else
+    {
+        <input type="hidden" name="Role" value="@Model.Role" />
+    }
+
+    <div class="mb-3">
+        <label class="form-label">啟用狀態</label>
+        <select class="form-select" name="IsActive">
+            @{
+                var selectedActive = Model.IsActive ? "selected" : "";
+                var selectedInactive = !Model.IsActive ? "selected" : "";
+            }
+
+            <option value="true" selected="@selectedActive">啟用</option>
+            <option value="false" selected="@selectedInactive">停用</option>
+        </select>
+    </div>
+
+    <div class="text-end">
+        <button type="submit" class="btn btn-primary">儲存變更</button>
+    </div>
+</form>

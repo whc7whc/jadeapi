@@ -1,0 +1,1105 @@
+﻿@model Team.Backend.Models.ViewModels.OfficialPostViewModel
+@{
+    ViewData["Title"] = Model.Id == 0 ? "新增文章" : "編輯文章";
+}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .back {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+            .header h1 {
+                color: #333;
+                font-size: 24px;
+                margin-bottom: 10px;
+            }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+            .form-group.full-width {
+                flex: none;
+                width: 100%;
+            }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 16px;
+        }
+
+        input[type="text"],
+        input[type="datetime-local"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+            input[type="text"]:focus,
+            input[type="datetime-local"]:focus,
+            input[type="number"]:focus,
+            select:focus {
+                outline: none;
+                border-color: #eb5757;
+                box-shadow: 0 0 0 2px rgba(235, 87, 87, 0.2);
+            }
+
+        /* 工具列樣式 */
+        .editor-container {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .editor-toolbar {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            padding: 10px;
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-btn {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+            .toolbar-btn:hover {
+                background-color: #e9ecef;
+            }
+
+            .toolbar-btn.active {
+                background-color: #4CAF50;
+                color: white;
+                border-color: #4CAF50;
+            }
+
+        .toolbar-separator {
+            width: 1px;
+            background-color: #ddd;
+            margin: 0 5px;
+        }
+
+        /* 編輯器區域 */
+        .editor-content {
+            min-height: 400px;
+            padding: 20px;
+            outline: none;
+            font-size: 16px;
+            line-height: 1.6;
+            background: white;
+        }
+
+            .editor-content:focus {
+                box-shadow: inset 0 0 0 2px rgba(235, 87, 87, 0.2);
+            }
+
+            .editor-content img {
+                max-width: 100%;
+                height: auto;
+                border-radius: 4px;
+                margin: 10px 0;
+                cursor: pointer;
+                transition: transform 0.2s ease;
+            }
+
+                .editor-content img:hover {
+                    transform: scale(1.02);
+                }
+
+        .image-align-left {
+            float: left !important;
+            margin-right: 20px !important;
+            margin-bottom: 10px !important;
+            max-width: 40% !important;
+        }
+
+        .image-align-right {
+            float: right !important;
+            margin-left: 20px !important;
+            margin-bottom: 10px !important;
+            max-width: 40% !important;
+        }
+
+        .image-align-center {
+            display: block !important;
+            margin: 20px auto !important;
+            max-width: 80% !important;
+            float: none !important;
+        }
+
+        /* 圖片上傳區域 */
+        .image-upload-section {
+            margin-bottom: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            background-color: #fafafa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+            .upload-area:hover {
+                border-color: #eb5757;
+                background-color: #F5E4E4;
+            }
+
+            .upload-area.dragover {
+                border-color: #eb5757;
+                background-color: #F5E4E4;
+            }
+
+        .upload-btn {
+            background-color: #eb5757;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+            .upload-btn:hover {
+                background-color: #d14545;
+            }
+
+        .upload-hint {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .image-gallery {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .gallery-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+            .gallery-item:hover {
+                border-color: #eb5757;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+
+            .gallery-item.selected {
+                border-color: #eb5757;
+                box-shadow: 0 0 0 2px rgba(235, 87, 87, 0.3);
+            }
+
+            .gallery-item img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            .gallery-item .remove-btn {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                background: rgba(255, 0, 0, 0.8);
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+                font-size: 12px;
+            }
+
+        /* 插入圖片選項 */
+        .insert-options {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: none;
+        }
+
+            .insert-options.show {
+                display: block;
+            }
+
+            .insert-options label {
+                margin-right: 15px;
+                font-size: 14px;
+            }
+
+            .insert-options input[type="radio"] {
+                margin-right: 5px;
+            }
+
+            .insert-options button {
+                background-color: #eb5757;
+                color: white;
+                border: none;
+                padding: 5px 15px;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-left: 10px;
+            }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: #eb5757;
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background-color: #d14545;
+            }
+
+        .btn-secondary {
+            background-color: #f5f5f5;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+
+            .btn-secondary:hover {
+                background-color: #e8e8e8;
+            }
+
+        .btn-draft {
+            background-color: #ffc107;
+            color: #212529;
+            border: 1px solid #ffc107;
+        }
+
+            .btn-draft:hover {
+                background-color: #e0a800;
+                border-color: #e0a800;
+            }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .text-danger {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+
+        .form-row {
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .editor-toolbar {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .image-align-left,
+        .image-align-right {
+            float: none;
+            margin: 10px auto;
+            max-width: 100%;
+            display: block;
+        }
+
+        #scheduledDateTime {
+            border: 2px solid #e3e6f0;
+        }
+
+            #scheduledDateTime:focus {
+                border-color: #007bff;
+                box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            }
+
+    </style>
+</head>
+
+<body>
+    <!-- Begin Page Content -->
+    <div class="container-fluid">
+        <!-- Page Heading -->
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">@ViewData["Title"]</h1>
+            <div class="auto-save-status" style="opacity: 0; transition: opacity 0.3s; color: #28a745;">
+                <i class="fas fa-check-circle"></i> 已自動儲存
+            </div>
+        </div>
+
+        <!-- 錯誤訊息顯示 -->
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["Error"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["Success"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+        <!-- 主要表單卡片 -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">文章資訊</h6>
+            </div>
+            <div class="card-body">
+                <form asp-action="SaveArticle" asp-controller="Blog" id="articleForm" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input asp-for="Id" type="hidden" />
+                    <!-- 隱藏的狀態欄位 - 由按鈕控制 -->
+                    <input asp-for="Status" type="hidden" value="draft" />
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label asp-for="Title" class="form-label">
+                                    文章標題 <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="Title" class="form-control" required />
+                                <span asp-validation-for="Title" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Category" class="form-label">分類</label>
+                                <select asp-for="Category" class="form-control" required>
+                                    <option value="">請選擇分類</option>
+                                    <option value="生活">生活</option>
+                                    <option value="時尚">時尚</option>
+                                    <option value="活動">活動</option>
+                                    <option value="社會責任">社會責任</option>
+                                    <option value="其他">其他</option>
+                                </select>
+                                <span asp-validation-for="Category" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="CoverImage" class="form-label">封面圖片 URL</label>
+                                <input asp-for="CoverImage" class="form-control" type="url" />
+                                <span asp-validation-for="CoverImage" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="CreatedBy" class="form-label">建立者 ID</label>
+                                <input asp-for="CreatedBy" class="form-control" type="number" />
+                                <span asp-validation-for="CreatedBy" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 隱藏欄位 -->
+                    <input asp-for="CreatedAt" type="hidden" />
+                    <input asp-for="UpdatedAt" type="hidden" />
+                    <input asp-for="PublishedAt" type="hidden" />
+                    <input asp-for="PublishType" type="hidden" value="" />
+                    <input asp-for="ScheduledTime" type="hidden" />
+
+                    <!-- 圖片上傳區域 -->
+                    <div class="form-group">
+                        <label class="form-label">圖片管理</label>
+                        <div class="border rounded p-3 mb-3" style="background-color: #f8f9fc;">
+                            <div class="text-center">
+                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('imageInput').click()">
+                                    <i class="fas fa-upload"></i> 選擇圖片
+                                </button>
+                                <input type="file" accept="image/*" multiple class="d-none" id="imageInput" />
+                                <p class="text-muted mt-2 mb-0">支援 JPG、PNG、GIF 格式，可選擇多張圖片</p>
+                            </div>
+                            <div id="imageGallery" class="mt-3"></div>
+                        </div>
+                    </div>
+
+                    <!-- 文章內容編輯器 -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            文章內容 <span class="text-danger">*</span>
+                        </label>
+
+                        <!-- 工具列 -->
+                        <div class="border-bottom pb-2 mb-2">
+                            <div class="btn-toolbar" role="toolbar">
+                                <div class="btn-group btn-group-sm mr-2" role="group">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="formatText('bold')" title="粗體">
+                                        <strong>B</strong>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="formatText('italic')" title="斜體">
+                                        <em>I</em>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="formatText('underline')" title="底線">
+                                        <u>U</u>
+                                    </button>
+                                </div>
+                                <div class="btn-group btn-group-sm mr-2" role="group">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="formatText('justifyLeft')" title="靠左對齊">
+                                        <i class="fas fa-align-left"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="formatText('justifyCenter')" title="置中對齊">
+                                        <i class="fas fa-align-center"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="formatText('justifyRight')" title="靠右對齊">
+                                        <i class="fas fa-align-right"></i>
+                                    </button>
+                                </div>
+                                <div class="btn-group btn-group-sm mr-2" role="group">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="formatText('insertOrderedList')" title="編號列表">
+                                        <i class="fas fa-list-ol"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="formatText('insertUnorderedList')" title="項目符號">
+                                        <i class="fas fa-list-ul"></i>
+                                    </button>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="formatText('formatBlock', 'h1')">H1</button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="formatText('formatBlock', 'h2')">H2</button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="formatText('formatBlock', 'h3')">H3</button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="formatText('formatBlock', 'p')">P</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 編輯器 -->
+                        <div class="border rounded p-3" style="min-height: 300px; background-color: white;">
+                            <div id="editor" contenteditable="true" style="min-height: 250px; outline: none;"
+                                 placeholder="開始撰寫您的文章內容...">
+                                @Html.Raw(Model.Content)
+                            </div>
+                        </div>
+
+                        <input asp-for="Content" type="hidden" />
+                        <span asp-validation-for="Content" class="text-danger"></span>
+                    </div>
+
+                    <!-- 動態產生的圖片 URL 隱藏欄位將在這裡插入 -->
+                    <div id="hiddenImageFields"></div>
+
+                    <div class="card mb-3" id="publishOptionsCard" style="display:none;">
+                        <div class="card-header">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                <i class="fas fa-clock"></i> 發布選項
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="publishImmediate" name="publishOption" value="immediate" class="custom-control-input">
+                                    <label class="custom-control-label" for="publishImmediate">
+                                        <i class="fas fa-paper-plane text-primary"></i> 立即發布
+                                    </label>
+                                </div>
+                                <div class="custom-control custom-radio mt-2">
+                                    <input type="radio" id="publishScheduled" name="publishOption" value="scheduled" class="custom-control-input">
+                                    <label class="custom-control-label" for="publishScheduled">
+                                        <i class="fas fa-calendar-alt text-warning"></i> 排程發布
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 排程時間選擇區域 -->
+                            <div id="scheduleTimeGroup" style="display:none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="scheduledDateTime" class="form-label">
+                                                <i class="fas fa-clock"></i> 發布時間
+                                            </label>
+                                            <input type="datetime-local"
+                                                   id="scheduledDateTime"
+                                                   class="form-control"
+                                                   min="">
+                                            <small class="form-text text-muted">請選擇未來的時間</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label">系統資訊</label>
+                                            <div class="alert alert-info mb-0" style="padding: 8px 12px; font-size: 0.875rem;">
+                                                <i class="fas fa-info-circle"></i>
+                                                排程系統：<strong>@ViewBag.SystemType</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 確認和取消按鈕 -->
+                            <div class="text-right">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="cancelPublishOptions()">
+                                    <i class="fas fa-times"></i> 取消
+                                </button>
+                                <button type="button" class="btn btn-success btn-sm" onclick="confirmPublish()" id="confirmPublishBtn">
+                                    <i class="fas fa-check"></i> 確認發布
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 修改後的按鈕群組 -->
+                    <div class="form-group text-right">
+                        <a asp-action="PostManagement" asp-controller="Blog" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 返回列表
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                            <i class="fas fa-undo"></i> 重設
+                        </button>
+
+                        <!-- 修改後的三個狀態按鈕 -->
+                        <button type="button" class="btn btn-warning" onclick="submitWithStatus('draft')">
+                            <i class="fas fa-save"></i> 存為草稿
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="submitWithStatus('archived')">
+                            <i class="fas fa-archive"></i> 封存文章
+                        </button>
+                        <!-- 修改發布按鈕，改為顯示發布選項 -->
+                        <button type="button" class="btn btn-primary" onclick="showPublishOptions()">
+                            <i class="fas fa-paper-plane"></i> 發布文章
+                            <i class="fas fa-chevron-down ml-1"></i>
+                        </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+@section Scripts {
+    <script>
+        // 全域變數
+        let uploadedImageUrls = @Json.Serialize(Model.UploadedImageUrls ?? new List<string>());
+        let autoSaveTimer = null;
+
+        $(document).ready(function() {
+            console.log('文章表單初始化...');
+
+            // 初始化現有圖片
+            initializeExistingImages();
+
+            // 設置事件監聽器
+            setupEventListeners();
+
+            // 初始化內容同步
+            updateHiddenContent();
+
+            // ✅ 新增：初始化排程功能
+            initializeScheduleFeatures();
+
+            console.log('初始化完成');
+        });
+
+        // ✅ 新增：初始化排程功能
+        function initializeScheduleFeatures() {
+            // 設定最小時間為現在+5分鐘
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 5);
+            const minDateTime = now.toISOString().slice(0, 16);
+            $('#scheduledDateTime').attr('min', minDateTime);
+
+            // 監聽發布選項變化
+            $('input[name="publishOption"]').change(function() {
+                if ($(this).val() === 'scheduled') {
+                    $('#scheduleTimeGroup').slideDown();
+                    $('#scheduledDateTime').prop('required', true);
+                    $('#confirmPublishBtn').html('<i class="fas fa-clock"></i> 排程發布');
+                } else {
+                    $('#scheduleTimeGroup').slideUp();
+                    $('#scheduledDateTime').prop('required', false);
+                    $('#confirmPublishBtn').html('<i class="fas fa-paper-plane"></i> 立即發布');
+                }
+            });
+
+            // ✅ 如果是編輯模式且有排程，顯示排程資訊
+        @if (Model.PublishType == "scheduled" && Model.ScheduledTime.HasValue)
+        {
+            <text>
+                    // 編輯模式下顯示現有排程
+                    showPublishOptions();
+                    $('#publishScheduled').prop('checked', true);
+                    $('#scheduledDateTime').val('@Model.ScheduledTime.Value.ToString("yyyy-MM-ddTHH:mm")');
+                    $('#scheduleTimeGroup').show();
+                    $('#confirmPublishBtn').html('<i class="fas fa-clock"></i> 更新排程');
+            </text>
+        }
+        }
+
+        // 初始化現有圖片
+        function initializeExistingImages() {
+            const gallery = $('#imageGallery');
+            gallery.empty();
+
+            uploadedImageUrls.forEach((url, index) => {
+                if (url && url.trim()) {
+                    addImageToGallery(url, index);
+                }
+            });
+
+            updateHiddenImageFields();
+        }
+
+        // 設置事件監聽器
+        function setupEventListeners() {
+            // 圖片上傳
+            $('#imageInput').on('change', handleImageUpload);
+
+            // 編輯器內容變化
+            $('#editor').on('input blur', function() {
+                updateHiddenContent();
+                scheduleAutoSave();
+            });
+
+            // 標題變化
+            $('[name="Title"]').on('input', scheduleAutoSave);
+
+            // 編輯器 placeholder 處理
+            $('#editor').on('focus', function() {
+                if ($(this).html().trim() === '' || $(this).html() === '<br>') {
+                    $(this).html('<div><br></div>');
+                }
+            }).on('blur', function() {
+                if ($(this).html() === '<div><br></div>') {
+                    $(this).html('');
+                }
+            });
+        }
+
+        // ✅ 新增：顯示發布選項
+        function showPublishOptions() {
+            if (!validateForm()) {
+                return false;
+            }
+
+            $('#publishOptionsCard').slideDown();
+            $('#publishImmediate').prop('checked', true);
+            $('#confirmPublishBtn').html('<i class="fas fa-paper-plane"></i> 立即發布');
+
+            // 滾動到發布選項區域
+            $('html, body').animate({
+                scrollTop: $('#publishOptionsCard').offset().top - 100
+            }, 500);
+        }
+
+        // ✅ 新增：取消發布選項
+        function cancelPublishOptions() {
+            $('#publishOptionsCard').slideUp();
+            $('input[name="publishOption"]').prop('checked', false);
+            $('#scheduleTimeGroup').hide();
+            $('#scheduledDateTime').val('');
+        }
+
+        // ✅ 新增：確認發布
+        function confirmPublish() {
+            const publishOption = $('input[name="publishOption"]:checked').val();
+
+            if (!publishOption) {
+                alert('請選擇發布方式');
+                return;
+            }
+
+            if (publishOption === 'scheduled') {
+                const scheduledTime = $('#scheduledDateTime').val();
+                if (!scheduledTime) {
+                    alert('請選擇排程時間');
+                    $('#scheduledDateTime').focus();
+                    return;
+                }
+
+                // 檢查時間是否為未來時間
+                const selectedTime = new Date(scheduledTime);
+                const now = new Date();
+                if (selectedTime <= now) {
+                    alert('排程時間必須是未來時間');
+                    $('#scheduledDateTime').focus();
+                    return;
+                }
+
+                // 設定排程相關欄位
+                $('[name="PublishType"]').val('scheduled');
+                $('[name="ScheduledTime"]').val(selectedTime.toISOString());
+
+                // 確認排程
+                const confirmMsg = `確定要在 ${selectedTime.toLocaleString()} 發布這篇文章嗎？`;
+                if (!confirm(confirmMsg)) {
+                    return;
+                }
+
+                submitWithStatus('scheduled');
+            } else {
+                // 立即發布
+                $('[name="PublishType"]').val('immediate');
+                $('[name="ScheduledTime"]').val('');
+                submitWithStatus('published');
+            }
+        }
+
+        // ✅ 修改：根據狀態提交文章 - 支援排程功能
+        function submitWithStatus(status) {
+            console.log('提交文章，狀態:', status);
+
+            if (!validateForm()) {
+                return false;
+            }
+
+            // 設定狀態
+            $('[name="Status"]').val(status);
+
+            // 設定時間戳記
+            $('[name="UpdatedAt"]').val(new Date().toISOString());
+
+            // 如果是立即發布狀態，設定發布時間
+            if (status === 'published') {
+                if (!$('[name="PublishedAt"]').val()) {
+                    $('[name="PublishedAt"]').val(new Date().toISOString());
+                }
+                // 清空排程相關欄位
+                $('[name="PublishType"]').val('immediate');
+                $('[name="ScheduledTime"]').val('');
+            }
+
+            // 更新內容和圖片
+            updateHiddenContent();
+            updateHiddenImageFields();
+
+            // 隱藏發布選項卡片
+            $('#publishOptionsCard').slideUp();
+
+            // 提交表單
+            $('#articleForm').submit();
+        }
+
+        // 處理圖片上傳
+        function handleImageUpload(e) {
+            const files = Array.from(e.target.files);
+
+            files.forEach(file => {
+                if (file.size > 5 * 1024 * 1024) {
+                    alert(`圖片 ${file.name} 超過 5MB 限制`);
+                    return;
+                }
+
+                if (!file.type.startsWith('image/')) {
+                    alert(`${file.name} 不是支援的圖片格式`);
+                    return;
+                }
+
+                uploadImageToServer(file);
+            });
+
+            // 清空 input 以允許重複上傳同一檔案
+            $(e.target).val('');
+        }
+
+        // 上傳圖片到伺服器
+        async function uploadImageToServer(file) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/Blog/UploadImage', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    uploadedImageUrls.push(result.url);
+                    addImageToGallery(result.url, uploadedImageUrls.length - 1);
+                    updateHiddenImageFields();
+                    console.log('圖片上傳成功:', result.url);
+                } else {
+                    alert(`上傳失敗：${result.message}`);
+                }
+            } catch (error) {
+                console.error('上傳錯誤:', error);
+                alert(`上傳 ${file.name} 時發生錯誤：${error.message}`);
+            }
+        }
+
+        // 新增圖片到圖庫
+        function addImageToGallery(url, index) {
+            const gallery = $('#imageGallery');
+
+            const imageItem = $(`
+                <div class="d-inline-block position-relative m-2" data-index="${index}">
+                    <img src="${url}" alt="上傳的圖片" style="width: 100px; height: 100px; object-fit: cover;" class="border rounded">
+                    <button type="button" class="btn btn-danger btn-sm position-absolute"
+                            style="top: -5px; right: -5px; width: 20px; height: 20px; padding: 0; font-size: 12px;"
+                            onclick="removeImage(${index})" title="移除圖片">×</button>
+                    <button type="button" class="btn btn-primary btn-sm position-absolute"
+                            style="bottom: -5px; right: -5px; width: 20px; height: 20px; padding: 0; font-size: 10px;"
+                            onclick="insertImageToEditor('${url}')" title="插入到文章">+</button>
+                </div>
+            `);
+
+            gallery.append(imageItem);
+        }
+
+        // 移除圖片
+        function removeImage(index) {
+            if (confirm('確定要移除這張圖片嗎？')) {
+                uploadedImageUrls.splice(index, 1);
+                updateImageGallery();
+                updateHiddenImageFields();
+            }
+        }
+
+        // 更新圖片圖庫
+        function updateImageGallery() {
+            const gallery = $('#imageGallery');
+            gallery.empty();
+
+            uploadedImageUrls.forEach((url, index) => {
+                if (url && url.trim()) {
+                    addImageToGallery(url, index);
+                }
+            });
+        }
+
+        // 插入圖片到編輯器
+        function insertImageToEditor(url) {
+            const editor = document.getElementById('editor');
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.maxWidth = '100%';
+            img.style.height = 'auto';
+            img.style.display = 'block';
+            img.style.margin = '10px auto';
+            img.alt = '文章圖片';
+
+            // 插入圖片
+            if (window.getSelection) {
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    range.insertNode(img);
+                    range.collapse(false);
+                } else {
+                    editor.appendChild(img);
+                }
+            } else {
+                editor.appendChild(img);
+            }
+
+            updateHiddenContent();
+        }
+
+        // 更新隱藏的圖片欄位
+        function updateHiddenImageFields() {
+            const container = $('#hiddenImageFields');
+            container.empty();
+
+            uploadedImageUrls.forEach((url, index) => {
+                if (url && url.trim()) {
+                    const hiddenInput = $(`<input type="hidden" name="UploadedImageUrls[${index}]" value="${url}" />`);
+                    container.append(hiddenInput);
+                }
+            });
+
+            console.log('更新隱藏欄位，圖片數量:', uploadedImageUrls.length);
+        }
+
+        // 格式化文字
+        function formatText(command, value = null) {
+            try {
+                document.execCommand(command, false, value);
+                $('#editor').focus();
+                updateHiddenContent();
+            } catch (error) {
+                console.warn('格式化命令執行失敗:', command, error);
+            }
+        }
+
+        // 更新隱藏的內容欄位
+        function updateHiddenContent() {
+            const editor = $('#editor');
+            const contentField = $('[name="Content"]');
+
+            if (editor.length && contentField.length) {
+                const content = editor.html().trim();
+                contentField.val(content);
+                console.log('內容已同步，長度:', content.length);
+            }
+        }
+
+        // 自動儲存
+        function scheduleAutoSave() {
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+            }
+            autoSaveTimer = setTimeout(performAutoSave, 3000);
+        }
+
+        function performAutoSave() {
+            const title = $('[name="Title"]').val().trim();
+            const content = $('#editor').html().trim();
+
+            if (title || (content && content !== '<br>' && content !== '<div><br></div>')) {
+                showAutoSaveStatus();
+            }
+        }
+
+        function showAutoSaveStatus() {
+            const status = $('.auto-save-status');
+            status.css('opacity', '1');
+            setTimeout(() => {
+                status.css('opacity', '0');
+            }, 2000);
+        }
+
+        // 驗證表單
+        function validateForm() {
+            const title = $('[name="Title"]').val().trim();
+            const content = $('#editor').html().trim();
+
+            if (!title) {
+                alert('請輸入文章標題');
+                $('[name="Title"]').focus();
+                return false;
+            }
+
+            if (!content || content === '<br>' || content === '<div><br></div>' || content === '') {
+                alert('請輸入文章內容');
+                $('#editor').focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        // ✅ 修改：重設表單 - 支援排程功能
+        function resetForm() {
+            if (confirm('確定要重設嗎？所有未儲存的內容將會遺失。')) {
+                $('#articleForm')[0].reset();
+                $('#editor').html('');
+                $('#imageGallery').empty();
+                $('#hiddenImageFields').empty();
+                uploadedImageUrls = [];
+
+                // 重設發布選項
+                cancelPublishOptions();
+                $('[name="Status"]').val('draft');
+                $('[name="PublishType"]').val('');
+                $('[name="ScheduledTime"]').val('');
+            }
+        }
+
+        // ✅ 新增：顯示排程成功訊息的函數（可選）
+        function showScheduleSuccess(scheduledTime) {
+            const message = `文章已成功排程於 ${new Date(scheduledTime).toLocaleString()} 發布！`;
+            $('.alert-success').remove(); // 移除現有訊息
+
+            const alertHtml = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> ${message}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            `;
+
+            $('.container-fluid').prepend(alertHtml);
+        }
+    </script>
+}

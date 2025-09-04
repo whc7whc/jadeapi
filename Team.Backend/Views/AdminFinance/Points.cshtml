@@ -1,0 +1,503 @@
+@model Team.Backend.Models.ViewModels.PointsManagementViewModel
+@{
+    ViewData["Title"] = "點數管理中心";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-coins text-warning"></i> 點數管理中心
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/AdminFinance">財務中心</a></li>
+                <li class="breadcrumb-item active">點數管理</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- 點數總覽卡片 -->
+    <div class="row">
+        <!-- 歷史總發放點數 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                歷史總發放點數
+                                <i class="fas fa-info-circle text-muted" 
+                                   data-toggle="tooltip" 
+                                   data-placement="top" 
+                                   title="系統自開始營運至今所發放給會員的所有點數總計，包含購物回饋、簽到獲得、活動贈送等。數據來源：PointsLogs 表 (Type='earned', 'signin', 'refund')"></i>
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalPointsIssued.ToString("N0") 點</div>
+                            <div class="text-xs text-success">
+                                <i class="fas fa-history"></i> 自營運開始累積
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-plus-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 歷史總使用點數 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                歷史總使用點數
+                                <i class="fas fa-info-circle text-muted" 
+                                   data-toggle="tooltip" 
+                                   data-placement="top" 
+                                   title="系統自開始營運至今會員總計使用和過期的所有點數。數據來源：PointsLogs 表 (Type='used', 'expired')"></i>
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalPointsUsed.ToString("N0") 點</div>
+                            <div class="text-xs text-info">
+                                <i class="fas fa-minus-circle"></i> 使用率 @{
+                                    var usageRate = Model.TotalPointsIssued > 0 ? 
+                                        Math.Max(0, ((decimal)Model.TotalPointsUsed / Model.TotalPointsIssued * 100)) : 0;
+                                }@usageRate.ToString("F1")%
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-minus-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 當前餘額點數 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                當前餘額點數
+                                <i class="fas fa-info-circle text-muted" 
+                                   data-toggle="tooltip" 
+                                   data-placement="top" 
+                                   title="會員賬戶中目前可使用的點數總額，即時計算結果：發放總計 - 使用總計"></i>
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalPointsBalance.ToString("N0") 點</div>
+                            <div class="text-xs text-muted">
+                                <i class="fas fa-wallet"></i> 即時可用餘額
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-wallet fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 今日點數變動 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                今日點數變動
+                                <i class="fas fa-info-circle text-muted" 
+                                   data-toggle="tooltip" 
+                                   data-placement="top" 
+                                   title="今日 (UTC+8) 系統的所有點數的淨變動量，正值代表發放大於使用，負值代表使用大於發放"></i>
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @if (Model.TodayPointsChange >= 0)
+                                {
+                                    <span class="text-success">+@Model.TodayPointsChange.ToString("N0")</span>
+                                }
+                                else
+                                {
+                                    <span class="text-danger">@Model.TodayPointsChange.ToString("N0")</span>
+                                }
+                                點
+                            </div>
+                            <div class="text-xs @(Model.TodayPointsChange >= 0 ? "text-success" : "text-danger")">
+                                <i class="fas @(Model.TodayPointsChange >= 0 ? "fa-arrow-up" : "fa-arrow-down")"></i> 
+                                @(Model.TodayPointsChange >= 0 ? "淨增加" : "淨減少")
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exchange-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理數據區域 -->
+    <div class="row">
+        <!-- 會員點數排行榜 -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-trophy"></i> 會員點數排行榜 (Top 5)
+                    </h6>
+                    <small class="text-muted">
+                        <i class="fas fa-users"></i> 顯示前5名會員
+                    </small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>排名</th>
+                                    <th>會員</th>
+                                    <th>點數餘額</th>
+                                    <th>等級</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.TopPointsHolders.Any())
+                                {
+                                    @for (int i = 0; i < Model.TopPointsHolders.Count; i++)
+                                    {
+                                        var holder = Model.TopPointsHolders[i];
+                                        var rankClass = i switch {
+                                            0 => "text-warning", // 金牌
+                                            1 => "text-muted",   // 銀牌
+                                            2 => "text-danger",  // 銅牌  
+                                            _ => "text-dark"     // 其他
+                                        };
+                                        var rankIcon = i switch {
+                                            0 => "fas fa-crown",
+                                            1 => "fas fa-medal", 
+                                            2 => "fas fa-award",
+                                            _ => "fas fa-star"
+                                        };
+                                        <tr>
+                                            <td class="@rankClass font-weight-bold">
+                                                <i class="@rankIcon"></i> @(i + 1)
+                                            </td>
+                                            <td>
+                                                <div>@holder.MemberName</div>
+                                                <small class="text-muted">@holder.Email</small>
+                                            </td>
+                                            <td class="text-warning font-weight-bold">@holder.Points.ToString("N0")</td>
+                                            <td><span class="badge" style="background-color: @holder.LevelColor; color: white;">@holder.Level</span></td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">
+                                            <i class="fas fa-trophy fa-2x text-muted mb-2"></i><br>
+                                            暫無點數持有會員數據
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 系統統計概要 -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-bar"></i> 系統統計概要
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>歷史發放點數總計</span>
+                                <span class="font-weight-bold text-success">@Model.TotalPointsIssued.ToString("N0") 點</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-success" style="width: 100%;"></div>
+                            </div>
+                            <small class="text-muted mt-1">
+                                <i class="fas fa-database"></i> 
+                                數據來源: PointsLogs 全歷史累積統計
+                            </small>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>歷史使用點數總計</span>
+                                <span class="font-weight-bold text-info">@Model.TotalPointsUsed.ToString("N0") 點</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-info" style="width: @(Model.TotalPointsIssued > 0 ? (decimal)Model.TotalPointsUsed / Model.TotalPointsIssued * 100 : 0)%;"></div>
+                            </div>
+                            <small class="text-muted mt-1">
+                                <i class="fas fa-chart-bar"></i> 
+                                使用率: 相對於歷史總發放點數的比例
+                            </small>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>當前剩餘點數總計</span>
+                                <span class="font-weight-bold text-warning">@Model.TotalPointsBalance.ToString("N0") 點</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-warning" style="width: @(Model.TotalPointsIssued > 0 ? (decimal)Model.TotalPointsBalance / Model.TotalPointsIssued * 100 : 0)%;"></div>
+                            </div>
+                            <small class="text-muted mt-1">
+                                <i class="fas fa-calculator"></i> 
+                                計算公式: 歷史發放總計 - 歷史使用總計
+                            </small>
+                        </div>
+                        <div class="col-12">
+                            <div class="alert alert-light mt-3">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle text-primary"></i> 
+                                            <strong>統計說明</strong><br>
+                                            <span class="text-success">?</span> <strong>數據來源:</strong> PointsLogs 全歷史統計<br>
+                                            <span class="text-info">?</span> <strong>統計範圍:</strong> 系統營運開始至今的所有數據
+                                        </small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock text-warning"></i> 
+                                            <strong>時間資訊</strong><br>
+                                            <span class="text-warning">?</span> <strong>更新時間:</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")<br>
+                                            <span class="text-secondary">??</span> <strong>時區:</strong> UTC+8 (台灣標準時間)
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 點數異動記錄 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-history"></i> 最新點數異動記錄
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="pointsTable">
+                            <thead>
+                                <tr>
+                                    <th>異動時間</th>
+                                    <th>會員</th>
+                                    <th>類型</th>
+                                    <th>點數變動</th>
+                                    <th>餘額</th>
+                                    <th>說明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var log in Model.RecentPointsLogs)
+                                {
+                                    <tr>
+                                        <td data-order="@log.Date.ToString("yyyyMMddHHmmss")">@log.Date.ToString("yyyy-MM-dd HH:mm")</td>
+                                        <td>@log.MemberEmail</td>
+                                        <td><span class="badge" style="background-color: @log.TypeColor; color: white;">@log.Type</span></td>
+                                        <td class="@(log.Type == "獲得" ? "text-success" : "text-danger")">
+                                            @if (log.Type == "獲得")
+                                            {
+                                                <span>+@log.Amount</span>
+                                            }
+                                            else
+                                            {
+                                                <span>-@log.Amount</span>
+                                            }
+                                        </td>
+                                        <td>@log.Balance.ToString("N0")</td>
+                                        <td>@log.Description</td>
+                                    </tr>
+                                }
+                                @if (!Model.RecentPointsLogs.Any())
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">暫無點數異動記錄</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 匯出功能 -->
+    <div class="row mb-4">
+        <div class="col-12 text-right">
+            <button class="btn btn-primary" onclick="exportPointsReport()">
+                <i class="fas fa-file-export"></i> 匯出點數報告
+            </button>
+        </div>
+    </div>
+
+    <!-- 批次發放點數 Modal -->
+    <div class="modal fade" id="batchIssueModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">批次發放點數</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="batchIssueForm">
+                        <div class="form-group">
+                            <label>發放對象</label>
+                            <select class="form-control" name="target">
+                                <option value="all">全部會員</option>
+                                <option value="level">特定會員等級</option>
+                                <option value="active">活躍會員</option>
+                                <option value="birthday">生日會員</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>發放點數</label>
+                            <input type="number" class="form-control" name="points" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>發放原因</label>
+                            <textarea class="form-control" name="reason" rows="3" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-success" onclick="batchIssuePoints()">確認發放</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 點數調整 Modal -->
+    <div class="modal fade" id="adjustModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">點數調整</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="adjustForm">
+                        <div class="form-group">
+                            <label>會員帳號</label>
+                            <input type="text" class="form-control" name="memberAccount" required>
+                        </div>
+                        <div class="form-group">
+                            <label>調整類型</label>
+                            <select class="form-control" name="adjustType">
+                                <option value="add">增加點數</option>
+                                <option value="subtract">扣除點數</option>
+                                <option value="set">設定點數</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>點數數量</label>
+                            <input type="number" class="form-control" name="points" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>調整原因</label>
+                            <textarea class="form-control" name="reason" rows="3" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-warning" onclick="adjustPoints()">確認調整</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 等待頁面載入完成
+        $(document).ready(function() {
+            console.log('點數管理頁面載入完成');
+            
+            // 初始化 tooltip
+            if (typeof $.fn.tooltip === 'function') {
+                $('[data-toggle="tooltip"]').tooltip();
+            } else {
+                console.warn('Bootstrap tooltip 功能未載入');
+            }
+            
+            // 初始化 DataTable（檢查元素存在）
+            if ($('#pointsTable').length > 0) {
+                try {
+                    $('#pointsTable').DataTable({
+                        "language": {
+                            "url": "https://cdn.datatables.net/plug-ins/1.10.25/i18n/Chinese-traditional.json"
+                        },
+                        "order": [[ 0, "desc" ]], // 按異動時間降序排列
+                        "pageLength": 10,
+                        "responsive": true,
+                        "columnDefs": [
+                            {
+                                "targets": 0, // 時間欄位
+                                "type": "string", // 使用 data-order 屬性排序
+                                "render": function(data, type, row) {
+                                    if (type === 'display') {
+                                        return data; // 顯示格式化的時間
+                                    }
+                                    return data; // 排序使用原始數據
+                                }
+                            }
+                        ]
+                    });
+                    console.log('DataTable 初始化成功');
+                } catch (error) {
+                    console.error('DataTable 初始化失敗:', error);
+                }
+            } else {
+                console.log('未找到 pointsTable 元素，跳過 DataTable 初始化');
+            }
+        });
+
+        // 匯出點數報告功能 (暫時簡易實作)
+        function exportPointsReport() {
+            alert('匯出點數報告功能開發中，請稍候...');
+            // TODO: 實作實際的匯出功能
+            console.log('exportPointsReport 被調用');
+        }
+
+        // 批次發放點數功能 (暫時簡易實作)
+        function batchIssuePoints() {
+            alert('批次發放點數功能開發中，請稍候...');
+            // TODO: 實作實際的批次發放功能
+            console.log('batchIssuePoints 被調用');
+        }
+
+        // 點數調整功能 (暫時簡易實作)
+        function adjustPoints() {
+            alert('點數調整功能開發中，請稍候...');
+            // TODO: 實作實際的點數調整功能
+            console.log('adjustPoints 被調用');
+        }
+    </script>
+}

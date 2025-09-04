@@ -1,0 +1,91 @@
+﻿.card {
+    border: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06)
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #0b2a4a;
+    color: #fff
+}
+
+.table tbody tr:hover {
+    background: #f9fbff
+}
+
+.table td, .table th {
+    vertical-align: middle
+}
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden
+}
+
+/* 先放 fallback（通用灰色） */
+.badge.badge-pay[data-pay],
+.badge.badge-status[data-status] {
+    background: #f8f9fa !important;
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+/* 然後放「付款狀態」的具體顏色 */
+.badge.badge-pay[data-pay="Paid"] {
+    background: #28a745 !important;
+    background-color: #28a745 !important;
+    color: #fff !important;
+}
+
+.badge.badge-pay[data-pay="Unpaid"] {
+    background: #6c757d !important;
+    background-color: #6c757d !important;
+    color: #fff !important;
+}
+
+.badge.badge-pay[data-pay="Refunded"] {
+    background: #17a2b8 !important;
+    background-color: #17a2b8 !important;
+    color: #212529 !important;
+}
+
+.badge.badge-pay[data-pay="Failed"] {
+    background: #dc3545 !important;
+    background-color: #dc3545 !important;
+    color: #fff !important;
+}
+
+/* 再放「訂單狀態」的具體顏色 */
+.badge.badge-status[data-status="Pending"] {
+    background: #ffc107 !important;
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.badge.badge-status[data-status="Processing"] {
+    background: #17a2b8 !important;
+    background-color: #17a2b8 !important;
+    color: #212529 !important;
+}
+
+.badge.badge-status[data-status="Shipping"] {
+    background: #007bff !important;
+    background-color: #007bff !important;
+    color: #fff !important;
+}
+
+.badge.badge-status[data-status="Completed"] {
+    background: #28a745 !important;
+    background-color: #28a745 !important;
+    color: #fff !important;
+}
+
+.badge.badge-status[data-status="Canceled"] {
+    background: #343a40 !important;
+    background-color: #343a40 !important;
+    color: #fff !important;
+}

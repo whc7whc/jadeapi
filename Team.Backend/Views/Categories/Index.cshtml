@@ -1,0 +1,406 @@
+﻿@model List<Team.Backend.Models.ViewModels.CategoryHierarchyViewModel>
+
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+    <meta charset="utf-8">
+    <title>商品分類管理</title>
+
+    <!-- Custom fonts for this template -->
+    <link href="~/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+          rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="~/css/sb-admin-2.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this page -->
+    <link href="~/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+
+    <style>
+        .action-btn {
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            margin: 0 5px;
+            transition: color 0.3s;
+        }
+
+        .edit-btn {
+            color: #3498db;
+        }
+
+            .edit-btn:hover {
+                color: #2980b9;
+            }
+
+        .delete-btn {
+            color: #e74c3c;
+        }
+
+            .delete-btn:hover {
+                color: #c0392b;
+            }
+
+        /* 階層式縮排樣式 */
+        .category-level-0 {
+            font-weight: bold;
+            background-color: #f8f9fc;
+            color: #2c3e50;
+        }
+
+        .category-level-1 {
+            padding-left: 30px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+            .category-level-1::before {
+                /* content: "└─ "; */
+                color: #007bff;
+                font-weight: bold;
+            }
+
+        .parent-category {
+            background-color: #e9ecef !important;
+        }
+
+        .child-category {
+            background-color: #f8f9fa;
+        }
+
+        .hierarchy-indent {
+            padding-left: 20px;
+        }
+
+        .hierarchy-connector::before {
+            /* content: "└─ "; */
+            color: #007bff;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        /* 父分類不可排序樣式 */
+        .parent-category-row {
+            background-color: #e9ecef !important;
+        }
+
+        .child-category-row {
+            background-color: #f8f9fa;
+        }
+
+        /* 自定義篩選器樣式 */
+        #customFilters {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f8f9fc;
+            border-radius: 5px;
+            border: 1px solid #e3e6f0;
+        }
+
+        .filter-label {
+            font-weight: bold;
+            color: #5a5c69;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body id="page-top">
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+            <!-- Main Content -->
+            <div id="content">
+                <div class="container-fluid">
+                    <h1 class="h3 mb-2 text-gray-800">商品分類管理</h1>
+
+                    <!-- 顯示訊息 -->
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    }
+
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    }
+
+                    @if (ViewBag.ErrorMessage != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i> @ViewBag.ErrorMessage
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    }
+
+                    <p class="mb-4">
+                        <button class="btn btn-primary" id="addNewBtn" data-toggle="modal" data-target="#editModal">
+                            <i class="fas fa-plus"></i> 新增子分類
+                        </button>
+                    </p>
+
+                    <!-- DataTables Example -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                <i class="fas fa-sitemap"></i> 商品分類表格
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            @if (Model != null && Model.Any())
+                            {
+                                <!-- 自定義篩選器 -->
+                                <div id="customFilters">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label class="filter-label">分類類型:</label>
+                                            <select id="categoryTypeFilter" class="form-control form-control-sm">
+                                                <option value="">全部</option>
+                                                <option value="父分類">父分類</option>
+                                                <option value="子分類">子分類</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="filter-label">父分類篩選:</label>
+                                            <select id="parentCategoryFilter" class="form-control form-control-sm">
+                                                <option value="">全部父分類</option>
+                                                @foreach (var category in Model.Where(x => x.IsParent).Select(x => x.CategoryName).Distinct())
+                                                {
+                                                    <option value="@category">@category</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="filter-label">重置篩選:</label><br>
+                                            <button id="resetFilters" class="btn btn-secondary btn-sm">
+                                                <i class="fas fa-undo"></i> 重置所有篩選
+                                            </button>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="filter-label">統計資訊:</label><br>
+                                            <small class="text-muted">
+                                                父分類: <span class="badge badge-primary" id="parentCount">@Model.Count(x => x.IsParent)</span> |
+                                                子分類: <span class="badge badge-info" id="childCount">@Model.Count(x => !x.IsParent)</span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" id="categoryTable" width="100%" cellspacing="0">
+                                        <thead>
+                                            <tr>
+                                                <th width="15%">分類ID</th>
+                                                <th width="45%">分類名稱</th>
+                                                <th width="20%">類型</th>
+                                                <th width="20%">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in Model)
+                                            {
+                                                if (item.IsParent)
+                                                {
+                                                    <!-- 父分類行 -->
+                                                    <tr class="parent-category parent-category-row" data-category-id="@item.CategoryId" data-category-name="@item.CategoryName">
+                                                        <td class="category-level-0">@item.CategoryId</td>
+                                                        <td class="category-level-0">
+                                                            <i class="@item.IconClass"></i>
+                                                            @item.DisplayText
+                                                        </td>
+                                                        <td class="category-level-0">
+                                                            <span class="badge @item.BadgeClass">@item.CategoryType</span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="text-muted">
+                                                                <i class="fas fa-info-circle"></i> 父分類不可編輯
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                                else
+                                                {
+                                                    <!-- 子分類行 -->
+                                                    <tr class="child-category child-category-row"
+                                                        data-subcategory-id="@item.SubCategoryId"
+                                                        data-category-id="@item.CategoryId"
+                                                        data-subcategory-name="@item.SubCategoryName"
+                                                        data-subcategory-description="@item.SubCategoryDescription"
+                                                        data-category-name="@item.CategoryName">
+                                                        <td class="category-level-1">@item.CategoryId-@item.SubCategoryId</td>
+                                                        <td class="category-level-1 hierarchy-indent">
+                                                            <span class="hierarchy-connector"></span>
+                                                            <i class="@item.IconClass"></i>
+                                                            @item.DisplayText
+                                                        </td>
+                                                        <td class="category-level-1">
+                                                            <span class="badge @item.BadgeClass">@item.CategoryType</span>
+                                                        </td>
+                                                        <td>
+                                                            <button class="action-btn edit-btn" title="編輯子分類" data-toggle="modal" data-target="#editModal">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button class="action-btn delete-btn" title="刪除子分類" data-toggle="modal" data-target="#deleteModal">
+                                                                <i class="fas fa-trash-alt"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-4">
+                                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">尚未有任何分類資料</p>
+                                    <p class="text-info">請先在資料庫中建立一些父分類，然後在此處新增子分類。</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End of Main Content -->
+        </div>
+        <!-- End of Content Wrapper -->
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <!-- 編輯/新增子分類 Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">
+                        <i class="fas fa-edit"></i> 編輯資料
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="editForm" method="post" action="/Categories/CreateSubCategory">
+                    <div class="modal-body">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="subCategoryId" name="SubCategoryId" value="0" />
+                        <div class="form-group">
+                            <label for="categorySelect" class="form-label">
+                                <i class="fas fa-folder"></i> 父分類 <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-control" id="categorySelect" name="CategoryId" required>
+                                <option value="">請選擇父分類</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="subCategoryName" class="form-label">
+                                <i class="fas fa-file-alt"></i> 子分類名稱 <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="subCategoryName" name="SubCategoryName" required
+                                   placeholder="請輸入子分類名稱，例如：上衣、褲子" maxlength="100">
+                        </div>
+                        <div class="form-group">
+                            <label for="subCategoryDescription" class="form-label">
+                                <i class="fas fa-align-left"></i> 子分類描述
+                            </label>
+                            <textarea class="form-control" id="subCategoryDescription" name="Description" rows="3" maxlength="255"
+                                      placeholder="請輸入子分類描述"></textarea>
+                            @* <small class="form-text text-muted">此描述將儲存於資料庫欄位 Description。</small> *@
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fas fa-times"></i> 關閉
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 刪除確認 Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel">
+                        <i class="fas fa-exclamation-triangle"></i> 確認刪除
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="deleteForm" method="post" action="/Categories/DeleteSubCategory">
+                    <div class="modal-body">
+                        @Html.AntiForgeryToken()
+                        <div class="text-center">
+                            <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
+                            <p class="h5">確定要刪除這個子分類嗎？</p>
+                            <p class="text-danger">
+                                <i class="fas fa-exclamation-circle"></i> 此操作無法復原！
+                            </p>
+                            <p class="text-warning">
+                                <i class="fas fa-info-circle"></i> 如果此子分類下還有商品，將無法刪除。
+                            </p>
+                        </div>
+                        <input type="hidden" id="deleteSubCategoryId" name="SubCategoryId" />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fas fa-times"></i> 取消
+                        </button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt"></i> 確定刪除
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="~/vendor/jquery/jquery.min.js"></script>
+    <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="~/vendor/jquery-easing/jquery.easing.min.js"></script>
+
+    <!-- Custom scripts for all pages-->
+    <script src="~/js/sb-admin-2.min.js"></script>
+
+    <!-- Page level plugins -->
+    <script src="~/vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+
+    <!-- Custom Categories DataTables script -->
+    <script src="~/js/demo/categories-datatables.js"></script>
+</body>
+</html>
+
+@section Styles {
+    <!-- Custom styles for this page -->
+    <link href="~/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+}

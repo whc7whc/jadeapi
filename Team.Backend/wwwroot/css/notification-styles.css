@@ -1,0 +1,177 @@
+﻿/* notification-styles.css - reorganized and simplified
+   Sections:
+   1. Variables & Keyframes
+   2. Global Reset & Layout
+   3. Buttons & Badges
+   4. Forms & Inputs
+   5. Search / Filter / Table
+   6. Modal-specific overrides (radio fixes, AI button, textarea)
+   7. Responsive tweaks
+*/
+
+/* ------------------------ 1. Variables & Keyframes ------------------------ */
+:root{
+  --primary-800:#1e3c72;
+  --primary-700:#2a5298;
+  --accent:#17a2b8;
+  --muted:#6c757d;
+  --surface:#ffffff;
+  --soft:#f8f9fc;
+}
+
+@keyframes slideInRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideOutRight{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:0}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pulseScale{0%,100%{transform:scale(.8);opacity:.5}50%{transform:scale(1.2);opacity:1}}
+
+/* ------------------------ 2. Global Reset & Layout ------------------------ */
+*{box-sizing:border-box}
+body{font-family:'Nunito',sans-serif;background:var(--soft);color:#2c3e50}
+.container-fluid{padding-left:15px;padding-right:15px}
+.row{display:flex;flex-wrap:wrap;margin-left:-15px;margin-right:-15px}
+[class^="col-"]{position:relative;padding-left:15px;padding-right:15px}
+
+.card{background:var(--surface);border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,.08);border:none}
+.card-header{padding:1.5rem;background:linear-gradient(135deg,#fff,#f8f9fc);border-bottom:1px solid #e8eef5;border-radius:10px 10px 0 0}
+.card-body{padding:1.25rem}
+
+/* ------------------------ 3. Buttons & Badges ------------------------ */
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.375rem .75rem;border-radius:8px;font-weight:500;transition:all .15s}
+.btn-sm{padding:.25rem .5rem}
+.btn-success{background:linear-gradient(135deg,#28a745,#20c997);color:#fff}
+.btn-outline-secondary{border:2px solid #e8eef5;background:#fff;color:var(--muted)}
+.btn:focus-visible{outline:2px solid #4e73df;outline-offset:2px}
+
+.badge{display:inline-block;padding:.25rem .6rem;border-radius:20px;font-weight:600}
+
+.alert-notification-custom{border-left:4px solid;animation:slideInRight .3s ease-out}
+
+/* ------------------------ 4. Forms & Inputs ------------------------ */
+.form-label{font-weight:600;color:#2c3e50;margin-bottom:.5rem}
+.form-control,.form-select{width:100%;padding:.5rem .75rem;border:2px solid #e8eef5;border-radius:8px;background:#fff}
+.form-control:focus,.form-select:focus{border-color:var(--primary-800);box-shadow:0 0 0 .2rem rgba(30,60,114,.15);transform:translateY(-1px)}
+
+.form-check{display:flex;align-items:center;gap:.5rem;margin:.25rem 0;padding:0}
+.form-check-input{width:1.2em;height:1.2em;flex:0 0 auto;cursor:pointer}
+.form-check-label{margin:0;cursor:pointer}
+
+/* character counter */
+#messageCharCount{font-weight:500}
+#messageCharCount.text-danger{color:#dc3545!important}
+
+/* ------------------------ 5. Search / Filter / Table ------------------------ */
+.integrated-search-bar{display:flex;background:#fff;border:2px solid #e8eef5;border-radius:10px;overflow:hidden}
+.search-input-integrated{flex:1;border:none;padding:.9rem 1.2rem}
+.search-actions{display:flex;align-items:center;border-left:1px solid #e8eef5}
+.search-btn-integrated{background:linear-gradient(135deg,var(--primary-800),var(--primary-700));color:#fff;padding:.9rem 1.2rem}
+.filter-btn-integrated{background:none;color:var(--muted);padding:.9rem 1.2rem;border-right:1px solid #e8eef5}
+.clear-search-btn{position:absolute;right:210px;top:50%;transform:translateY(-50%);display:none}
+
+.table{width:100%;border-collapse:separate;border-spacing:0;background:transparent}
+.table th{background:linear-gradient(135deg,var(--primary-800),var(--primary-700));color:#fff;padding:1rem .75rem;font-weight:600}
+.table td{background:#fff;padding:1rem .75rem;border-color:#e8eef5}
+.table-responsive{overflow-x:auto}
+
+/* initial loading */
+.initial-loading{display:flex;flex-direction:column;align-items:center;gap:.75rem;padding:3rem 1rem}
+.pulse-loader{display:flex;gap:.5rem}
+.pulse-dot{width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,var(--primary-800),var(--primary-700));animation:pulseScale 1.5s infinite}
+
+/* ------------------------ 6. Modal overrides (radio fixes, AI button, textarea) ------------------------ */
+/* Scope to .modal to avoid global side effects */
+.modal .form-check{display:flex;align-items:center;gap:.75rem;padding:0;margin:.25rem 0}
+.modal .form-check-input{position:relative!important;margin:0!important;left:0!important;transform:none!important;width:1.25rem;height:1.25rem;flex:0 0 auto;z-index:2}
+.modal .form-check-label{display:inline-block;margin:0;cursor:pointer}
+
+/* AI generate button sizing */
+.modal #generateAiBtn{min-width:120px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center}
+@media (max-width:576px){.modal #generateAiBtn{min-width:100%}}
+
+/* Textarea: expand and allow scroll */
+.modal textarea#editMessage{flex:1 1 0;min-width:0;height:160px;max-height:420px;overflow:auto;resize:vertical;padding:.65rem}
+
+/* Ensure layout for the textarea + generator column */
+.modal .d-flex.align-items-start{display:flex;gap:.5rem;align-items:flex-start}
+@media (max-width:576px){.modal .d-flex.align-items-start{flex-direction:column}}
+
+/* modal header/footer polish */
+.modal-header{background:linear-gradient(135deg,var(--primary-800),var(--primary-700));color:#fff;padding:1.5rem 2rem;border-radius:15px 15px 0 0}
+.modal-content{border-radius:15px}
+
+/* Stronger overrides to defeat vendor CSS that may set absolute positioning on .form-check-input */
+#editModal .form-check-input,
+.modal#editModal .form-check-input,
+.modal .card-body .form-check-input,
+.modal .form-check > .form-check-input,
+.modal input[type="radio"].form-check-input,
+.modal input[type="checkbox"].form-check-input {
+    position: relative !important;
+    margin: 0 !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    flex: 0 0 auto !important;
+    z-index: 2 !important;
+}
+
+/* Ensure label sits next to control and not overlapped */
+#editModal .form-check-label,
+.modal .form-check-label {
+    margin-left: 0 !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+    z-index: 1 !important;
+}
+
+/* If Bootstrap utility added padding-left to form-check container, reset for editModal */
+#editModal .form-check,
+.modal#editModal .form-check {
+    padding-left: 0 !important;
+}
+
+@media (max-width:768px){
+  .card-header .row{flex-direction:column;text-align:center}
+  .integrated-search-bar{flex-direction:column}
+  .search-actions{border-left:none;border-top:1px solid #e8eef5}
+}
+
+/* small utility rules kept minimal */
+.hidden{display:none!important}
+
+/* Ensure header checkbox is centered and aligned properly */
+.table thead th {
+  vertical-align: middle;
+}
+.table thead th .form-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  margin: 0;
+}
+.table thead th .form-check-input {
+  margin: 0 !important;
+  position: relative !important;
+  top: 0 !important;
+  transform: none !important;
+}
+
+/* If checkbox still appears shifted due to global rules, enforce alignment for selectAll specifically */
+#selectAll {
+  margin: 0 auto !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
+
+/* Ensure badges in table cells (分類 / 郵件狀態) have white text for better contrast */
+.table td .badge,
+.table td span.badge,
+.modal .badge {
+  color: #fff !important;
+}
+
+/* End additions */

@@ -1,0 +1,220 @@
+﻿@using Team.Backend.Constants
+@model OrderIndexVm
+
+@{
+    ViewData["Title"] = "管理員｜訂單管理";
+    var today = DateTime.Now.ToString("yyyy/MM/dd");
+}
+
+<div id="ordersConfig"
+     data-list-url="@Url.Action("ListPartial", "AdminOrders")"
+     data-index-url="@Url.Action("Index", "AdminOrders")"
+     data-detail-url-base="@Url.Action("DetailPartial", "AdminOrders")"
+     data-manage-url-base="@Url.Action("Detail", "AdminOrders")"></div>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="m-0">訂單總覽（管理員）</h3>
+    <div class="text-muted small">
+        <div>今天：@today</div>
+        <div class="mt-1"><i class="fas fa-info-circle"></i> 僅供查看，出貨由各賣家管理</div>
+    </div>
+</div>
+
+<!-- 訂單統計報表 -->
+<!-- 移除所有統計卡片 -->
+
+<!-- 搜尋 / 篩選列 -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form id="filterForm" method="get" class="row g-3 align-items-end">
+            <div class="col-lg-4">
+                <label class="form-label">關鍵字（編號/姓名/電話）</label>
+                <input name="Q" value="@Model.Query.Q" type="search" class="form-control" placeholder="輸入關鍵字…">
+            </div>
+            <div class="col-lg-2">
+                <label class="form-label">付款狀態</label>
+                <select name="PaymentStatus" class="form-control">
+                    <option value="">全部</option>
+                    @foreach (var s in PaymentStatusOptions.All)
+                    {
+                        <option value="@s" selected="@(Model.Query.PaymentStatus == s)">@PaymentStatusOptions.Text(s)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2">
+                <label class="form-label">訂單狀態</label>
+                <select name="OrderStatus" class="form-control">
+                    <option value="">全部</option>
+                    @foreach (var s in OrderStatusOptions.All)
+                    {
+                        <option value="@s" selected="@(Model.Query.OrderStatus == s)">@OrderStatusOptions.Text(s)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2">
+                <label class="form-label">起</label>
+                <input name="DateFrom" value="@(Model.Query.DateFrom?.ToString("yyyy-MM-dd"))" type="date" class="form-control">
+            </div>
+            <div class="col-lg-2">
+                <label class="form-label">迄</label>
+                <input name="DateTo" value="@(Model.Query.DateTo?.ToString("yyyy-MM-dd"))" type="date" class="form-control">
+            </div>
+
+            <input type="hidden" name="Page" value="@Model.Page" />
+            <input type="hidden" name="PageSize" value="@Model.PageSize" />
+        </form>
+
+    </div>
+</div>
+
+<!-- 操作列 -->
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("Index", new { Model.Query.Q, Model.Query.PaymentStatus, Model.Query.OrderStatus, DateFrom = Model.Query.DateFrom?.ToString("yyyy-MM-dd"), DateTo = Model.Query.DateTo?.ToString("yyyy-MM-dd"), Page = Model.Page, PageSize = Model.PageSize })">
+        <i class="fas fa-sync-alt"></i> 重新整理
+    </a>
+    
+    <!-- 快速篩選按鈕 -->
+    <div class="btn-group">
+        <a class="btn btn-outline-info btn-sm" href="@Url.Action("Index", new { OrderStatus = "pending" })">
+            <i class="fas fa-clock"></i> 待處理
+        </a>
+        <a class="btn btn-outline-warning btn-sm" href="@Url.Action("Index", new { OrderStatus = "paid" })">
+            <i class="fas fa-credit-card"></i> 已付款
+        </a>
+        <a class="btn btn-outline-primary btn-sm" href="@Url.Action("Index", new { OrderStatus = "shipped" })">
+            <i class="fas fa-truck"></i> 已出貨
+        </a>
+        <a class="btn btn-outline-success btn-sm" href="@Url.Action("Index", new { OrderStatus = "delivered" })">
+            <i class="fas fa-check-circle"></i> 已完成
+        </a>
+    </div>
+    
+    <!-- 日期快速篩選 -->
+    <div class="btn-group">
+        <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("Index", new { DateFrom = DateTime.Today.ToString("yyyy-MM-dd") })">
+            <i class="fas fa-calendar-day"></i> 今天
+        </a>
+        <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("Index", new { DateFrom = DateTime.Today.AddDays(-7).ToString("yyyy-MM-dd") })">
+            <i class="fas fa-calendar-week"></i> 本週
+        </a>
+        <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("Index", new { DateFrom = DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd") })">
+            <i class="fas fa-calendar-alt"></i> 本月
+        </a>
+    </div>
+    
+    <a class="btn btn-outline-success btn-sm" href="@Url.Action("ExportCsv", "AdminOrders", new { Model.Query.Q, Model.Query.PaymentStatus, Model.Query.OrderStatus, DateFrom = Model.Query.DateFrom?.ToString("yyyy-MM-dd"), DateTo = Model.Query.DateTo?.ToString("yyyy-MM-dd") })">
+        <i class="fas fa-download"></i> 匯出 CSV
+    </a>
+    
+    <div class="ml-auto text-muted small">
+        共 <span id="count">@Model.TotalCount</span> 筆
+        <!-- 移除本頁總額顯示 -->
+    </div>
+</div>
+
+<!-- 清單 -->
+<div class="card">
+    <div class="card-header bg-white font-weight-bold">訂單列表</div>
+    <div class="card-body p-0">
+        <div id="listRegion">
+            @await Html.PartialAsync("_OrderList", Model)
+        </div>
+    </div>
+</div>
+
+<!-- 明細 Modal（BS4 寫法） -->
+<div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailTitle">訂單明細</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="關閉">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="detailModalBody">
+                <div class="p-4 text-center text-muted">載入中…</div>
+            </div>
+            <div class="modal-footer">
+                <div class="mr-auto small text-muted" id="detailMeta"></div>
+                <button class="btn btn-outline-info btn-sm" onclick="copyOrderInfo()" title="複製訂單資訊">
+                    <i class="fas fa-copy"></i> 複製資訊
+                </button>
+                <button class="btn btn-outline-warning btn-sm" onclick="sendNotification()" title="發送通知給會員">
+                    <i class="fas fa-bell"></i> 通知會員
+                </button>
+                <button class="btn btn-secondary" data-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" />
+}
+@section Scripts {
+    <script src="~/js/admin-orders.js" asp-append-version="true"></script>
+    <script>
+        // 聯絡賣家功能
+        function contactVendor(vendorName, vendorId) {
+            // 這裡可以實作聯絡賣家的功能，例如：
+            // 1. 打開聊天視窗
+            // 2. 跳轉到賣家管理頁面
+            // 3. 顯示賣家聯絡資訊
+            
+            // 暫時使用 alert 示意
+            if (confirm(`要聯絡賣家「${vendorName}」嗎？\n\n這會打開賣家聯絡資訊或管理頁面。`)) {
+                // 可以跳轉到賣家詳細頁面或開啟聯絡功能
+                window.open(`/Admin/Sellers/Detail/${vendorId}`, '_blank');
+            }
+        }
+        
+        // 複製訂單資訊功能
+        function copyOrderInfo() {
+            const modal = document.getElementById('detailModal');
+            const orderCode = modal.querySelector('.modal-title').textContent;
+            const orderInfo = modal.querySelector('#detailModalBody').textContent;
+            
+            const textToCopy = `${orderCode}\n\n${orderInfo}`;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(textToCopy).then(function() {
+                    alert('訂單資訊已複製到剪貼板');
+                });
+            } else {
+                // 舊版瀏覽器的備用方案
+                const textArea = document.createElement('textarea');
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('訂單資訊已複製到剪貼板');
+            }
+        }
+        
+        // 發送通知給會員功能
+        function sendNotification() {
+            const modal = document.getElementById('detailModal');
+            const orderCode = modal.querySelector('.modal-title').textContent;
+            
+            const message = prompt(`要發送什麼通知給會員？\n訂單：${orderCode}`, '您的訂單狀態已更新，請查看詳細資訊。');
+            
+            if (message && message.trim()) {
+                // 這裡可以實作發送通知的 API 調用
+                // 暫時使用 alert 示意
+                alert(`通知已發送給會員：${message}`);
+                
+                // 實際實作可能如下：
+                // fetch('/api/notifications/send', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({ orderCode, message })
+                // });
+            }
+        }
+        
+        // 移除統計功能 - 統計卡片已被移除
+        
+    </script>
+}

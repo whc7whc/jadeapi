@@ -1,0 +1,149 @@
+﻿@using Team.Backend.Models.ViewModels.Logistics
+@model CarrierDetailVm
+
+<div class="row">
+    <div class="col-md-6">
+        <h6 class="text-muted">基本資訊</h6>
+        <table class="table table-sm">
+            <tr>
+                <td width="30%"><strong>ID：</strong></td>
+                <td>@Model.Id</td>
+            </tr>
+            <tr>
+                <td><strong>名稱：</strong></td>
+                <td>@Model.Name</td>
+            </tr>
+            <tr>
+                <td><strong>綠界代碼：</strong></td>
+                <td>
+                    <span class="badge badge-primary">@Model.ECPayCode</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>狀態：</strong></td>
+                <td>
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge badge-success">啟用</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-secondary">停用</span>
+                    }
+                </td>
+            </tr>
+            <tr>
+                <td><strong>建立時間：</strong></td>
+                <td>@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="col-md-6">
+        <h6 class="text-muted">聯絡資訊</h6>
+        <div class="card bg-light">
+            <div class="card-body">
+                <pre class="mb-0">@Model.Contact</pre>
+            </div>
+        </div>
+        
+        <h6 class="text-muted mt-3">使用統計</h6>
+        <div class="row text-center">
+            <div class="col-6">
+                <h4 class="text-primary">@Model.OrderCount</h4>
+                <small class="text-muted">總訂單數</small>
+            </div>
+            <div class="col-6">
+                <h4 class="text-success">載入中...</h4>
+                <small class="text-muted">總運費收入</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr>
+
+<div class="row">
+    <div class="col-12">
+        <h6 class="text-muted">支援的配送方式</h6>
+        <div class="d-flex flex-wrap">
+            @switch (Model.ECPayCode)
+            {
+                case "HOME_TCAT":
+                    <span class="badge badge-warning me-2 mb-2">
+                        <i class="fas fa-truck"></i> 宅急便到府
+                    </span>
+                    <span class="badge badge-info me-2 mb-2">
+                        <i class="fas fa-clock"></i> 當日配送
+                    </span>
+                    <span class="badge badge-success me-2 mb-2">
+                        <i class="fas fa-calendar"></i> 指定配送時間
+                    </span>
+                    break;
+                
+                case "UNIMART":
+                    <span class="badge badge-success me-2 mb-2">
+                        <i class="fas fa-store"></i> 超商取貨
+                    </span>
+                    <span class="badge badge-primary me-2 mb-2">
+                        <i class="fas fa-money-bill"></i> 取貨付款
+                    </span>
+                    <span class="badge badge-info me-2 mb-2">
+                        <i class="fas fa-24-hours"></i> 24小時服務
+                    </span>
+                    break;
+                
+                case "FAMI":
+                    <span class="badge badge-info me-2 mb-2">
+                        <i class="fas fa-store"></i> 超商取貨
+                    </span>
+                    <span class="badge badge-primary me-2 mb-2">
+                        <i class="fas fa-money-bill"></i> 取貨付款
+                    </span>
+                    <span class="badge badge-warning me-2 mb-2">
+                        <i class="fas fa-coffee"></i> 全家便利
+                    </span>
+                    break;
+                
+                default:
+                    <span class="badge badge-secondary me-2 mb-2">
+                        <i class="fas fa-question"></i> 未知物流方式
+                    </span>
+                    break;
+            }
+        </div>
+    </div>
+</div>
+
+@if (Model.OrderCount > 0)
+{
+    <hr>
+    <div class="row">
+        <div class="col-12">
+            <h6 class="text-muted">操作選項</h6>
+            <div class="btn-group" role="group">
+                <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-edit"></i> 編輯資訊
+                </a>
+                <button class="btn btn-outline-info btn-sm" onclick="viewOrderHistory(@Model.Id)">
+                    <i class="fas fa-history"></i> 訂單記錄
+                </button>
+                <button class="btn btn-outline-warning btn-sm" onclick="exportCarrierData(@Model.Id)">
+                    <i class="fas fa-download"></i> 匯出資料
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    function viewOrderHistory(carrierId) {
+        // 開啟新視窗顯示該物流商的訂單記錄
+        window.open('@Url.Action("Index", "AdminOrders")?carrierId=' + carrierId, '_blank');
+    }
+    
+    function exportCarrierData(carrierId) {
+        // 匯出該物流商的統計資料
+        window.location.href = '@Url.Action("ExportCarrierData")?id=' + carrierId;
+    }
+</script>

@@ -1,0 +1,221 @@
+﻿## 購物車 API 測試檔案
+## 設定基本 URL
+@baseUrl = https://localhost:7106
+@userId = 1
+@productId = 1
+@attributeValueId = 1
+@couponId = 1
+
+## ========== 完整的購物車流程測試 ==========
+
+## 1. 取得用戶購物車 (應該先建立空購物車)
+GET {{baseUrl}}/api/Carts/user/{{userId}}
+Content-Type: application/json
+
+##
+
+## 2. 加入商品到購物車
+POST {{baseUrl}}/api/Carts/user/{{userId}}/items
+Content-Type: application/json
+
+{
+  "productId": {{productId}},
+  "attributeValueId": {{attributeValueId}},
+  "quantity": 2
+}
+
+##
+
+## 3. 取得購物車 (檢查商品是否加入)
+GET {{baseUrl}}/api/Carts/user/{{userId}}
+Content-Type: application/json
+
+##
+
+## ========== 優惠券功能測試 ==========
+
+## 4. 取得用戶可用的優惠券清單 (用於前端下拉選單)
+GET {{baseUrl}}/api/Coupons/UserAvailable/{{userId}}
+Content-Type: application/json
+
+##
+
+## 5. 套用選取的優惠券
+POST {{baseUrl}}/api/Carts/user/{{userId}}/coupon
+Content-Type: application/json
+
+{
+  "couponCode": "{{couponId}}"
+}
+
+##
+
+## 6. 取得購物車 (檢查優惠券是否套用成功)
+GET {{baseUrl}}/api/Carts/user/{{userId}}
+Content-Type: application/json
+
+##
+
+## ========== 購物車操作測試 ==========
+
+## 7. 更新商品數量 (需要先取得實際的 itemId)
+PUT {{baseUrl}}/api/Carts/user/{{userId}}/items/1
+Content-Type: application/json
+
+{
+  "quantity": 3
+}
+
+##
+
+## 8. 驗證購物車
+POST {{baseUrl}}/api/Carts/user/{{userId}}/validate
+Content-Type: application/json
+
+##
+
+## 9. 移除優惠券
+DELETE {{baseUrl}}/api/Carts/user/{{userId}}/coupon
+Content-Type: application/json
+
+##
+
+## 10. 取得購物車 (檢查優惠券是否移除)
+GET {{baseUrl}}/api/Carts/user/{{userId}}
+Content-Type: application/json
+
+##
+
+## 11. 移除商品
+DELETE {{baseUrl}}/api/Carts/user/{{userId}}/items/1
+Content-Type: application/json
+
+##
+
+## 12. 清空購物車
+DELETE {{baseUrl}}/api/Carts/user/{{userId}}
+Content-Type: application/json
+
+##
+
+## ========== 優惠券錯誤測試案例 ==========
+
+## 13. 測試無效的優惠券 ID
+POST {{baseUrl}}/api/Carts/user/{{userId}}/coupon
+Content-Type: application/json
+
+{
+  "couponCode": "99999"
+}
+
+##
+
+## 14. 測試無效的優惠券代碼格式
+POST {{baseUrl}}/api/Carts/user/{{userId}}/coupon
+Content-Type: application/json
+
+{
+  "couponCode": "INVALID"
+}
+
+##
+
+## 15. 測試空的優惠券代碼
+POST {{baseUrl}}/api/Carts/user/{{userId}}/coupon
+Content-Type: application/json
+
+{
+  "couponCode": ""
+}
+
+##
+
+## ========== 其他錯誤測試案例 ==========
+
+## 16. 測試無效的用戶ID
+GET {{baseUrl}}/api/Carts/user/99999
+Content-Type: application/json
+
+##
+
+## 17. 測試無效的商品ID
+POST {{baseUrl}}/api/Carts/user/{{userId}}/items
+Content-Type: application/json
+
+{
+  "productId": 99999,
+  "attributeValueId": {{attributeValueId}},
+  "quantity": 1
+}
+
+##
+
+## ========== 批量操作測試 ==========
+
+## 18. 批量加入商品 (如果您的資料庫有多個商品)
+POST {{baseUrl}}/api/Carts/user/{{userId}}/items
+Content-Type: application/json
+
+{
+  "productId": 2,
+  "attributeValueId": 2,
+  "quantity": 1
+}
+
+##
+
+## 19. 再次加入相同商品 (測試數量累加)
+POST {{baseUrl}}/api/Carts/user/{{userId}}/items
+Content-Type: application/json
+
+{
+  "productId": {{productId}},
+  "attributeValueId": {{attributeValueId}},
+  "quantity": 1
+}
+
+##
+
+## 20. 測試不同用戶的購物車隔離
+GET {{baseUrl}}/api/Carts/user/2
+Content-Type: application/json
+
+##
+
+## ========== 完整結帳流程測試 ==========
+
+## 21. 完整流程：加入商品 → 取得可用優惠券 → 套用優惠券 → 驗證 → 取得最終購物車
+POST {{baseUrl}}/api/Carts/user/{{userId}}/items
+Content-Type: application/json
+
+{
+  "productId": {{productId}},
+  "attributeValueId": {{attributeValueId}},
+  "quantity": 2
+}
+
+##
+
+GET {{baseUrl}}/api/Coupons/UserAvailable/{{userId}}
+Content-Type: application/json
+
+##
+
+POST {{baseUrl}}/api/Carts/user/{{userId}}/coupon
+Content-Type: application/json
+
+{
+  "couponCode": "{{couponId}}"
+}
+
+##
+
+POST {{baseUrl}}/api/Carts/user/{{userId}}/validate
+Content-Type: application/json
+
+##
+
+GET {{baseUrl}}/api/Carts/user/{{userId}}
+Content-Type: application/json
+
+##

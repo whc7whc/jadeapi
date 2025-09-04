@@ -1,0 +1,513 @@
+﻿@model Team.Backend.Models.ViewModels.SellerFullViewModel
+
+<style>
+    /* 調整 modal 對話框寬度與置中 */
+    .modal-dialog {
+        max-width: 700px; /* 最大寬度限制 */
+        margin: 1.5rem auto; /* 上下間距與置中 */                            
+    }
+
+    /* modal 內容內邊距 */
+    .modal-content {
+        padding: 1.5rem;
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- 詳情標題列，左側是賣家名稱，右側是返回列表按鈕 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0">賣家申請詳情 - @Model.RealName</h5>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">返回列表</button>
+    </div>
+
+    <!-- Tab 導航列，用於切換申請資料、銀行帳戶、退貨資訊、證件管理 -->
+    <ul class="nav nav-tabs mb-3" id="sellerDetailTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="application-tab" data-bs-toggle="tab"
+                    data-bs-target="#application" type="button" role="tab">
+                申請資料
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="bank-tab" data-bs-toggle="tab"
+                    data-bs-target="#bank" type="button" role="tab">
+                銀行帳戶
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="return-tab" data-bs-toggle="tab"
+                    data-bs-target="#return" type="button" role="tab">
+                退貨資訊
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="account-tab" data-bs-toggle="tab"
+                    data-bs-target="#account" type="button" role="tab">
+                證件管理
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab 內容區塊 -->
+    <div class="tab-content" id="sellerDetailTabContent">
+
+        <!-- 申請資料 tab -->
+        <div class="tab-pane fade show active" id="application" role="tabpanel">
+            <div class="row g-3">
+
+                <!-- 真實姓名 -->
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">真實姓名</label>
+                    <div class="form-control-plaintext mb-0">@Model.RealName</div>
+                </div>
+
+                <!-- 身份證號 -->
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">身份證號</label>
+                    <div class="form-control-plaintext mb-0">@Model.IdNumber</div>
+                </div>
+
+                <!-- 信箱 -->
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">信箱</label>
+                    <div class="form-control-plaintext mb-0">@Model.Email</div>
+                </div>
+
+                <!-- 申請狀態下拉選單 -->
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">申請狀態</label>
+                    <div class="mt-1">
+                        <select class="form-select" id="applicationStatus" asp-for="ApplicationStatus" onchange="toggleRejectionReason()">
+                            <option value="pending">待審核</option>
+                            <option value="approved">已通過</option>
+                            <option value="rejected">已拒絕</option>
+                            <option value="resubmitted">重新申請</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 拒絕原因輸入框 -->
+                <div id="rejectionReasonDiv" class="col-12" style="display: none;">
+                    <label class="form-label text-muted">拒絕原因</label>
+                    <textarea id="rejectionReason" class="form-control" rows="3"></textarea>
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- 銀行帳戶 tab -->
+        <div class="tab-pane fade" id="bank" role="tabpanel">
+            <div class="row g-3">
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">銀行名稱</label>
+                    <div class="form-control-plaintext mb-0">@Model.BankName</div>
+                </div>
+
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">銀行代碼</label>
+                    <div class="form-control-plaintext mb-0">@Model.BankCode</div>
+                </div>
+
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">帳戶名稱</label>
+                    <div class="form-control-plaintext mb-0">@Model.AccountName</div>
+                </div>
+
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">帳戶號碼</label>
+                    <div class="form-control-plaintext mb-0">@Model.AccountNumber</div>
+                </div>
+
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">銀行帳戶驗證</label>
+                    @if (Model.SellerBankAccountIsVerified)
+                    {
+                        <span class="badge bg-primary" style="color:white">已驗證</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">未驗證</span>
+                    }
+                </div>
+
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">檔案類型</label>
+                    <div class="form-control-plaintext mb-0">
+                        @{
+                            var bankPhoto = Model.Documents?.FirstOrDefault(d => d.DocumentType == "BankPhoto");
+                        }
+                        @if (bankPhoto != null && !string.IsNullOrEmpty(bankPhoto.FilePath))
+                        {
+                            <img src="@bankPhoto.FilePath"
+                                 alt="銀行證明圖片"
+                                 class="img-thumbnail"
+                                 style="max-width: 150px; cursor: pointer;"
+                                 onclick="showImageModal('@(bankPhoto.FilePath.Replace("'", "\\'"))')" />
+                        }
+                        else
+                        {
+                            <span class="text-danger">尚未上傳銀行證明圖片</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- 退貨資訊 tab -->
+        <div class="tab-pane fade" id="return" role="tabpanel">
+            <div class="row g-3">
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">聯絡姓名</label>
+                    <div class="form-control-plaintext mb-0">@Model.ContactName</div>
+                </div>
+
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">聯絡電話</label>
+                    <div class="form-control-plaintext mb-0">@Model.ContactPhone</div>
+                </div>
+
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">城市</label>
+                    <div class="form-control-plaintext mb-0">@Model.City</div>
+                </div>
+
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">區域</label>
+                    <div class="form-control-plaintext mb-0">@Model.District</div>
+                </div>
+
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">郵遞區號</label>
+                    <div class="form-control-plaintext mb-0">@Model.ZipCode</div>
+                </div>
+
+                <div class="col-md-6 d-flex align-items-center">
+                    <label class="form-label text-muted mb-0 me-3" style="width: 120px;">退貨地址</label>
+                    <div class="form-control-plaintext mb-0">@Model.ReturnAddress</div>
+                </div>
+            </div>
+        </div>
+
+
+       
+        <!-- 證件管理 tab -->
+        <div class="tab-pane fade" id="account" role="tabpanel">
+            <div class="row g-3">
+                @{
+                    var frontDoc = Model.Documents?.FirstOrDefault(d => d.DocumentType == "frontDoc");
+                    var backDoc = Model.Documents?.FirstOrDefault(d => d.DocumentType == "backDoc");
+                }
+
+                @if (frontDoc != null && !string.IsNullOrEmpty(frontDoc.FilePath))
+                {
+                    <div class="col-md-6 d-flex align-items-center">
+                        <label class="form-label text-muted mb-0 me-3" style="width: 120px;">身分證正面</label>
+                        <div class="form-control-plaintext mb-0">
+                            <img src="@frontDoc.FilePath"
+                                 alt="身分證正面"
+                                 class="img-thumbnail"
+                                 style="max-width: 150px; cursor: pointer;"
+                                 onclick="showImageModal('@(frontDoc.FilePath.Replace("'", "\\'"))')" />
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="col-md-6">
+                        <span class="text-danger">尚未上傳身分證正面圖片</span>
+                    </div>
+                }
+
+                @if (backDoc != null && !string.IsNullOrEmpty(backDoc.FilePath))
+                {
+                    <div class="col-md-6 d-flex align-items-center">
+                        <label class="form-label text-muted mb-0 me-3" style="width: 120px;">身分證反面</label>
+                        <div class="form-control-plaintext mb-0">
+                            <img src="@backDoc.FilePath"
+                                 alt="身分證反面"
+                                 class="img-thumbnail"
+                                 style="max-width: 150px; cursor: pointer;"
+                                 onclick="showImageModal('@(backDoc.FilePath.Replace("'", "\\'"))')" />
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="col-md-6">
+                        <span class="text-danger">尚未上傳身分證反面圖片</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+
+
+                <!-- 賣家驗證狀態 -->
+        <div class="row g-3 col-md-6 d-flex align-items-center">
+                    @* <label class="form-label text-muted">驗證狀態</label> *@
+                    <div class="form-control-plaintext">
+                        @if (Model.SellerIsActive)
+                        {
+                    <span class="badge bg-success" style="color:white">啟用中</span>
+                        }
+                        else
+                        {
+                    <span class="badge bg-danger disabled" style="color:white">未啟用</span>
+                        }
+                    </div>
+                </div>
+
+                <!-- 申請時間再次顯示 -->
+                <div class="col-md-6">
+                    @* <label class="form-label text-muted">申請時間</label> *@
+            <div class="form-control-plaintext">申請時間 @Model.SellerAppliedAt.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                </div>
+            </div>
+        </div>
+
+
+<!-- 底部操作按鈕區 -->
+<div class="mt-3 d-flex justify-content-end gap-2 pe-3">
+    @if (Model.ApplicationStatus == "待審核")
+    {
+        <button type="button" class="btn btn-success" onclick="approveApplication(@Model.SellerId)">
+            <i class="bi bi-check-circle me-1"></i> 通過申請
+        </button>
+        <button type="button" class="btn btn-danger" onclick="rejectApplication(@Model.SellerId)">
+            <i class="bi bi-x-circle me-1"></i> 拒絕申請
+        </button>
+    }
+
+    @if (Model.ApplicationStatus == "已拒絕")
+    {
+        <button id="resubmitBtn" class="btn btn-warning">
+            <i class="bi bi-arrow-clockwise me-1"></i> 重新申請
+        </button>
+    }
+
+    <button type="button" class="btn btn-primary" onclick="saveChanges(@Model.SellerId)">
+        <i class="bi bi-save me-1"></i> 保存變更
+    </button>
+</div>
+
+<!-- 圖片預覽 Modal -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" alt="預覽圖片" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 頁面載入時初始化拒絕原因輸入框的顯示狀態
+    $(document).ready(function() {
+        toggleRejectionReason();
+    });
+
+    // 根據申請狀態選擇，顯示或隱藏拒絕原因輸入框
+      function toggleRejectionReason() {
+        var status = $('#applicationStatus').val();
+
+        if (status === 'rejected') {
+            $('#rejectionReasonDiv').show();
+        } else {
+            $('#rejectionReasonDiv').hide();
+        }
+    }
+
+    // 保存變更功能（包含狀態和拒絕原因）
+    function saveChanges(sellerId) {
+        var status = $('#applicationStatus').val();
+        var rejectionReason = $('#rejectionReason').val();
+
+        // 若狀態為已拒絕且未填拒絕原因，阻止保存並提醒
+             if (!rejectionReason) {
+        alert('請填寫拒絕原因！');
+        return;
+   
+    }
+
+        $.ajax({
+            url: '@Url.Action("UpdateSellerStatus", "SellerManage")',
+            type: 'POST',
+            data: {
+                sellerId: sellerId,
+                status: status,
+                rejectionReason: rejectionReason
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('保存成功！');
+                    location.reload();
+                } else {
+                    alert('保存失敗：' + response.message);
+                }
+            },
+            error: function() {
+                alert('保存失敗，請稍後再試。');
+            }
+        });
+    }
+
+    // 通過申請
+    function approveApplication(sellerId) {
+        if (confirm('確定要通過這個申請嗎？')) {
+            $.ajax({
+               url: '@Url.Action("ApproveApplication", "SellerManage")',
+                type: 'POST',
+                data: { sellerId: sellerId },
+                success: function(response) {
+                    if (response.success) {
+                        alert('申請已通過！');
+                        $('#sellerDetailModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert('操作失敗：' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('操作失敗，請稍後再試。');
+                }
+            });
+        }
+    }
+
+   $(function() {
+    toggleRejectionReason();
+
+    // 重新申請按鈕事件
+    $('#resubmitBtn').on('click', function () {
+        if (!confirm("確定要重新申請嗎？")) return;
+
+        $.ajax({
+            type: 'POST',
+            url: '/SellerManage/ResubmitApplication',
+            data: { sellerId: @Model.SellerId },
+            success: function (res) {
+                if (res.success) {
+                    alert("已送出重新申請！");
+                    location.reload();
+                } else {
+                    alert("失敗：" + res.message);
+                }
+            },
+            error: function () {
+                alert("發生錯誤，請稍後再試。");
+            }
+        });
+    });
+});
+
+function toggleRejectionReason() {
+    var status = $('#applicationStatus').val();
+    if (status === 'rejected') {
+        $('#rejectionReasonDiv').show();
+    } else {
+        $('#rejectionReasonDiv').hide();
+        $('#rejectionReason').removeClass('is-invalid');
+    }
+}
+
+function saveChanges(sellerId) {
+    var status = $('#applicationStatus').val();
+    var rejectionReason = $('#rejectionReason').val().trim();
+
+    if (status === 'rejected' && !rejectionReason) {
+        $('#rejectionReason').addClass('is-invalid');
+        alert('請填寫拒絕原因！');
+        return;
+    } else {
+        $('#rejectionReason').removeClass('is-invalid');
+    }
+
+    $.ajax({
+        url: '@Url.Action("UpdateSellerStatus", "SellerManage")',
+        type: 'POST',
+        data: {
+            sellerId: sellerId,
+            status: status,
+            rejectionReason: rejectionReason
+        },
+        success: function(response) {
+            if (response.success) {
+                alert('保存成功！');
+                location.reload();
+            } else {
+                alert('保存失敗：' + response.message);
+            }
+        },
+        error: function() {
+            alert('保存失敗，請稍後再試。');
+        }
+    });
+}
+
+function approveApplication(sellerId) {
+    if (confirm('確定要通過這個申請嗎？')) {
+        $.ajax({
+            url: '@Url.Action("ApproveApplication", "SellerManage")',
+            type: 'POST',
+            data: { sellerId: sellerId },
+            success: function(response) {
+                if (response.success) {
+                    alert('申請已通過！');
+                    $('#sellerDetailModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('操作失敗：' + response.message);
+                }
+            },
+            error: function() {
+                alert('操作失敗，請稍後再試。');
+            }
+        });
+    }
+}
+
+function rejectApplication(sellerId) {
+    var rejectionReason = $('#rejectionReason').val().trim();
+
+    if (!rejectionReason) {
+        $('#rejectionReason').addClass('is-invalid');
+        alert('請填寫拒絕原因！');
+        return;
+    } else {
+        $('#rejectionReason').removeClass('is-invalid');
+    }
+
+    if (confirm('確定要拒絕這個申請嗎？')) {
+        $.ajax({
+            url: '@Url.Action("RejectApplication", "SellerManage")',
+            type: 'POST',
+            data: {
+                sellerId: sellerId,
+                rejectionReason: rejectionReason
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('申請已拒絕！');
+                    $('#sellerDetailModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('操作失敗：' + response.message);
+                }
+            },
+            error: function() {
+                alert('操作失敗，請稍後再試。');
+            }
+        });
+    }
+}
+
+    // 開啟 Modal 並載入圖片
+    function showImageModal(imageSrc) {
+        $('#modalImage').attr('src', imageSrc);
+        var myModal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
+        myModal.show();
+    }
+</script>

@@ -1,0 +1,503 @@
+﻿@model Team.Backend.Models.ViewModels.FinanceDashboardViewModel
+@{
+    ViewData["Title"] = "財務中心儀表板";
+    var currentYear = DateTime.Now.Year;
+    var currentMonth = DateTime.Now.Month;
+
+    // 修正：確保 ViewBag 的值轉換為正確的 int 類型
+    var selectedYear = (int?)ViewBag.SelectedYear ?? currentYear;
+    var selectedMonth = (int?)ViewBag.SelectedMonth ?? currentMonth;
+}
+
+@section Styles {
+    <!-- 移動 Bootstrap Icons 到 Styles section，避免重複載入 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-chart-line text-primary"></i> 財務中心儀表板
+        </h1>
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                <i class="fas fa-download"></i> 匯出報表
+            </button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="#"><i class="fas fa-file-excel"></i> Excel</a>
+                <a class="dropdown-item" href="#"><i class="fas fa-file-pdf"></i> PDF</a>
+                <a class="dropdown-item" href="#"><i class="fas fa-file-csv"></i> CSV</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 時間篩選器 -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form asp-action="Index" method="get" class="row align-items-end">
+                <div class="col-md-3">
+                    <label for="year" class="form-label">
+                        <i class="fas fa-calendar-alt"></i> 年份
+                    </label>
+                    <select name="year" id="year" class="form-control">
+                        @for (int i = currentYear - 5; i <= currentYear; i++)
+                        {
+                            if (i == selectedYear)
+                            {
+                                <option value="@i" selected>@i</option>
+                            }
+                            else
+                            {
+                                <option value="@i">@i</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="month" class="form-label">
+                        <i class="fas fa-calendar"></i> 月份
+                    </label>
+                    <select name="month" id="month" class="form-control">
+                        @for (int i = 1; i <= 12; i++)
+                        {
+                            if (i == selectedMonth)
+                            {
+                                <option value="@i" selected>@i 月</option>
+                            }
+                            else
+                            {
+                                <option value="@i">@i 月</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> 查詢
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="resetFilters()">
+                        <i class="fas fa-sync"></i> 重置
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 關鍵指標卡片 -->
+    <div class="row">
+        <!-- 總營收 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                @(selectedYear)年@(selectedMonth)月 總營收
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                NT$ @Model.TotalRevenue.ToString("N0")
+                            </div>
+                            <div class="text-xs text-success">
+                                <i class="fas fa-arrow-up"></i> @Model.GrowthRate.ToString("F1")% vs 上月
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 平均訂單金額 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                平均訂單金額
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                NT$ @Model.AverageOrderValue.ToString("N0")
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 活躍會員 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                活躍會員 / 總會員
+                            </div>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto">
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">
+                                        @Model.ActiveMembersThisMonth / @Model.TotalMembers
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="progress progress-sm mr-2">
+                                        <div class="progress-bar bg-info" role="progressbar"
+                                             style="width: @(Model.TotalMembers > 0 ? (double)Model.ActiveMembersThisMonth / Model.TotalMembers * 100 : 0)%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 點數餘額 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                點數餘額
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @((Model.TotalPointsIssued - Model.TotalPointsUsed).ToString("N0")) 點
+                            </div>
+                            <div class="text-xs text-muted">
+                                發放: @Model.TotalPointsIssued.ToString("N0") | 使用: @Model.TotalPointsUsed.ToString("N0")
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-coins fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 圖表區域 -->
+    <div class="row">
+        <!-- 營收趨勢圖 -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-area"></i> 月營收趨勢
+                    </h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" data-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow">
+                            <a class="dropdown-item" href="#">匯出圖表</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="revenueChart" style="height: 320px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分類銷售圓餅圖 -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie"></i> 分類銷售占比
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="categoryChart" style="height: 320px;"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        @if (Model.CategorySales != null && Model.CategorySales.Any())
+                        {
+                            @foreach (var category in Model.CategorySales.Take(4))
+                            {
+                                <span class="mr-2">
+                                    <i class="fas fa-circle" style="color: @category.Color"></i> @category.CategoryName
+                                </span>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 詳細數據表格 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-table"></i> 詳細財務數據
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>指標</th>
+                                    <th>本月</th>
+                                    <th>上月</th>
+                                    <th>成長率</th>
+                                    <th>年度累計</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><i class="fas fa-dollar-sign text-primary"></i> 總營收</td>
+                                    <td>NT$ @Model.TotalRevenue.ToString("N0")</td>
+                                    <td>NT$ 0</td>
+                                    <td><span class="text-success">@Model.GrowthRate.ToString("F1")%</span></td>
+                                    <td>NT$ 0</td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-users text-info"></i> 新增會員</td>
+                                    <td>@Model.NewMembersThisMonth</td>
+                                    <td>0</td>
+                                    <td><span class="text-success">0%</span></td>
+                                    <td>@Model.TotalMembers</td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-coins text-warning"></i> 點數發放</td>
+                                    <td>@Model.TotalPointsIssued.ToString("N0")</td>
+                                    <td>0</td>
+                                    <td><span class="text-success">0%</span></td>
+                                    <td>0</td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-gift text-danger"></i> 優惠券使用</td>
+                                    <td>@Model.CouponUsage</td>
+                                    <td>0</td>
+                                    <td><span class="text-success">0%</span></td>
+                                    <td>0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 等待頁面載入完成
+document.addEventListener('DOMContentLoaded', function() {
+    // 檢查 Chart.js 是否載入
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js 未載入');
+        return;
+    }
+
+    // 工具函數：安全的 JSON 解析
+    function safeJsonParse(data) {
+        if (typeof data === 'string') {
+            try {
+                return JSON.parse(data);
+            } catch (e) {
+                console.error('JSON 解析失敗:', e);
+                return [];
+            }
+        }
+        return Array.isArray(data) ? data : [];
+    }
+
+    // 工具函數：安全的顏色轉換
+    function generateHoverColor(color, fallback = 'rgba(0, 0, 0, 0.2)') {
+        if (!color || typeof color !== 'string') return fallback;
+        
+        // 檢查是否為 hex 格式 (#RGB 或 #RRGGBB)
+        if (/^#([0-9A-F]{3}){1,2}$/i.test(color)) {
+            const hex = color.slice(1);
+            const fullHex = hex.length === 3 ? hex.split('').map(x => x + x).join('') : hex;
+            const r = parseInt(fullHex.slice(0, 2), 16);
+            const g = parseInt(fullHex.slice(2, 4), 16);
+            const b = parseInt(fullHex.slice(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, 0.8)`;
+        }
+        
+        // 其他格式（如 rgba, rgb）保持原樣
+        return color;
+    }
+
+    // 預設調色盤
+    const defaultColors = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69'];
+
+    // 修正：安全的 JSON 序列化處理
+    const rawRevenueData = @Html.Raw(Json.Serialize(Model.MonthlyRevenues));
+    const monthlyRevenueData = safeJsonParse(rawRevenueData);
+    console.log('MonthlyRevenues data:', monthlyRevenueData);
+
+    // 營收趨勢圖 - 使用 Chart.js v3.9.1 語法
+    const revenueCtx = document.getElementById('revenueChart');
+    if (revenueCtx && monthlyRevenueData.length > 0) {
+        // 修正屬性名稱 - 使用 PascalCase 並提供預設值
+        const revenueLabels = monthlyRevenueData.map(item => item.Month || item.month || '');
+        const revenueValues = monthlyRevenueData.map(item => Number(item.Revenue || item.revenue || 0));
+
+        const revenueChart = new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: revenueLabels,
+                datasets: [{
+                    label: '營收 (NT$)',
+                    data: revenueValues,
+                    borderColor: 'rgb(78, 115, 223)',
+                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '@selectedYear 年度營收趨勢'
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'NT$ ' + Number(value).toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } else if (revenueCtx) {
+        // 沒有數據時顯示提示
+        revenueCtx.parentElement.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                <p class="text-muted">暫無營收趨勢數據</p>
+            </div>
+        `;
+    }
+
+    // 修正：安全的分類銷售數據處理
+    const rawCategoryData = @Html.Raw(Json.Serialize(Model.CategorySales));
+    const categorySalesData = safeJsonParse(rawCategoryData);
+    console.log('CategorySales data:', categorySalesData);
+
+     // 分類銷售圓餅圖 - 使用 Chart.js v3.9.1 語法
+    const categoryCtx = document.getElementById('categoryChart');
+    if (categoryCtx && categorySalesData.length > 0) {
+        // 修正屬性名稱 - 使用 PascalCase 並提供預設值
+        const categoryLabels = categorySalesData.map(item => item.CategoryName || item.categoryName || '未知分類');
+        const categorySales = categorySalesData.map(item => Number(item.Sales || item.sales || 0));
+        const categoryColors = categorySalesData.map((item, index) =>
+            item.Color || item.color || defaultColors[index % defaultColors.length]
+        );
+
+        // 修正：安全的 hover 顏色生成
+        const hoverColors = categoryColors.map(color => generateHoverColor(color));
+
+        const categoryChart = new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    data: categorySales,
+                    backgroundColor: categoryColors,
+                    hoverBackgroundColor: hoverColors,
+                    hoverBorderColor: "rgba(234, 236, 244, 1)",
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = Number(context.raw || 0);
+                                // 修正：安全的總計算法
+                                const total = context.dataset.data.reduce((a, b) => Number(a) + Number(b), 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                                return `${label}: NT$ ${value.toLocaleString()} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } else if (categoryCtx) {
+        // 沒有數據時顯示提示
+        categoryCtx.parentElement.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                <p class="text-muted">暫無分類銷售數據</p>
+            </div>
+        `;
+    }
+
+
+    // 初始化 DataTables（如果需要交互功能）
+    if (typeof $.fn.DataTable !== 'undefined') {
+        $('#dataTable').DataTable({
+            "language": {
+                "lengthMenu": "顯示 _MENU_ 筆記錄",
+                "zeroRecords": "沒有找到記錄",
+                "info": "顯示第 _START_ 到 _END_ 筆，共 _TOTAL_ 筆記錄",
+                "infoEmpty": "沒有可用的記錄",
+                "infoFiltered": "(從 _MAX_ 筆記錄過濾)",
+                "search": "搜索:",
+                "paginate": {
+                    "first": "第一頁",
+                    "last": "最後一頁",
+                    "next": "下一頁",
+                    "previous": "上一頁"
+                }
+            },
+            "responsive": true,
+            "pageLength": 25,
+            "order": [[0, "asc"]]
+        });
+    }
+});
+
+// 修正：重置過濾器函數
+function resetFilters() {
+    document.getElementById('year').value = '@currentYear';
+    document.getElementById('month').value = '@currentMonth';
+}
+</script>

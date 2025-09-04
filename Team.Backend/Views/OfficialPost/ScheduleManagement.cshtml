@@ -1,0 +1,90 @@
+﻿@using Team.Backend.Models.EfModel
+@model List<ContentPublishingSchedule>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-2 custom-text-color">排程管理</h1>
+    <p class="mb-4">管理文章發布排程 - 當前系統：<strong>@ViewBag.SystemType</strong></p>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">排程列表</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>文章 ID</th>
+                            <th>排程時間</th>
+                            <th>狀態</th>
+                            <th>執行時間</th>
+                            <th>建立時間</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var schedule in Model)
+                            {
+                                <tr>
+                                    <td>@schedule.ContentId</td>
+                                    <td>@schedule.ScheduledTime.ToString("yyyy/MM/dd HH:mm")</td>
+                                    <td>
+                                        <span class="badge badge-@(schedule.Status == "pending" ? "warning" :
+                                                                   schedule.Status == "executed" ? "success" :
+                                                                   schedule.Status == "failed" ? "danger" : "secondary")">
+                                            @schedule.Status
+                                        </span>
+                                    </td>
+                                    <td>@(schedule.ExecutedAt.HasValue ? $"{schedule.ExecutedAt.Value:yyyy/MM/dd HH:mm}" : "-")</td>
+                                    <td>@(schedule.CreatedAt.HasValue ? $"{schedule.CreatedAt.Value:yyyy/MM/dd HH:mm}" : "-")</td>
+                                    <td>
+                                        @if (schedule.Status == "pending")
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    onclick="cancelSchedule(@schedule.Id)">
+                                                取消
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center">目前沒有排程資料</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function cancelSchedule(scheduleId) {
+        if (confirm('確定要取消這個排程嗎？')) {
+            $.ajax({
+                url: '@Url.Action("CancelSchedule", "OfficialPost")', // ✅ 注意：改成 OfficialPost
+                type: 'POST',
+                data: { scheduleId: scheduleId },
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('取消失敗：' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('發生錯誤：' + error);
+                }
+            });
+        }
+    }
+</script>

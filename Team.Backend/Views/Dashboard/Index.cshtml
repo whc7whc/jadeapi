@@ -1,0 +1,162 @@
+@using System.Linq
+@using Team.Backend.Models.ViewModels
+@using System.Globalization
+@model MainDashboardViewModel
+
+@{
+    ViewData["Title"] = "儀表板";
+    Layout = "_Layout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" crossorigin="anonymous" />
+    <link href="~/css/main-dashboard.css" rel="stylesheet" />
+}
+
+<!-- 儀表板內容 -->
+<div class="container-fluid">
+
+    <!-- 指標卡片 -->
+    <div class="row">
+        <div class="col-xl-3 col-md-4 mb-4">
+            <div class="stats-card stats-card-members" onclick="window.location.href='/AccountManage/MemberInfo'">
+                <i class="fas fa-users stats-card-icon"></i>
+                <div class="stats-card-label">會員總數</div>
+                <div class="stats-card-value" id="totalMembers">@Model.TotalMembers.ToString("N0", CultureInfo.GetCultureInfo("zh-TW"))</div>
+                <div class="stats-card-change">
+                    <i class="fas fa-user-plus"></i>
+                    <span id="newMembers">@Model.NewMembers.ToString("N0", CultureInfo.GetCultureInfo("zh-TW"))</span> 新增會員
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-4 mb-4">
+            <div class="stats-card stats-card-products" onclick="window.location.href='/Product/Products'">
+                <i class="fas fa-box stats-card-icon"></i>
+                <div class="stats-card-label">商品總數</div>
+                <div class="stats-card-value" id="totalProducts">@Model.TotalProducts.ToString("N0", CultureInfo.GetCultureInfo("zh-TW"))</div>
+                <div class="stats-card-change">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="lowStockProducts">@Model.LowStockProducts.ToString("N0", CultureInfo.GetCultureInfo("zh-TW"))</span> 低庫存
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-4 mb-4">
+            <div class="stats-card stats-card-orders" onclick="window.location.href='/AdminOrders'">
+                <i class="fas fa-shopping-cart stats-card-icon"></i>
+                <div class="stats-card-label">訂單總數</div>
+                <div class="stats-card-value" id="totalOrders">@Model.TotalOrders.ToString("N0", CultureInfo.GetCultureInfo("zh-TW"))</div>
+                <div class="stats-card-change">
+                    <i class="fas fa-arrow-up"></i>
+                    <span id="newOrders">@Model.NewOrders.ToString("N0", CultureInfo.GetCultureInfo("zh-TW"))</span> 新訂單
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-4 mb-4">
+            <div class="stats-card stats-card-ads" onclick="window.location.href='/AdManage/Banner'">
+                <i class="fas fa-ad stats-card-icon"></i>
+                <div class="stats-card-label">廣告總數</div>
+                <div class="stats-card-value" id="totalAds">@Model.TotalAds.ToString("N0", CultureInfo.GetCultureInfo("zh-TW"))</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-4 mb-4">
+            <div class="stats-card stats-card-coupons" onclick="window.location.href='/Coupons/CouponsManager'">
+                <i class="fas fa-ticket-alt stats-card-icon"></i>
+                <div class="stats-card-label">優惠券總數</div>
+                <div class="stats-card-value" id="totalCoupons">@Model.TotalCoupons.ToString("N0", CultureInfo.GetCultureInfo("zh-TW"))</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-4 mb-4">
+            <div class="stats-card stats-card-notifications" onclick="window.location.href='/Notification/MainNotification'">
+                <i class="fas fa-bell stats-card-icon"></i>
+                <div class="stats-card-label">通知總數</div>
+                <div class="stats-card-value" id="totalNotifications">@Model.TotalNotifications.ToString("N0", CultureInfo.GetCultureInfo("zh-TW"))</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-4 mb-4">
+            <div class="stats-card stats-card-articles" onclick="window.location.href='/Blog/PostManagement'">
+                <i class="fas fa-newspaper stats-card-icon"></i>
+                <div class="stats-card-label">文章總數</div>
+                <div class="stats-card-value" id="totalArticles">@Model.TotalArticles.ToString("N0", CultureInfo.GetCultureInfo("zh-TW"))</div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-4 mb-4">
+            <div class="stats-card stats-card-revenue" onclick="window.location.href='/AdminFinance'">
+                <i class="fas fa-dollar-sign stats-card-icon"></i>
+                <div class="stats-card-label">總營收</div>
+                <div class="stats-card-value" id="totalRevenue">$@Model.TotalRevenue.ToString("N0", CultureInfo.GetCultureInfo("zh-TW"))</div>
+                <div class="stats-card-change">
+                    <i class="fas fa-chart-line"></i>
+                    與上月比較
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- 圖表區域 -->
+    <div class="row">
+        <div class="col-xl-8 col-lg-7">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h6 class="chart-title">
+                        <i class="fas fa-chart-line mr-2"></i>營收趨勢
+                    </h6>
+                    
+                </div>
+                <div class="chart-body">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-lg-5">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h6 class="chart-title">
+                        <i class="fas fa-chart-pie mr-2"></i>商品分類佔比
+                    </h6>
+                    
+                </div>
+                <div class="chart-body">
+                 
+                    <div id="categoryChart" style="min-height: 320px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Layout 已載入 Chart.js v3.9.1，移除重複載入避免版本衝突 -->
+    <script src="~/js/main-dashboard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化卡片點擊
+            document.querySelector('.stats-card-orders').addEventListener('click', function() {
+                window.location.href = '/AdminOrders';
+            });
+            document.querySelector('.stats-card-revenue').addEventListener('click', function() {
+                window.location.href = '/AdminFinance';
+            });
+            document.querySelector('.stats-card-members').addEventListener('click', function() {
+                window.location.href = '/AccountManage/MemberInfo';
+            });
+            document.querySelector('.stats-card-products').addEventListener('click', function() {
+                window.location.href = '/Product/Products';
+            });
+            document.querySelector('.stats-card-notifications').addEventListener('click', function() {
+                window.location.href = '/Notification/MainNotification';
+            });
+            document.querySelector('.stats-card-articles').addEventListener('click', function() {
+                window.location.href = '/Blog/PostManagement';
+            });
+            document.querySelector('.stats-card-coupons').addEventListener('click', function() {
+                window.location.href = '/Coupons/CouponsManager';
+            });
+            document.querySelector('.stats-card-ads').addEventListener('click', function() {
+                window.location.href = '/AdManage/Banner';
+            });
+        });
+    </script>
+}

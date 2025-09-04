@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Models</title>
+</head>
+
+<body>
+    <h1>透過List Models API取得所有模型列表</h1>
+    <ul id="container" class="mb-5"></ul>
+
+    <script>
+        // WARNING: Do NOT put OpenAI API keys in frontend code.
+        // This page should call a secure backend proxy which holds the OpenAI API key.
+        // Backend example endpoints (adjust to your implementation):
+        // GET /api/OpenAI/Models  -> returns model list from OpenAI
+        const modellist_ApiUrl = "/api/OpenAI/Models";
+        let container;
+        let modellist = {};
+
+        window.onload = function () {
+            container = document.getElementById("container");
+
+            // Call backend proxy without any API key in the frontend.
+            let request = new Request(modellist_ApiUrl, {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json"
+                }
+            });
+
+            fetch(request)
+                .then(response => {
+                    //檢查response是否ok ?
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error(`發生錯誤: ${response.status}, ${response.statusText}`);
+                    }
+                })
+                .then(modellist => {
+                    let namesArray = modellist.data.map(x => x.id);
+                    console.log(namesArray);
+                    return namesArray
+                })
+                .then(modelnames => {
+                    //container.innerText = JSON.stringify(modelnames);
+
+                    modelnames.forEach((name, index) => {
+                        let li = document.createElement("li");
+                        li.innerText = `${++index}. ${name}`;
+
+                        container.append(li);
+                    });
+                })
+                .catch(ex => {
+                    console.log(ex.response);
+                })
+                .finally(() => {
+
+                });
+
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,128 @@
+﻿@model Team.Backend.Models.ViewModels.LoginViewModel
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <title>登入表單</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            margin:100px;
+            background-color: #033570;
+        }
+
+        .login-form {
+            background: #efe9dd;
+            padding: 20px;
+            max-width: 90%;
+            margin: auto;
+            border: 0.5px groove #033570;
+            border-radius: 10px;
+            box-shadow: 10px 10px 100px rgba(171, 120, 120, 0.1);
+        }
+
+            .login-form label {
+                display: block;
+                margin-bottom: 6px;
+                font-weight: bold;
+                color: #033570;
+            }
+
+            .login-form input[type="email"],
+            .login-form input[type="password"] {
+                width: 100%;
+                padding: 8px 10px;
+                margin-bottom: 14px;
+                border: 1px solid #033570;
+                border-radius: 4px;
+                box-sizing: border-box;
+                font-size: 16px;
+            }
+
+            .login-form button {
+                padding: 12px 15px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: bold;
+                font-size: 16px;
+            }
+
+        .login-btn {
+            background-color: #174b86;
+            color: white;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .forgot-btn {
+            background-color: transparent;
+            color: #033570;
+            text-decoration: underline;
+            width: 100%;
+        }
+
+        .login-form img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            margin-top: 15px;
+        }
+
+        .text-danger{
+            color: #ff3032;
+           
+        }
+    </style>
+</head>
+<body>
+
+    @* 錯誤訊息顯示 *@
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-info">@TempData["Message"]</div>
+    }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        </div>
+    }
+
+    <form asp-controller="Account" asp-action="Login" method="post" class="login-form">
+        <div class="container" style="max-width: 320px; margin: 20px auto 0;">
+            <img src="~/img/logoLogin.png" alt="Logo" style="width: 100%; margin-bottom: 15px;" />
+
+            <label asp-for="Email"></label>
+            <input asp-for="Email" class="form-control" />
+         
+
+            <label asp-for="Password"></label>
+            <input asp-for="Password" type="password" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+            <span asp-validation-for="Password" class="text-danger"></span>
+
+            <button type="submit" class="login-btn">登入</button>
+            <button type="button" class="forgot-btn" onclick="alert('請聯絡超級管理員重設密碼')">忘記密碼?</button>
+
+            <img src="~/img/havegoodday.png" alt="祝福圖" />
+        </div>
+    </form>
+
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        var loginError = '@TempData["LoginError"]';
+        if (loginError && loginError !== "") {
+            alert("輸入錯誤請重新輸入");
+        }
+    </script>
+</body>
+</html>

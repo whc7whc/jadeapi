@@ -1,0 +1,54 @@
+﻿:root {
+    --primary-color: #022c5c;
+    --danger-color: #eb5757;
+    --secondary-color: #e4dcd1;
+    --bg-light: #faf6eb;
+}
+
+.custom-text-color {
+    color: var(--primary-color) !important;
+}
+
+.btn-custom {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+    .btn-custom:hover {
+        background-color: #011a36;
+        border-color: #011a36;
+    }
+
+.btn-ship {
+    background-color: #1e7e34;
+    border-color: #1e7e34;
+    color: #fff;
+}
+
+    .btn-ship:hover {
+        background-color: #155724;
+        border-color: #155724;
+    }
+
+.select-checkbox {
+    transform: scale(1.2);
+    margin-right: 5px;
+}
+
+.table thead th {
+    background-color: var(--primary-color);
+    color: #fff !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: var(--bg-light);
+}
+
+.table-striped > tbody > tr:nth-of-type(even) {
+    background-color: var(--secondary-color);
+}
+
+.table tbody tr:hover {
+    background-color: #d6e0ef;
+}

@@ -1,0 +1,711 @@
+﻿@model IEnumerable<Team.Backend.Models.EfModel.OfficialPost>
+
+@{
+	ViewData["Title"] = "文章管理";
+	Layout = "_Layout";
+}
+
+<style>
+	:root {
+		--primary-color: #022c5c;
+		--danger-color: #eb5757;
+		--secondary-color: #e4dcd1;
+		--bg-light: #faf6eb;
+	}
+
+	/* Custom text color */
+	.custom-text-color {
+		color: var(--primary-color) !important;
+	}
+
+	/* Button styles */
+	.btn-custom {
+		background-color: var(--primary-color);
+		border-color: var(--primary-color);
+		color: #fff;
+	}
+
+		.btn-custom:hover {
+			background-color: #011a36;
+			border-color: #011a36;
+			color: #fff;
+		}
+
+	.btn-approve {
+		background-color: #1e7e34;
+		border-color: #1e7e34;
+		color: #fff;
+	}
+
+		.btn-approve:hover {
+			background-color: #155724;
+			border-color: #155724;
+		}
+
+	.btn-reject {
+		background-color: var(--danger-color);
+		border-color: var(--danger-color);
+		color: #fff;
+	}
+
+		.btn-reject:hover {
+			background-color: #b92d2d;
+			border-color: #b92d2d;
+		}
+
+	/* Checkbox style */
+	.select-checkbox {
+		transform: scale(1.2);
+		margin-right: 5px;
+	}
+
+	/* Table header styles */
+	.table thead th {
+		background-color: var(--primary-color);
+		color: #fff !important;
+	}
+
+	/* Table row styles */
+	.table-striped > tbody > tr:nth-of-type(odd) {
+		background-color: var(--bg-light);
+	}
+
+	.table-striped > tbody > tr:nth-of-type(even) {
+		background-color: var(--secondary-color);
+	}
+
+	.table tbody tr {
+		cursor: pointer;
+		transition: background-color 0.2s;
+	}
+
+		.table tbody tr:hover {
+			background-color: #d6e0ef;
+		}
+
+	/* Card header style */
+	.card-header h6 {
+		color: var(--primary-color) !important;
+	}
+
+	/* Content preview style */
+	.content-preview {
+		max-width: 150px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* Image preview style */
+	.image-preview {
+		width: 50px;
+		height: 50px;
+		object-fit: cover;
+		border-radius: 4px;
+	}
+
+	/* Status badge styles */
+	.status-badge {
+		font-size: 0.875rem;
+		padding: 0.375rem 0.75rem;
+		border-radius: 4px;
+	}
+
+	.status-published {
+		background-color: #d4edda;
+		color: #155724;
+	}
+
+	.status-draft {
+		background-color: #fff3cd;
+		color: #856404;
+	}
+
+	.status-archived {
+		background-color: #f8d7da;
+		color: #721c24;
+	}
+
+	.status-pending {
+		background-color: #ffc107;
+		color: #856404;
+	}
+
+	.status-approved {
+		background-color: #1e7e34;
+		color: #fff;
+	}
+
+	.status-rejected {
+		background-color: var(--danger-color);
+		color: #fff;
+	}
+
+	/* Modal header */
+	.modal-header {
+		background-color: var(--primary-color);
+		color: white;
+	}
+
+	/* Article content */
+	.article-content {
+		max-height: 300px;
+		overflow-y: auto;
+		border: 1px solid #dee2e6;
+		padding: 1rem;
+		background-color: #f8f9fa;
+	}
+
+	/* Article image */
+	.article-image {
+		max-width: 100%;
+		height: auto;
+		border-radius: 0.375rem;
+	}
+
+	/* Batch actions */
+	.batch-actions {
+		display: none;
+		animation: fadeIn 0.3s ease-in;
+	}
+
+		.batch-actions.show {
+			display: block;
+		}
+
+	/* Animation */
+	fadeIn 
+	{
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	
+
+	/* Table responsive */
+	.table-responsive {
+		border-radius: 0.375rem;
+	}
+
+	/* Pagination */
+	.pagination .page-link {
+		color: var(--primary-color);
+	}
+
+	.pagination .page-item.active .page-link {
+		background-color: var(--primary-color);
+		border-color: var(--primary-color);
+	}
+
+	.sortable {
+		cursor: pointer;
+		user-select: none;
+		position: relative;
+		padding-right: 25px !important;
+	}
+
+		.sortable:hover {
+			background-color: rgba(0, 44, 92, 0.15) !important;
+		}
+
+		.sortable::after {
+			content: '\f0dc';
+			font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free';
+			font-weight: 900;
+			position: absolute;
+			right: 8px;
+			top: 50%;
+			transform: translateY(-50%);
+			color: rgba(255, 255, 255, 0.6);
+			font-size: 0.8rem;
+		}
+
+		.sortable.sorting_asc::after {
+			content: '\f0de';
+			color: lightblue !important;
+		}
+
+		.sortable.sorting_desc::after {
+			content: '\f0dd';
+			color: lightblue !important;
+		}
+</style>
+
+<!-- Begin Page Content -->
+<div class="container-fluid">
+
+	<!-- Page Heading -->
+	<h1 class="h3 mb-2 custom-text-color">文章管理</h1>
+	<p class="mb-4">管理您的文章內容，包括新增、編輯和刪除功能。</p>
+
+	<!-- DataTales Example -->
+	<div class="card shadow mb-4">
+		<div class="card-header py-3 d-flex justify-content-between align-items-center">
+			<h6 class="m-0 font-weight-bold">文章列表</h6>
+			<div>
+				<button type="button" class="btn btn-custom btn-sm me-2" onclick="editSelected()">
+					<i class="fas fa-edit"></i> 編輯文章
+				</button>
+				<button type="button" class="btn btn-custom btn-sm me-2" onclick="deleteSelected()">
+					<i class="fas fa-trash"></i> 刪除選取
+				</button>
+				<a href="@Url.Action("AddArticles", "Blog")" class="btn btn-custom btn-sm">
+					<i class="fas fa-plus"></i> 新增文章
+				</a>
+			</div>
+		</div>
+		<div class="card-body">
+			<div class="table-responsive">
+				<div id="dataTable_wrapper" class="dataTables_wrapper dt-bootstrap4">
+					<!-- 控制列：每頁顯示數量和搜索框 -->
+					<div class="row">
+						<div class="col-sm-12 col-md-6">
+							<div class="dataTables_length" id="dataTable_length">
+								<label class="custom-text-color">
+									Show
+									<select name="dataTable_length" aria-controls="dataTable" class="custom-select custom-select-sm form-control form-control-sm">
+										<option value="10">10</option>
+										<option value="25">25</option>
+										<option value="50">50</option>
+										<option value="100">100</option>
+									</select>
+									entries
+								</label>
+							</div>
+						</div>
+						<div class="col-sm-12 col-md-6">
+							<div id="dataTable_filter" class="dataTables_filter">
+								<label class="custom-text-color">
+									Search:
+									<input type="search" id="searchInput" class="form-control form-control-sm" placeholder="搜尋文章..." aria-controls="dataTable">
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- 表格主體 -->
+				<div class="row">
+					<div class="col-sm-12">
+						<table class="table table-bordered dataTable" id="dataTable" width="100%" cellspacing="0" role="grid" aria-describedby="dataTable_info" style="width: 100%;">
+							<thead>
+								<tr role="row">
+									<th class="sorting" tabindex="0" aria-controls="dataTable" rowspan="1" colspan="1" style="width: 50px;">
+										<input type="checkbox" id="selectAll" class="select-checkbox" onchange="toggleSelectAll()">
+									</th>
+									<!-- 🔥 重點：加入 data-column 屬性 -->
+									<th class="sortable sorting_asc" data-column="Id" tabindex="0" aria-controls="dataTable" rowspan="1" colspan="1" aria-sort="ascending" style="width: 60px;">
+										@Html.DisplayNameFor(model => model.Id)
+									</th>
+									<th class="sortable" data-column="Title" tabindex="0" aria-controls="dataTable" rowspan="1" colspan="1" style="width: 200px;">
+										@Html.DisplayNameFor(model => model.Title)
+									</th>
+									<th class="sorting" tabindex="0" aria-controls="dataTable" rowspan="1" colspan="1" style="width: 80px;">
+										@Html.DisplayNameFor(model => model.CoverImage)
+									</th>
+									<th class="sorting" tabindex="0" aria-controls="dataTable" rowspan="1" colspan="1" style="width: 200px;">
+										@Html.DisplayNameFor(model => model.Content)
+									</th>
+									<th class="sortable" data-column="Category" tabindex="0" aria-controls="dataTable" rowspan="1" colspan="1" style="width: 80px;">
+										@Html.DisplayNameFor(model => model.Category)
+									</th>
+									<th class="sortable" data-column="Status" tabindex="0" aria-controls="dataTable" rowspan="1" colspan="1" style="width: 80px;">
+										@Html.DisplayNameFor(model => model.Status)
+									</th>
+									<th class="sortable" data-column="PublishedAt" tabindex="0" aria-controls="dataTable" rowspan="1" colspan="1" style="width: 120px;">
+										@Html.DisplayNameFor(model => model.PublishedAt)
+									</th>
+									<th class="sortable" data-column="CreatedBy" tabindex="0" aria-controls="dataTable" rowspan="1" colspan="1" style="width: 100px;">
+										@Html.DisplayNameFor(model => model.CreatedBy)
+									</th>
+									<th class="sortable" data-column="CreatedAt" tabindex="0" aria-controls="dataTable" rowspan="1" colspan="1" style="width: 120px;">
+										@Html.DisplayNameFor(model => model.CreatedAt)
+									</th>
+									<th class="sortable" data-column="UpdatedAt" tabindex="0" aria-controls="dataTable" rowspan="1" colspan="1" style="width: 120px;">
+										@Html.DisplayNameFor(model => model.UpdatedAt)
+									</th>
+									<th class="sorting" tabindex="0" aria-controls="dataTable" rowspan="1" colspan="1" style="width: 120px;">
+										操作
+									</th>
+								</tr>
+							</thead>
+
+							<!-- 🔥 重點：加入 id="tableBody" -->
+							<tbody id="tableBody">
+								@if (Model != null && Model.Any())
+								{
+									@foreach (var item in Model)
+									{
+										<tr class="@(Model.ToList().IndexOf(item) % 2 == 0 ? "even" : "odd")">
+											<td><input type="checkbox" class="select-checkbox row-checkbox" value="@item.Id"></td>
+											<td class="sorting_1 custom-text-color">@Html.DisplayFor(modelItem => item.Id)</td>
+											<td class="custom-text-color">@Html.DisplayFor(modelItem => item.Title)</td>
+											<td class="custom-text-color">
+												@if (!string.IsNullOrEmpty(item.CoverImage))
+												{
+													<img src="@item.CoverImage" alt="封面圖片" class="image-preview" />
+												}
+												else
+												{
+													<span class="text-muted">無圖片</span>
+												}
+											</td>
+											<td class="custom-text-color">
+												<div class="content-summary">
+													@{
+														string plainText = "";
+														if (!string.IsNullOrEmpty(item.Content))
+														{
+															plainText = System.Text.RegularExpressions.Regex.Replace(item.Content, "<.*?>", "");
+															plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"\s+", " ").Trim();
+														}
+														string summary = plainText.Length > 50 ? plainText.Substring(0, 50) + "..." : plainText;
+														if (string.IsNullOrEmpty(summary)) { summary = "無內容"; }
+													}
+
+													<span title="@plainText">@summary</span>
+
+													@if (item.OfficialPostImages != null && item.OfficialPostImages.Any())
+													{
+														<br>
+
+														<small style="background: #007bff; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.75rem;">
+															📷 @item.OfficialPostImages.Count()
+														</small>
+													}
+												</div>
+											</td>
+											<td class="custom-text-color">@Html.DisplayFor(modelItem => item.Category)</td>
+											<td class="custom-text-color">
+												<span class="status-badge status-@(item.Status?.ToLower())">
+													@Html.DisplayFor(modelItem => item.Status)
+												</span>
+											</td>
+											<td class="custom-text-color">
+												@if (item.PublishedAt.HasValue)
+												{
+													@item.PublishedAt.Value.ToString("yyyy/MM/dd")
+												}
+												else
+												{
+													<span class="text-muted">未發布</span>
+												}
+											</td>
+											<td class="custom-text-color">@Html.DisplayFor(modelItem => item.CreatedBy)</td>
+											<td class="custom-text-color">@item.CreatedAt.ToString("yyyy/MM/dd")</td>
+											<td class="custom-text-color">@item.UpdatedAt?.ToString("yyyy/MM/dd")</td>
+											<td class="custom-text-color">
+												@Html.ActionLink("編輯", "EditArticle", new { id = item.Id }, new { @class = "btn btn-sm btn-outline-primary me-1" })
+												@Html.ActionLink("詳情", "Details", new { id = item.Id }, new { @class = "btn btn-sm btn-outline-info me-1" })
+												<form asp-action="DeleteArticle" asp-controller="Blog" method="post" style="display:inline;">
+													<input type="hidden" name="id" value="@item.Id" />
+													@Html.AntiForgeryToken()
+													<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('確定要刪除這篇文章嗎？');">刪除</button>
+												</form>
+											</td>
+										</tr>
+									}
+								}
+								else
+								{
+									<tr>
+										<td colspan="12" class="text-center custom-text-color">目前沒有文章資料</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+
+						@if (Model != null && Model.Any())
+						{
+							<div class="row">
+								<div class="col-sm-12 col-md-5">
+									<div class="dataTables_info custom-text-color" id="dataTable_info" role="status" aria-live="polite">
+										顯示第 1 到 @Model.Count() 筆，共 @Model.Count() 筆資料
+									</div>
+								</div>
+								<div class="col-sm-12 col-md-7">
+									<div class="dataTables_paginate paging_simple_numbers" id="dataTable_paginate">
+										<ul class="pagination">
+											<li class="paginate_button page-item previous disabled" id="dataTable_previous">
+												<a href="#" aria-controls="dataTable" data-dt-idx="0" tabindex="0" class="page-link">上一頁</a>
+											</li>
+											<li class="paginate_button page-item active">
+												<a href="#" aria-controls="dataTable" data-dt-idx="1" tabindex="0" class="page-link">1</a>
+											</li>
+											<li class="paginate_button page-item next disabled" id="dataTable_next">
+												<a href="#" aria-controls="dataTable" data-dt-idx="2" tabindex="0" class="page-link">下一頁</a>
+											</li>
+										</ul>
+									</div>
+								</div>
+							</div>
+						}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- /.container-fluid -->
+@section Scripts {
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script>
+		console.log("文章管理頁面載入完成!");
+
+		// 🔥 排序功能變數
+		let currentSort = {
+			column: null,
+			direction: 'asc'
+		};
+
+		// 全選/取消全選功能
+		function toggleSelectAll() {
+			const selectAll = document.getElementById('selectAll');
+			const checkboxes = document.querySelectorAll('.row-checkbox');
+
+			checkboxes.forEach(checkbox => {
+				checkbox.checked = selectAll.checked;
+			});
+		}
+
+		// 🔥 DOM 載入完成後執行
+		document.addEventListener('DOMContentLoaded', function() {
+			console.log("DOM 載入完成，初始化排序功能");
+
+			// 監聽個別選取框變化
+			const checkboxes = document.querySelectorAll('.row-checkbox');
+			const selectAll = document.getElementById('selectAll');
+
+			checkboxes.forEach(checkbox => {
+				checkbox.addEventListener('change', function() {
+					const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+					selectAll.checked = checkedCount === checkboxes.length;
+					selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+				});
+			});
+
+			// 🔥 為可排序的表頭添加點擊事件
+			const sortableHeaders = document.querySelectorAll('.sortable');
+			console.log("找到可排序的表頭數量:", sortableHeaders.length);
+
+			sortableHeaders.forEach(header => {
+				header.addEventListener('click', function() {
+					const column = this.getAttribute('data-column');
+					console.log('點擊排序欄位:', column);
+					if (column) {
+						handleSort(column, this);
+					}
+				});
+			});
+
+			// 🔥 搜索功能
+			const searchInput = document.getElementById('searchInput');
+			if (searchInput) {
+				searchInput.addEventListener('input', function() {
+					filterTable(this.value);
+				});
+			}
+		});
+
+		// 🔥 處理排序
+		function handleSort(column, headerElement) {
+			console.log('開始排序:', column, '目前方向:', currentSort.direction);
+
+			// 更新排序方向
+			if (currentSort.column === column) {
+				currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+			} else {
+				currentSort.direction = 'asc';
+			}
+			currentSort.column = column;
+
+			// 更新表頭樣式
+			updateHeaderStyles(headerElement);
+
+			// 執行排序
+			sortTable(column, currentSort.direction);
+		}
+
+		// 🔥 更新表頭樣式
+		function updateHeaderStyles(activeHeader) {
+			// 移除所有表頭的排序樣式
+			document.querySelectorAll('.sortable').forEach(header => {
+				header.classList.remove('sorting_asc', 'sorting_desc');
+			});
+
+			// 為當前排序的表頭添加樣式
+			if (currentSort.direction === 'asc') {
+				activeHeader.classList.add('sorting_asc');
+			} else {
+				activeHeader.classList.add('sorting_desc');
+			}
+		}
+
+		// 🔥 執行表格排序
+		function sortTable(column, direction) {
+			const tbody = document.getElementById('tableBody');
+			if (!tbody) {
+				console.error('找不到 tableBody 元素');
+				return;
+			}
+
+			const rows = Array.from(tbody.querySelectorAll('tr'));
+			console.log('找到', rows.length, '行資料');
+
+			rows.sort((a, b) => {
+				let aValue = getColumnValue(a, column);
+				let bValue = getColumnValue(b, column);
+
+				console.log('比較值:', aValue, 'vs', bValue);
+
+				// 🔥 處理不同類型的資料 - 修正欄位名稱
+				if (column === 'Id') {
+					aValue = parseInt(aValue) || 0;
+					bValue = parseInt(bValue) || 0;
+				} else if (column === 'CreatedAt' || column === 'UpdatedAt' || column === 'PublishedAt') {
+					aValue = new Date(aValue || '1900-01-01');
+					bValue = new Date(bValue || '1900-01-01');
+				} else {
+					aValue = aValue.toLowerCase();
+					bValue = bValue.toLowerCase();
+				}
+
+				if (aValue < bValue) {
+					return direction === 'asc' ? -1 : 1;
+				}
+				if (aValue > bValue) {
+					return direction === 'asc' ? 1 : -1;
+				}
+				return 0;
+			});
+
+			// 重新插入排序後的行
+			rows.forEach(row => tbody.appendChild(row));
+			console.log('排序完成');
+		}
+
+		// 🔥 取得欄位值 - 修正欄位名稱對應
+		function getColumnValue(row, column) {
+			const columnIndexMap = {
+				'Id': 1,
+				'Title': 2,
+				'Category': 5,
+				'Status': 6,
+				'PublishedAt': 7,
+				'CreatedBy': 8,
+				'CreatedAt': 9,
+				'UpdatedAt': 10
+			};
+
+			const cellIndex = columnIndexMap[column];
+			const cell = row.children[cellIndex];
+
+			if (!cell) return '';
+
+			// 特殊處理狀態欄位
+			if (column === 'Status') {
+				const badge = cell.querySelector('.status-badge');
+				return badge ? badge.textContent.trim() : '';
+			}
+
+			// 特殊處理發布日期（可能包含「未發布」）
+			if (column === 'PublishedAt') {
+				const text = cell.textContent.trim();
+				return text === '未發布' ? '' : text;
+			}
+
+			return cell.textContent.trim();
+		}
+
+		// 🔥 搜索功能
+		function filterTable(searchTerm) {
+			const tbody = document.getElementById('tableBody');
+			if (!tbody) return;
+
+			const rows = tbody.querySelectorAll('tr');
+
+			rows.forEach(row => {
+				const text = row.textContent.toLowerCase();
+				const shouldShow = text.includes(searchTerm.toLowerCase());
+				row.style.display = shouldShow ? '' : 'none';
+			});
+
+			// 更新顯示資訊
+			updateDisplayInfo();
+		}
+
+		// 🔥 更新顯示資訊
+		function updateDisplayInfo() {
+			const tbody = document.getElementById('tableBody');
+			if (!tbody) return;
+
+			const visibleRows = tbody.querySelectorAll('tr:not([style*="display: none"])');
+			const totalRows = tbody.querySelectorAll('tr').length;
+
+			const infoElement = document.getElementById('dataTable_info');
+			if (infoElement) {
+				infoElement.textContent = `顯示第 1 到 ${visibleRows.length} 筆，共 ${totalRows} 筆資料`;
+			}
+		}
+
+		// 編輯選取的文章
+		function editSelected() {
+			const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+
+			if (selectedCheckboxes.length === 0) {
+				alert('請至少選取一篇文章');
+				return;
+			}
+
+			if (selectedCheckboxes.length > 1) {
+				alert('請只選取一篇文章進行編輯');
+				return;
+			}
+
+			const articleId = selectedCheckboxes[0].value;
+			window.location.href = '@Url.Action("EditArticle", "Blog")/' + articleId;
+		}
+
+		// 刪除選取的文章
+		function deleteSelected() {
+			const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+
+			if (selectedCheckboxes.length === 0) {
+				alert('請至少選取一篇文章');
+				return;
+			}
+
+			if (selectedCheckboxes.length > 1) {
+				alert('請只選取一篇文章進行刪除');
+				return;
+			}
+
+			const articleId = selectedCheckboxes[0].value;
+			const confirmMessage = `確定要刪除文章 ID ${articleId} 嗎？此操作無法復原。`;
+
+			if (confirm(confirmMessage)) {
+				$.ajax({
+					url: '@Url.Action("DeleteArticle", "Blog")',
+					type: 'POST',
+					data: { id: articleId, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
+					success: function(response) {
+						if (response.success) {
+							window.location.href = '@Url.Action("PostManagement", "Blog")';
+						} else {
+							alert('刪除失敗：' + response.message);
+						}
+					},
+					error: function(xhr, status, error) {
+						alert('刪除時發生錯誤：' + error);
+					}
+				});
+			}
+		}
+	</script>
+}

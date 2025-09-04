@@ -1,0 +1,259 @@
+﻿{
+  "info": {
+    "name": "購物車 API 測試集合",
+    "description": "完整的購物車 API 測試，包含正常流程和錯誤處理測試",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://localhost:7000",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "attributeValueId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "cartItemId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. 取得用戶購物車",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('狀態碼應為 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('回應應包含購物車資料', function () {",
+              "    const responseJson = pm.response.json();",
+              "    pm.expect(responseJson).to.have.property('success', true);",
+              "    pm.expect(responseJson.data).to.have.property('cartId');",
+              "    pm.expect(responseJson.data).to.have.property('items');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/Carts/user/{{userId}}",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "Carts", "user", "{{userId}}" ]
+        }
+      }
+    },
+    {
+      "name": "2. 加入商品到購物車",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('狀態碼應為 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('應成功加入商品', function () {",
+              "    const responseJson = pm.response.json();",
+              "    pm.expect(responseJson).to.have.property('success', true);",
+              "    pm.expect(responseJson.data.items).to.have.length.greaterThan(0);",
+              "    ",
+              "    // 儲存第一個商品的 ID 供後續測試使用",
+              "    if (responseJson.data.items.length > 0) {",
+              "        pm.collectionVariables.set('cartItemId', responseJson.data.items[0].itemId);",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productId\": {{productId}},\n  \"attributeValueId\": {{attributeValueId}},\n  \"quantity\": 2\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/Carts/user/{{userId}}/items",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "Carts", "user", "{{userId}}", "items" ]
+        }
+      }
+    },
+    {
+      "name": "3. 更新商品數量",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('狀態碼應為 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('商品數量應該更新', function () {",
+              "    const responseJson = pm.response.json();",
+              "    pm.expect(responseJson).to.have.property('success', true);",
+              "    const item = responseJson.data.items.find(i => i.itemId == pm.collectionVariables.get('cartItemId'));",
+              "    pm.expect(item.quantity).to.equal(3);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 3\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/Carts/user/{{userId}}/items/{{cartItemId}}",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "Carts", "user", "{{userId}}", "items", "{{cartItemId}}" ]
+        }
+      }
+    },
+    {
+      "name": "4. 驗證購物車",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('狀態碼應為 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('驗證結果應該有效', function () {",
+              "    const responseJson = pm.response.json();",
+              "    pm.expect(responseJson).to.have.property('success', true);",
+              "    pm.expect(responseJson.data).to.have.property('isValid');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/Carts/user/{{userId}}/validate",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "Carts", "user", "{{userId}}", "validate" ]
+        }
+      }
+    },
+    {
+      "name": "5. 移除商品",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('狀態碼應為 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('商品應該被移除', function () {",
+              "    const responseJson = pm.response.json();",
+              "    pm.expect(responseJson).to.have.property('success', true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/Carts/user/{{userId}}/items/{{cartItemId}}",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "Carts", "user", "{{userId}}", "items", "{{cartItemId}}" ]
+        }
+      }
+    },
+    {
+      "name": "6. 清空購物車",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('狀態碼應為 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('購物車應該被清空', function () {",
+              "    const responseJson = pm.response.json();",
+              "    pm.expect(responseJson).to.have.property('success', true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/Carts/user/{{userId}}",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "Carts", "user", "{{userId}}" ]
+        }
+      }
+    }
+  ]
+}

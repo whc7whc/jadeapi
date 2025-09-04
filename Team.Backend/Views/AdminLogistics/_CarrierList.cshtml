@@ -1,0 +1,183 @@
+﻿@using Team.Backend.Models.ViewModels.Logistics
+@model LogisticsIndexVm
+
+<div class="card-body p-0">
+    @if (Model.Items.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>物流商名稱</th>
+                        <th>綠界代碼</th>
+                        <th>聯絡資訊</th>
+                        <th>訂單數量</th>
+                        <th>建立時間</th>
+                        <th style="width: 200px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var carrier in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="carrier-icon me-2">
+                                        @switch (carrier.ECPayCode)
+                                        {
+                                            case "HOME_TCAT":
+                                                <i class="fas fa-truck text-warning" title="黑貓宅急便"></i>
+                                                break;
+                                            case "UNIMART":
+                                                <i class="fas fa-store text-success" title="7-11超商"></i>
+                                                break;
+                                            case "FAMI":
+                                                <i class="fas fa-store text-info" title="全家便利商店"></i>
+                                                break;
+                                            default:
+                                                <i class="fas fa-shipping-fast text-secondary"></i>
+                                                break;
+                                        }
+                                    </div>
+                                    <div>
+                                        <strong>@carrier.Name</strong>
+                                        @if (carrier.IsActive)
+                                        {
+                                            <span class="badge badge-success badge-sm ms-1">啟用</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary badge-sm ms-1">停用</span>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-primary">@carrier.ECPayCode</span>
+                            </td>
+                            <td>
+                                <small class="text-muted">@carrier.Contact</small>
+                            </td>
+                            <td>
+                                <span class="badge badge-info">@carrier.OrderCount</span>
+                            </td>
+                            <td>
+                                <small class="text-muted">@carrier.CreatedAt.ToString("yyyy-MM-dd")</small>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <button type="button" 
+                                            class="btn btn-outline-info btn-sm"
+                                            onclick="showCarrierDetail(@carrier.Id)"
+                                            title="查看詳細">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <a href="@Url.Action("Edit", new { id = carrier.Id })" 
+                                       class="btn btn-outline-primary btn-sm"
+                                       title="編輯">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-outline-@(carrier.IsActive ? "warning" : "success") btn-sm"
+                                            onclick="toggleCarrierStatus(@carrier.Id, '@carrier.Name')"
+                                            title="@(carrier.IsActive ? "停用" : "啟用")">
+                                        <i class="fas fa-@(carrier.IsActive ? "pause" : "play")"></i>
+                                    </button>
+                                    <button type="button" 
+                                            class="btn btn-outline-danger btn-sm"
+                                            onclick="confirmDelete(@carrier.Id, '@carrier.Name', @carrier.OrderCount)"
+                                            title="刪除">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分頁 -->
+        @if (Model.TotalCount > Model.Query.PageSize)
+        {
+            <div class="card-footer">
+                <nav>
+                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                        @{
+                            var totalPages = (int)Math.Ceiling((double)Model.TotalCount / Model.Query.PageSize);
+                            var currentPage = Model.Query.Page;
+                            var startPage = Math.Max(1, currentPage - 2);
+                            var endPage = Math.Min(totalPages, currentPage + 2);
+                        }
+                        
+                        <!-- 第一頁 -->
+                        @if (currentPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="#" onclick="loadPage(1)">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#" onclick="loadPage(@(currentPage - 1))">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        }
+                        
+                        <!-- 頁碼 -->
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                <a class="page-link" href="#" onclick="loadPage(@i)">@i</a>
+                            </li>
+                        }
+                        
+                        <!-- 最後一頁 -->
+                        @if (currentPage < totalPages)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="#" onclick="loadPage(@(currentPage + 1))">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#" onclick="loadPage(@totalPages)">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+                
+                <div class="text-center mt-2">
+                    <small class="text-muted">
+                        第 @currentPage 頁，共 @totalPages 頁 (總計 @Model.TotalCount 筆)
+                    </small>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="card-body text-center py-5">
+            <div class="text-muted">
+                <i class="fas fa-search fa-3x mb-3"></i>
+                <h5>沒有找到物流商</h5>
+                <p>
+                    @if (Model.Query.CarrierId.HasValue && Model.Query.CarrierId.Value > 0)
+                    {
+                        <span>所選物流商沒有資料</span>
+                    }
+                    else
+                    {
+                        <span>目前沒有任何物流商資料</span>
+                    }
+                </p>
+                <a href="@Url.Action("Create")" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 新增第一個物流商
+                </a>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,302 @@
+﻿<!-- 引入 CSS 樣式表 -->
+<link rel="stylesheet" href="~/css/MemberInfo.css" />
+<link href="~/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<style>
+    .input-group-lg > .form-control {
+        font-size: 1.25rem; /* 加大輸入框字體 */
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    .input-group-lg > .btn,
+    .input-group-lg > a.btn {
+        font-size: 1.1rem;
+        padding: 0.5rem 1rem;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
+    .input-group-lg > a.btn {
+        border-left: none;
+        margin-left: 2px;
+    }
+
+    /* 按鈕 hover 效果 */
+    .btn-primary:hover {
+        background-color: #004085;
+        border-color: #004085;
+    }
+
+    .btn-outline-secondary:hover {
+        background-color: #e2e6ea;
+        border-color: #dae0e5;
+    }
+
+</style>
+@model List<MemberFullViewModel>
+<form method="get" asp-controller="AccountManage" asp-action="MemberInfo" class="mb-4">
+    <div class="input-group input-group-lg rounded shadow-sm">
+        <input type="text" name="search" class="form-control border-primary" placeholder="搜尋姓名、信箱、性別、註冊方式..." value="@ViewBag.CurrentSearch" aria-label="搜尋" />
+        <button class="btn btn-primary d-flex align-items-center" type="submit">
+            <i class="bi bi-search me-2"></i> 搜尋
+        </button>
+        <a href="@Url.Action("MemberInfo", "AccountManage")" class="btn btn-outline-secondary d-flex align-items-center" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+            <i class="bi bi-x-lg me-1"></i> 清除
+        </a>
+    </div>
+</form>
+
+@* 分頁邏輯設定 *@
+@{
+    var pageSize = 10; // 每頁顯示筆數
+    var currentPageStr = Context.Request.Query["page"].FirstOrDefault(); // 從 QueryString 讀取當前頁碼字串
+    int currentPage;
+    if (!int.TryParse(currentPageStr, out currentPage) || currentPage < 1)
+    {
+        currentPage = 1; // 預設頁碼為 1
+    }
+    var totalItems = Model.Count; // 總筆數
+    var totalPages = (int)Math.Ceiling((double)totalItems / pageSize); // 總頁數計算
+    var pagedMembers = Model.Skip((currentPage - 1) * pageSize).Take(pageSize).ToList(); // 取得當前頁資料
+}
+
+<!-- 會員清單區域 -->
+<div id="members-tab" class="tab-content active">
+    <div class="table-container">
+        <table id="myDataTable" class="table table-bordered" width="100%" cellspacing="0">
+            <thead>
+                <tr>
+                    <!-- 表頭欄位名稱與寬度設定 -->
+                    <th style="width: 80px; text-align: center;">姓名</th>
+                    <th style="width: 180px; text-align: center;">Email</th>
+                    @* <th style="width: 90px; text-align: center;">帳號</th> *@
+                    <th style="width: 40px; text-align: center;">性別</th>
+                    <th style="width: 60px; text-align: center;">註冊方式</th>
+                    <th style="width: 50px; text-align: center;">狀態</th>
+                    <th style="width: 60px; text-align: center;">會員等級</th>
+                    <th style="width: 110px; text-align: center;">角色權限</th>
+                    <th style="width: 140px; text-align: center;">註冊時間</th>
+                    <th style="width: 180px; text-align: center;">操作</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @* 列出分頁後會員資料 *@
+                @foreach (var item in pagedMembers)
+                {
+                    <tr style="text-align: center">
+                        <td>@item.Profile?.Name</td>
+                        <td>@item.Member.Email</td>
+                        @* <td>@item.Profile?.MemberAccount</td> *@
+                        <td>
+                            @{
+                                // 性別顯示邏輯
+                                var gender = item.Profile?.Gender?.ToLower();
+                                string displayGender = gender == "male" ? "男"
+                                : gender == "female" ? "女"
+                                : "其他";
+                            }
+                            @displayGender
+                        </td>
+                        @{
+                            var registeredVia = item.Member.RegisteredVia?.ToLower() ?? "";
+                        }
+                        <td>
+                            @switch (registeredVia)
+                            {
+                                case "google":
+                                    <span class="badge bg-danger"><i class="bi bi-google"></i> Google</span>
+                                    break;
+              
+                                case "email":
+                                    <span class="badge bg-success"><i class="bi bi-envelope"></i> Email</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary">@item.Member.RegisteredVia</span>
+                                    break;
+                            }
+                    </td>
+                        <td>
+                            <!-- 狀態標籤（啟用/停用） -->
+                            <span class="badge fs-1 px-2 py-2 @(item.Member.IsActive ? "bg-success" : "bg-danger") text-white">
+                                @(item.Member.IsActive ? "啟用" : "停用")
+                            </span>
+                        </td>
+                        <td>
+                            <!-- 會員等級標籤 -->
+                            <span class="badge fs-1 px-2 py-2
+        @(item.Member.Level == 1 ?  "bg-success text-white" :
+          item.Member.Level == 2 ? "bg-secondary text-white" :
+          item.Member.Level == 3 ? "bg-warning text-white" : "bg-dark text-white")">
+                                @(item.Member.Level == 1 ? "銅" :
+                                    item.Member.Level == 2 ? "銀" :
+                                    item.Member.Level == 3 ? "金" : "未知")
+                            </span>
+                        </td>
+                        <td>
+                            <!-- 角色權限標籤，賣家或一般會員 -->
+                            <span class="badge fs-1 px-2 py-2 @(item.Member.Role ? "bg-warning text-white" : "bg-secondary text-white")">
+                                @(item.Member.Role ? "賣家" : "一般會員")
+                            </span>
+                        </td>
+                        <td>@item.Member.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>
+                            <!-- 編輯按鈕，點擊後觸發 showEditMember(id) -->
+                            <button type="button" class="btn btn-primary btn-sm m-1" onclick="showEditMember(@item.Member.Id)">
+                                <i class="bi bi-pencil-square"></i> 編輯
+                            </button>
+
+                            <!-- 檢視按鈕，點擊後觸發 showMemberDetail(id) -->
+                            <button type="button" class="btn btn-secondary  btn-sm m-1" onclick="showMemberDetail(@item.Member.Id)">
+                                <i class="bi bi-eye"></i> 檢視
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- 分頁區塊 -->
+        <nav aria-label="會員分頁" class="mt-3">
+            <ul class="pagination justify-content-center">
+                <!-- 上一頁按鈕 -->
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" href="?page=@(currentPage - 1)&search=@ViewBag.CurrentSearch">上一頁</a>
+                </li>
+
+                <!-- 頁碼按鈕 -->
+                @for (var i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(currentPage == i ? "active" : "")">
+                        <a class="page-link" href="?page=@i&search=@ViewBag.CurrentSearch">@i</a>
+                    </li>
+                }
+
+                <!-- 下一頁按鈕 -->
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    <a class="page-link" href="?page=@(currentPage + 1)&search=@ViewBag.CurrentSearch">下一頁</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- 會員詳細資料 Modal -->
+    <div class="modal fade" id="memberDetailModal" tabindex="-1" aria-labelledby="memberDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" id="memberDetailContent">
+                <!-- 會員詳細資料由 AJAX 載入 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 編輯會員 Modal -->
+    <div class="modal fade" id="editMemberModal" tabindex="-1" aria-labelledby="editMemberModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" id="editMemberContent">
+                <!-- 編輯表單由 AJAX 載入 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- 引入 jQuery, Bootstrap JS 和 DataTables -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+
+    <script>
+        // 初始化 DataTable，但關閉 DataTable 預設的分頁搜尋等功能
+        $(document).ready(function () {
+            $('#myDataTable').DataTable({
+                paging: false,       // 關閉分頁（自己用 Razor 分頁）
+                info: false,
+                searching: false,
+            });
+        });
+    </script>
+
+    <script>
+        // 全選/取消全選功能
+        function toggleSelectAll() {
+            const isChecked = $('#selectAll').is(':checked');
+            $('.member-checkbox').prop('checked', isChecked);
+        }
+
+        // 當部分 checkbox 被手動取消時，自動取消全選的勾選狀態
+        $(document).on('change', '.member-checkbox', function () {
+            const total = $('.member-checkbox').length;
+            const checked = $('.member-checkbox:checked').length;
+            $('#selectAll').prop('checked', total === checked);
+        });
+
+        // 顯示會員詳細資料的函式，透過 AJAX 載入 Modal
+        function showMemberDetail(id) {
+            $.get('/AccountManage/MemberDetail', { id: id }, function (result) {
+                $('#memberDetailContent').html(result);
+                const detailModal = new bootstrap.Modal(document.getElementById('memberDetailModal'));
+                detailModal.show();
+            }).fail(function() {
+                alert('載入會員詳細資料失敗');
+            });
+        }
+
+        // 顯示編輯會員表單的函式，透過 AJAX 載入 Modal
+        function showEditMember(id) {
+            $.get('/AccountManage/EditPartial', { id: id }, function (html) {
+                $('#editMemberContent').html(html);
+                const editModal = new bootstrap.Modal(document.getElementById('editMemberModal'));
+                editModal.show();
+                bindEditFormSubmit(); // 綁定表單送出事件
+            }).fail(function() {
+                alert('該會員尚未填寫基本資料，請通知對方完成資料填寫後再進行編輯。');
+            });
+        }
+
+        // 綁定編輯表單送出事件，用 AJAX 送出表單資料
+        function bindEditFormSubmit() {
+            $('#editMemberForm').off('submit').on('submit', function (e) {
+                e.preventDefault();
+                var form = $(this);
+                var formData = form.serialize();
+
+                // 表單送出時，按鈕顯示「儲存中...」且不可點擊
+                var submitBtn = form.find('button[type="submit"]');
+                var originalText = submitBtn.text();
+                submitBtn.prop('disabled', true).text('儲存中...');
+
+                $.ajax({
+                    url: '/AccountManage/EditPartial',
+                    type: 'POST',
+                    data: formData,
+                    success: function (result) {
+                        if (result.success) {
+                            // 編輯成功，關閉 Modal 並重整頁面
+                            bootstrap.Modal.getInstance(document.getElementById('editMemberModal')).hide();
+                            location.reload();
+                        } else {
+                            // 驗證失敗，重新載入表單並顯示錯誤訊息
+                            $('#editMemberContent').html(result);
+                            bindEditFormSubmit(); // 重新綁定事件
+                        }
+                    },
+                    error: function () {
+                        alert('儲存失敗，請稍後再試');
+                        submitBtn.prop('disabled', false).text(originalText);
+                    }
+                });
+            });
+        }
+
+        // Modal 隱藏時，清除 Modal 內容（避免殘留）
+        $('#editMemberModal').on('hidden.bs.modal', function () {
+            $('#editMemberContent').empty();
+        });
+
+        $('#memberDetailModal').on('hidden.bs.modal', function () {
+            $('#memberDetailContent').empty();
+        });
+    </script>
+}

@@ -1,0 +1,96 @@
+﻿@using Team.Backend.Models.ViewModels
+@model RegisterViewModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <title>設定密碼完成註冊</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            margin: 100px;
+            background-color: #033570;
+        }
+
+        .register-form {
+            background: #efe9dd;
+            padding: 20px;
+            max-width: 90%;
+            max-width: 320px;
+            margin: auto;
+            border: 0.5px groove #033570;
+            border-radius: 10px;
+            box-shadow: 10px 10px 100px rgba(171, 120, 120, 0.1);
+        }
+
+            .register-form label {
+                display: block;
+                margin-bottom: 6px;
+                font-weight: bold;
+                color: #033570;
+            }
+
+            .register-form input[type="email"],
+            .register-form input[type="password"] {
+                width: 100%;
+                padding: 8px 10px;
+                margin-bottom: 14px;
+                border: 1px solid #033570;
+                border-radius: 4px;
+                box-sizing: border-box;
+                font-size: 16px;
+            }
+
+            .register-form input[readonly] {
+                background-color: #dcdcdc;
+                cursor: not-allowed;
+            }
+
+            .register-form button {
+                padding: 12px 15px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: bold;
+                font-size: 16px;
+                background-color: #174b86;
+                color: white;
+                width: 100%;
+                margin-top: 10px;
+            }
+
+        .text-danger {
+            color: #ff3032;
+        }
+    </style>
+</head>
+<body>
+
+    <h2 style="color: #efe9dd; text-align:center; margin-bottom: 20px;">設定密碼</h2>
+
+    <form asp-action="Register" method="post" class="register-form">
+        <input type="hidden" asp-for="Token" />
+
+        <label asp-for="Email"></label>
+        <input asp-for="Email" readonly />
+
+        <label asp-for="Password"></label>
+        <input asp-for="Password" type="password" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+
+        <label asp-for="ConfirmPassword"></label>
+        <input asp-for="ConfirmPassword" type="password" />
+        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+
+        <button type="submit">完成</button>
+    </form>
+
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+</body>
+</html>

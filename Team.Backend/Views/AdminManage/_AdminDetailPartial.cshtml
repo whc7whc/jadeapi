@@ -1,0 +1,68 @@
+﻿
+
+        @model Team.Backend.Models.ViewModels.AdminFullViewModel
+
+<!-- Modal 標題列 -->
+<div class="modal-header">
+    <h5 class="modal-title" id="adminDetailModalLabel">管理員詳細資料 - @Model.UserEmail</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+        <i class="fas fa-times text-danger fs-4 text-white"></i>
+    </button>
+</div>
+
+<div class="modal-body">
+    <!-- 基本資料 -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header">
+            <h6 class="mb-0">基本資料</h6>
+        </div>
+        <div class="card-body">
+            <!-- Email -->
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Email</div>
+                <div class="col-sm-8">@Model.UserEmail</div>
+            </div>
+            <!-- 角色名稱 -->
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">角色名稱</div>
+                <div class="col-sm-8">@Model.RoleName</div>
+            </div>
+            <!-- 描述 -->
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">描述</div>
+                <div class="col-sm-8">@Model.UserDescription</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 帳戶狀態 -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header">
+            <h6 class="mb-0">帳戶狀態</h6>
+        </div>
+        <div class="card-body">
+            <!-- 狀態 -->
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">狀態</div>
+                <div class="col-sm-8">@(Model.UserIsActive ? "啟用" : "停用")</div>
+            </div>
+            <!-- 最後登入 -->
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">上次登入時間</div>
+                <div class="col-sm-8">
+                   <p> @Model.UserLastLoginAt</p>
+                </div>
+            </div>
+            <!-- 管理員 ID -->
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">管理員 ID</div>
+                <div class="col-sm-8">@Model.UserId</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 底部 -->
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+</div>

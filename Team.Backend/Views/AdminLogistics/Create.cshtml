@@ -1,0 +1,148 @@
+﻿@using Team.Backend.Models.ViewModels.Logistics
+@model CarrierCreateVm
+
+@{
+    ViewData["Title"] = "新增物流商";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="m-0">
+        <i class="fas fa-plus text-success"></i>
+        新增物流商
+    </h3>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> 返回列表
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-truck"></i>
+                    物流商基本資訊
+                </h5>
+            </div>
+            
+            <form asp-action="Create" method="post">
+                <div class="card-body">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            請檢查輸入的資料是否正確
+                        </div>
+                    }
+                    
+                    <div class="form-group mb-3">
+                        <label asp-for="Name" class="form-label">
+                            物流商名稱 <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Name" class="form-control" placeholder="例：黑貓宅急便">
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label asp-for="Contact" class="form-label">
+                            聯絡資訊 <span class="text-danger">*</span>
+                        </label>
+                        <textarea asp-for="Contact" class="form-control" rows="3" 
+                                  placeholder="例：客服專線: 0800-200-777&#10;服務時間: 週一至週五 09:00-18:00"></textarea>
+                        <span asp-validation-for="Contact" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            可包含客服電話、服務時間、官網等聯絡資訊
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> 儲存
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> 取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    支援的物流方式
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex align-items-center">
+                        <i class="fas fa-truck text-warning me-2"></i>
+                        <div>
+                            <strong>黑貓宅急便</strong>
+                            <br>
+                            <small class="text-muted">到府配送服務</small>
+                        </div>
+                    </div>
+                    <div class="list-group-item d-flex align-items-center">
+                        <i class="fas fa-store text-success me-2"></i>
+                        <div>
+                            <strong>7-ELEVEN</strong>
+                            <br>
+                            <small class="text-muted">超商取貨付款</small>
+                        </div>
+                    </div>
+                    <div class="list-group-item d-flex align-items-center">
+                        <i class="fas fa-store text-info me-2"></i>
+                        <div>
+                            <strong>全家便利商店</strong>
+                            <br>
+                            <small class="text-muted">超商取貨付款</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-lightbulb"></i>
+                    <strong>提示：</strong>
+                    <br>
+                    系統會根據物流商名稱自動判斷對應的綠界代碼：
+                    <ul class="mb-0 mt-2">
+                        <li>名稱包含「黑貓」→ HOME_TCAT</li>
+                        <li>名稱包含「7-11」或「7-ELEVEN」→ UNIMART</li>
+                        <li>名稱包含「全家」→ FAMI</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cog"></i>
+                    設定說明
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <i class="fas fa-check text-success"></i>
+                    新增後將自動同步到前台
+                </p>
+                <p class="mb-2">
+                    <i class="fas fa-check text-success"></i>
+                    支援運費計算和地區限制
+                </p>
+                <p class="mb-0">
+                    <i class="fas fa-check text-success"></i>
+                    提供配送狀態追蹤
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

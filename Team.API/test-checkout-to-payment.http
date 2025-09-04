@@ -1,0 +1,48 @@
+### 測試：從結帳結果建立綠界付款
+### 這個檔案展示如何使用新的 create-from-checkout API
+
+### 1. 先建立一個模擬的結帳結果
+POST {{baseUrl}}/api/payments/create-from-checkout
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "orderNumber": "ORD00000001",
+  "totalAmount": 1299,
+  "orderStatus": "pending",
+  "paymentStatus": "pending", 
+  "createdAt": "2025-08-29T10:30:00"
+}
+
+### 2. 如果您已經有 CheckoutController 的結帳結果，可以直接使用
+### 例如：從 CheckoutController.CreateOrder 或 QuickCheckout 得到的回應
+POST {{baseUrl}}/api/payments/create-from-checkout
+Content-Type: application/json
+
+{
+  "orderId": 2,
+  "orderNumber": "ORD00000002", 
+  "totalAmount": 2599,
+  "orderStatus": "confirmed",
+  "paymentStatus": "pending",
+  "createdAt": "2025-08-29T11:00:00"
+}
+
+### 3. 測試原有的 ecpay-checkout API（直接用訂單ID）
+GET {{baseUrl}}/api/payments/ecpay-checkout/1
+
+### 4. 測試快速測試 API（不需要實際訂單）
+GET {{baseUrl}}/api/payments/quick-test
+
+### 變數設定
+@baseUrl = https://localhost:7025
+# 或者使用 ngrok 網址
+# @baseUrl = https://1993eea1f57b.ngrok-free.app
+
+### 使用說明：
+### 1. create-from-checkout：接收 CheckoutController 的結帳結果，轉換為綠界付款
+### 2. ecpay-checkout/{orderId}：直接用訂單ID建立付款（需要訂單存在於資料庫）
+### 3. quick-test：快速測試用，不需要實際訂單資料
+
+### 整合流程建議：
+### 前端 -> CheckoutController.CreateOrder -> 得到結帳結果 -> PaymentsController.CreateFromCheckout -> 跳轉綠界

@@ -1,0 +1,226 @@
+﻿@model MemberFullViewModel
+
+<!-- Modal 標題列：顯示會員名稱與關閉按鈕 -->
+<div class="modal-header">
+    <h5 class="modal-title" id="memberDetailModalLabel">會員詳細資料 - @Model.Profile?.Name</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+        <i class="fas fa-times text-danger fs-4 text-white"></i>
+    </button>
+</div>
+
+
+<div class="card mb-4 shadow-sm">
+    <div class="card-header">
+        <h6 class="mb-0">基本資料</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- 左側放照片 -->
+            <div class="col-md-3 text-center">
+                @if (!string.IsNullOrEmpty(Model.Profile?.ProfileImg))
+                {
+                    <img src="@Url.Content(Model.Profile.ProfileImg)" alt="會員照片" class="img-fluid rounded mb-3" />
+                }
+                else
+                {
+                    <img src="@Url.Content("~/img/member.jpg")" alt="預設會員照片" class="img-fluid rounded mb-3" />
+                }
+            </div>
+
+            <!-- 右側放基本資料 -->
+            <div class="col-md-9">
+                <!-- 姓名 -->
+                <div class="row mb-2">
+                    <div class="col-sm-4 fw-bold">姓名</div>
+                    <div class="col-sm-8">@Model.Profile?.Name</div>
+                </div>
+                <!-- Email -->
+                <div class="row mb-2">
+                    <div class="col-sm-4 fw-bold">Email</div>
+                    <div class="col-sm-8">@Model.Member.Email</div>
+                </div>
+                <!-- 性別 -->
+                <div class="row mb-2">
+                    <div class="col-sm-4 fw-bold">性別</div>
+                    <div class="col-sm-8">
+                        @{
+                            var gender = Model.Profile?.Gender?.ToLower();
+                            string displayGender = gender == "male" ? "男"
+                            : gender == "female" ? "女"
+                            : "其他";
+                        }
+                        @displayGender
+                    </div>
+                </div>
+                <!-- 生日 -->
+                <div class="row mb-2">
+                    <div class="col-sm-4 fw-bold">生日</div>
+                    <div class="col-sm-8">
+                        @(Model.Profile != null ? Model.Profile.BirthDate.ToString("yyyy-MM-dd") : "")
+                    </div>
+                </div>
+                <!-- 註冊時間 -->
+                <div class="row mb-2">
+                    <div class="col-sm-4 fw-bold">註冊時間</div>
+                    <div class="col-sm-8">@Model.Member.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
+                </div>
+                <!-- 註冊方式 -->
+                <div class="row mb-2">
+                    <div class="col-sm-4 fw-bold">註冊方式</div>
+                    <div class="col-sm-8">@Model.Member.RegisteredVia</div>
+                </div>
+                <!-- 狀態 (啟用/停用) -->
+                <div class="row mb-2">
+                    <div class="col-sm-4 fw-bold">狀態</div>
+                    <div class="col-sm-8">@(Model.Member.IsActive ? "啟用" : "停用")</div>
+                </div>
+                <!-- Email驗證狀態 -->
+                <div class="row mb-2">
+                    <div class="col-sm-4 fw-bold">Email驗證</div>
+                    <div class="col-sm-8">
+                        @Html.Raw(Model.Member.IsEmailVerified ? "<span>已驗證</span>" : "<span>未驗證</span>")
+                    </div>
+                </div>
+                <!-- 會員等級 (金銀銅等) -->
+                <div class="row mb-2">
+                    <div class="col-sm-4 fw-bold">會員等級</div>
+                    <div class="col-sm-8">
+                        @{
+                            var level = Model.Member?.Level;
+                            string displayLevel = level switch
+                            {
+                                1 => "銅",
+                                2 => "銀",
+                                3 => "金",
+                                _ => "其他"
+                            };
+                        }
+                        @displayLevel
+                    </div>
+                </div>
+                <!-- 角色 (一般會員 / 賣家) -->
+                <div class="row mb-2">
+                    <div class="col-sm-4 fw-bold">角色</div>
+                    <div class="col-sm-8">
+                        @(Model.Member?.Role == true ? "一般會員" : "賣家")
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- 地址資訊區塊 -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header  text-white">
+            <h6 class="mb-0">地址資訊</h6>
+        </div>
+        <div class="card-body">
+            @if (Model.Addresses != null && Model.Addresses.Any())
+            {
+                <div class="row">
+                    <!-- 遍歷所有地址，並顯示詳細資訊 -->
+                    @foreach (var addr in Model.Addresses)
+                    {
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 border-secondary">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        收件人：@addr.RecipientName
+                                        @if (addr.IsDefault)
+                                        {
+                                            <span class="badge bg-success text-white ms-2">預設地址</span>
+                                        }
+                                    </h6>
+                                    <p class="mb-1"><strong>電話：</strong>@addr.PhoneNumber</p>
+                                    <p class="mb-1"><strong>郵遞區號：</strong>@addr.ZipCode</p>
+                                    <p class="mb-1"><strong>城市：</strong>@addr.City</p>
+                                    <p class="mb-1"><strong>區域：</strong>@addr.District</p>
+                                    <p class="mb-1"><strong>街道地址：</strong>@addr.StreetAddress</p>
+                                    <p class="mb-1"><small>建立時間：@addr.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small></p>
+                                    <p class="mb-0"><small>更新時間：@addr.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</small></p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <!-- 無地址資料時顯示提示 -->
+                <p>沒有地址資料</p>
+            }
+        </div>
+    </div>
+
+    <!-- 預設地址區塊 -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header text-dark">
+            <h6 class="mb-0">預設地址</h6>
+        </div>
+        <div class="card-body">
+            @if (Model.Addresses != null && Model.Addresses.Any())
+            {
+                <!-- 找出並顯示預設地址 -->
+                var defaultAddr = Model.Addresses.FirstOrDefault(a => a.IsDefault);
+                if (defaultAddr != null)
+                {
+                    <p><strong>@($"{defaultAddr.ZipCode} {defaultAddr.City} {defaultAddr.District} {defaultAddr.StreetAddress}")</strong></p>
+                }
+                else
+                {
+                    <p>沒有設定預設地址</p>
+                }
+            }
+            else
+            {
+                <p>沒有地址資料</p>
+            }
+        </div>
+    </div>
+
+    <!-- 最後登入資訊區塊 -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header text-white">
+            <h6 class="mb-0">最後登入資訊</h6>
+        </div>
+        <div class="card-body">
+            @{
+                // 找出最新的登入紀錄
+                var lastSession = Model.Sessions != null && Model.Sessions.Any()
+                ? Model.Sessions.OrderByDescending(s =>
+                {
+                    var prop = s.GetType().GetProperty("LoginTime");
+                    if (prop != null)
+                    {
+                        var val = prop.GetValue(s);
+                        if (val is DateTime dt) return dt;
+                    }
+                    return DateTime.MinValue;
+                }).FirstOrDefault()
+                : null;
+            }
+            @if (lastSession != null)
+            {
+                // 讀取登入時間、IP、裝置資訊
+                var loginTimeProp = lastSession.GetType().GetProperty("LoginTime");
+                var ipProp = lastSession.GetType().GetProperty("IpAddress");
+                var deviceProp = lastSession.GetType().GetProperty("DeviceInfo");
+
+                <p><strong>登入時間：</strong>@(loginTimeProp?.GetValue(lastSession) is DateTime dt ? dt.ToString("yyyy-MM-dd HH:mm:ss") : "未知")</p>
+                <p><strong>IP 位址：</strong>@(ipProp?.GetValue(lastSession)?.ToString() ?? "未知")</p>
+                <p><strong>裝置資訊：</strong>@(deviceProp?.GetValue(lastSession)?.ToString() ?? "未知")</p>
+            }
+            else
+            {
+                <!-- 無登入紀錄時顯示提示 -->
+                <p>沒有登入資訊</p>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal 底部關閉按鈕 -->
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+</div>

@@ -1,0 +1,266 @@
+﻿@using Team.Backend.Models.ViewModels.Logistics
+@model LogisticsDiagnosticsViewModel
+
+@{
+    ViewData["Title"] = "物流管理診斷";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- 標題 -->
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h2 class="text-primary">
+                    <i class="fas fa-stethoscope"></i>
+                    物流管理系統診斷
+                </h2>
+                <div>
+                    <a href="/AdminLogistics" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> 返回物流管理
+                    </a>
+                </div>
+            </div>
+
+            <!-- 訊息顯示 -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["InfoMessage"] != null)
+            {
+                <div class="alert alert-info alert-dismissible fade show">
+                    @TempData["InfoMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- 診斷結果 -->
+            <div class="row">
+                <!-- 測試結果 -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-check-circle"></i>
+                                診斷測試結果
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.Tests.Any())
+                            {
+                                <ul class="list-unstyled">
+                                    @foreach (var test in Model.Tests)
+                                    {
+                                        <li class="mb-2">
+                                            <span class="fw-bold">@test</span>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <p class="text-muted">沒有測試結果</p>
+                            }
+
+                            <!-- 快速修復按鈕 -->
+                            @if (Model.CanConnect && Model.CarrierCount == 0)
+                            {
+                                <div class="mt-3 p-3 bg-light rounded">
+                                    <h6 class="text-warning">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        沒有物流商資料
+                                    </h6>
+                                    <p class="small text-muted">
+                                        資料庫連接正常，但沒有找到任何物流商。點擊下方按鈕插入測試資料。
+                                    </p>
+                                    <form method="post" action="/Debug/Logistics/QuickFix">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-warning">
+                                            <i class="fas fa-magic"></i>
+                                            快速修復 - 插入測試資料
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+
+                            <!-- 系統狀態總結 -->
+                            <div class="mt-3 p-3 rounded @(Model.CanConnect && Model.CarrierCount > 0 ? "bg-success text-white" : "bg-danger text-white")">
+                                <h6 class="mb-1">
+                                    <i class="fas fa-@(Model.CanConnect && Model.CarrierCount > 0 ? "check-circle" : "times-circle")"></i>
+                                    系統狀態: @(Model.CanConnect && Model.CarrierCount > 0 ? "正常" : "異常")
+                                </h6>
+                                <small>
+                                    @if (Model.CanConnect && Model.CarrierCount > 0)
+                                    {
+                                        @($"物流管理系統運作正常，共有 {Model.CarrierCount} 個物流商")
+                                    }
+                                    else if (!Model.CanConnect)
+                                    {
+                                        @("資料庫連接失敗，請檢查連接字串和 SQL Server 狀態")
+                                    }
+                                    else
+                                    {
+                                        @("資料庫正常但缺少物流商資料，建議使用快速修復功能")
+                                    }
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 物流商列表 -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-truck"></i>
+                                當前物流商列表 (@Model.CarrierCount 筆)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.Carriers.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>名稱</th>
+                                                <th>狀態</th>
+                                                <th>建立時間</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var carrier in Model.Carriers)
+                                            {
+                                                <tr>
+                                                    <td>@carrier.Id</td>
+                                                    <td>
+                                                        <strong>@carrier.Name</strong>
+                                                        <br>
+                                                        <small class="text-muted">@carrier.Contact</small>
+                                                    </td>
+                                                    <td>
+                                                        @if (carrier.IsActive)
+                                                        {
+                                                            <span class="badge bg-success">啟用</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-secondary">停用</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <small>@carrier.CreatedAt.ToString("yyyy-MM-dd")</small>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p>沒有找到任何物流商資料</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 錯誤詳細資訊 -->
+            @if (!string.IsNullOrEmpty(Model.Error))
+            {
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card border-danger">
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-bug"></i>
+                                    錯誤詳細資訊
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <pre class="bg-light p-3 rounded"><code>@Model.Error</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- 操作指南 -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-lightbulb"></i>
+                                下一步建議
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (!Model.CanConnect)
+                            {
+                                <div class="alert alert-danger">
+                                    <h6><i class="fas fa-database"></i> 資料庫連接問題</h6>
+                                    <ul>
+                                        <li>檢查 SQL Server 是否啟動</li>
+                                        <li>確認 appsettings.json 中的連接字串正確</li>
+                                        <li>檢查資料庫 'JadePej' 是否存在</li>
+                                        <li>確認有權限訪問資料庫</li>
+                                    </ul>
+                                </div>
+                            }
+                            else if (Model.CarrierCount == 0)
+                            {
+                                <div class="alert alert-warning">
+                                    <h6><i class="fas fa-exclamation-triangle"></i> 沒有物流商資料</h6>
+                                    <ul>
+                                        <li>使用上方的「快速修復」按鈕插入測試資料</li>
+                                        <li>或手動在 <code>/AdminLogistics/Create</code> 新增物流商</li>
+                                        <li>或執行 SQL: <code>Team.Backend\Scripts\CreateLogisticsTestData.sql</code></li>
+                                    </ul>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-success">
+                                    <h6><i class="fas fa-check-circle"></i> 系統正常</h6>
+                                    <p>物流管理系統運作正常！您現在可以：</p>
+                                    <ul>
+                                        <li><a href="/AdminLogistics">訪問物流管理頁面</a></li>
+                                        <li><a href="/AdminLogistics/Statistics">查看統計報表</a></li>
+                                        <li><a href="/AdminLogistics/Settings">配置運費設定</a></li>
+                                    </ul>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 自動隱藏成功訊息
+        setTimeout(function() {
+            $('.alert').fadeOut();
+        }, 5000);
+    </script>
+}

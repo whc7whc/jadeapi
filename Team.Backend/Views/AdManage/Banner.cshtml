@@ -1,0 +1,375 @@
+﻿@model IEnumerable<Team.Backend.Models.EfModel.Banner>
+@{
+    ViewData["Title"] = "Banner 管理";
+}
+
+<style>
+    :root {
+        --primary-color: #022c5c;
+        --danger-color: #eb5757;
+        --secondary-color: #e4dcd1;
+        --bg-light: #faf6eb;
+    }
+
+    /* Custom text color */
+    .custom-text-color {
+        color: var(--primary-color) !important;
+    }
+
+    /* Button styles */
+    .btn-custom {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: #fff;
+    }
+
+        .btn-custom:hover {
+            background-color: #011a36;
+            border-color: #011a36;
+            color: #fff;
+        }
+
+    .btn-approve {
+        background-color: #1e7e34;
+        border-color: #1e7e34;
+        color: #fff;
+    }
+
+        .btn-approve:hover {
+            background-color: #155724;
+            border-color: #155724;
+        }
+
+    .btn-reject {
+        background-color: var(--danger-color);
+        border-color: var(--danger-color);
+        color: #fff;
+    }
+
+        .btn-reject:hover {
+            background-color: #b92d2d;
+            border-color: #b92d2d;
+        }
+
+    /* Table header styles */
+    .table thead th {
+        background-color: var(--primary-color);
+        color: #fff !important;
+    }
+
+    /* Table row styles */
+    .table-striped > tbody > tr:nth-of-type(odd) {
+        background-color: var(--bg-light);
+    }
+
+    .table-striped > tbody > tr:nth-of-type(even) {
+        background-color: var(--secondary-color);
+    }
+
+    .table tbody tr {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .table tbody tr:hover {
+            background-color: #d6e0ef;
+        }
+
+    /* Card header style */
+    .card-header h6 {
+        color: var(--primary-color) !important;
+    }
+
+    /* Image preview style */
+    .image-preview {
+        width: 60px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+
+    /* Status badge styles */
+    .status-badge {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 4px;
+    }
+
+    .status-active {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .status-inactive {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    /* Table responsive */
+    .table-responsive {
+        border-radius: 0.375rem;
+    }
+
+    /* Sortable columns */
+    .sortable {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        padding-right: 25px !important;
+    }
+
+        .sortable:hover {
+            background-color: rgba(0, 44, 92, 0.15) !important;
+        }
+
+        .sortable::after {
+            content: '\f0dc';
+            font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+        }
+
+    .content-preview {
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-2 custom-text-color">橫幅廣告管理</h1>
+    <p class="mb-4">管理您的橫幅廣告，包括新增、編輯和刪除功能。</p>
+
+    <!-- 顯示成功/錯誤訊息 -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <a href="@Url.Action("Create")" class="btn btn-custom btn-sm">
+                        <i class="fas fa-plus me-1"></i>新增 Banner
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" width="60">ID</th>
+                                    <th class="sortable" width="100">頁面</th>
+                                    <th class="sortable" width="100">位置</th>
+                                    <th width="150">標題</th>
+                                    <th width="80">圖片</th>
+                                    <th class="sortable" width="80">排序</th>
+                                    <th class="sortable" width="80">狀態</th>
+                                    <th class="sortable" width="110">開始時間</th>
+                                    <th class="sortable" width="110">結束時間</th>
+                                    <th width="80">點擊數</th>
+                                    <th width="150">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.Any())
+                                {
+                                    @foreach (var item in Model)
+                                    {
+                                        <tr>
+                                            <td class="align-middle">
+                                                <strong class="custom-text-color">@item.Id</strong>
+                                            </td>
+                                            <td class="align-middle">
+                                                <span class="badge" style="background-color: var(--primary-color); color: white;">
+                                                    @item.Page
+                                                </span>
+                                            </td>
+                                            <td class="align-middle">@item.Position</td>
+                                            <td class="align-middle">
+                                                <div class="content-preview" title="@item.Title">
+                                                    <strong>@item.Title</strong>
+                                                    @if (!string.IsNullOrEmpty(item.Description))
+                                                    {
+                                                        <br>
+                                                        <small class="text-muted">@item.Description</small>
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                                {
+                                                    <img src="@item.ImageUrl" alt="Banner" class="image-preview">
+                                                }
+                                                else
+                                                {
+                                                    <div class="text-muted">
+                                                        <i class="fas fa-image fa-2x"></i>
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                <span class="badge bg-secondary">@item.DisplayOrder</span>
+                                            </td>
+                                            <td class="align-middle">
+                                                @if (item.IsActive == true)
+                                                {
+                                                    <span class="status-badge status-active">
+                                                        <i class="fas fa-check-circle me-1"></i>啟用
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="status-badge status-inactive">
+                                                        <i class="fas fa-times-circle me-1"></i>停用
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td class="align-middle">
+                                                @if (item.StartTime.HasValue)
+                                                {
+                                                    <small class="custom-text-color">
+                                                        @item.StartTime.Value.ToString("yyyy/MM/dd")
+                                                    </small>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td class="align-middle">
+                                                @if (item.EndTime.HasValue)
+                                                {
+                                                    <small class="custom-text-color">
+                                                        @item.EndTime.Value.ToString("yyyy/MM/dd")
+                                                    </small>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                <span class="badge" style="background-color: var(--primary-color); color: white;">
+                                                    @(item.ClickCount ?? 0)
+                                                </span>
+                                            </td>
+                                            <td class="align-middle">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="@Url.Action("Details", new { id = item.Id })"
+                                                       class="btn btn-outline-info btn-sm"
+                                                       title="查看詳情">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="@Url.Action("Edit", new { id = item.Id })"
+                                                       class="btn btn-custom btn-sm"
+                                                       title="編輯">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+
+                                                    <!-- 修正後的刪除按鈕 - 使用表單POST請求 -->
+                                                    <form method="post"
+                                                          action="@Url.Action("Delete", new { id = item.Id })"
+                                                          style="display: inline-block;"
+                                                          onsubmit="return confirmDelete('@item.Title')">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit"
+                                                                class="btn btn-reject btn-sm"
+                                                                title="刪除">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="11" class="text-center py-5">
+                                            <div class="text-muted">
+                                                <i class="fas fa-image fa-3x mb-3" style="color: var(--primary-color); opacity: 0.3;"></i>
+                                                <h5 class="custom-text-color">目前沒有任何 Banner</h5>
+                                                <p class="mb-3">開始建立您的第一個 Banner 來展示重要內容</p>
+                                                <a href="@Url.Action("Create")" class="btn btn-custom">
+                                                    <i class="fas fa-plus me-1"></i>立即新增 Banner
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 確認刪除函數
+    function confirmDelete(title) {
+        return confirm(`確定要刪除 Banner "${title}" 嗎？\n\n此操作無法復原！`);
+    }
+
+    // 排序功能
+    document.querySelectorAll('.sortable').forEach(header => {
+        header.addEventListener('click', function() {
+            // 移除其他列的排序樣式
+            document.querySelectorAll('.sortable').forEach(h => {
+                if (h !== this) {
+                    h.classList.remove('sorting_asc', 'sorting_desc');
+                }
+            });
+
+            // 切換當前列的排序
+            if (this.classList.contains('sorting_asc')) {
+                this.classList.remove('sorting_asc');
+                this.classList.add('sorting_desc');
+            } else if (this.classList.contains('sorting_desc')) {
+                this.classList.remove('sorting_desc');
+            } else {
+                this.classList.add('sorting_asc');
+            }
+        });
+    });
+
+    // 點擊行的效果
+    document.querySelectorAll('.table tbody tr').forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (!e.target.closest('.btn-group') && !e.target.closest('form')) {
+                // 可以在這裡添加點擊行的邏輯，比如跳轉到詳情頁
+                console.log('點擊了行:', this);
+            }
+        });
+    });
+
+    // 自動隱藏成功訊息
+    setTimeout(function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        });
+    }, 5000); // 5秒後自動關閉
+</script>

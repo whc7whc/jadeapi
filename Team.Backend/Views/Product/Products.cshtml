@@ -1,0 +1,471 @@
+﻿@using Team.Backend.Models.ViewModels
+@model List<ProductViewModel>
+
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+    <meta charset="utf-8">
+    <title>商品庫存管理</title>
+    <!-- Custom fonts for this template -->
+    <link href="~/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <!-- Custom styles for this template -->
+    <link href="~/css/sb-admin-2.min.css" rel="stylesheet">
+    <!-- Custom styles for this page -->
+    <link href="~/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+
+    <!-- 🔥 新增：自訂樣式 -->
+    <style>
+        .product-image { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #dee2e6; cursor: pointer; transition: transform 0.2s ease; }
+        .product-image:hover { transform: scale(1.1); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .no-image { width: 60px; height: 60px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 12px; text-align: center; }
+        .stock-status { font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .stock-normal { background-color: #d4edda; color: #155724; }
+        .stock-low { background-color: #fff3cd; color: #856404; }
+        .stock-out { background-color: #f8d7da; color: #721c24; }
+        .status-active { background-color: #e0f3ff; color: #0c5460; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .status-inactive { background-color: #fbeaea; color: #7f1d1d; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .product-name { font-weight: 500; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .price-display { font-weight: 600; color: #e74a3b; }
+        .image-modal { display: none; position: fixed; z-index: 1000; padding-top: 100px; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); }
+        .modal-image { margin: auto; display: block; max-width: 80%; max-height: 80%; border-radius: 8px; }
+        .close-modal { position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; }
+        .close-modal:hover { color: #bbb; }
+    </style>
+</head>
+<body id="page-top">
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+            <!-- Main Content -->
+            <div id="content">
+                <div class="container-fluid">
+                    <!-- Page Heading -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">
+                            <i class="fas fa-boxes mr-2"></i>商品庫存管理
+                        </h1>
+                        <!-- 🔥 新增：統計資訊 -->
+                        <div class="d-none d-sm-inline-block">
+                            <span class="badge badge-primary mr-2">
+                                <i class="fas fa-box"></i> 總商品數: @Model.Count
+                            </span>
+                            <span class="badge badge-success mr-2">
+                                <i class="fas fa-check-circle"></i> 有庫存: @Model.Count(p => p.Stock > 0)
+                            </span>
+                            <span class="badge badge-warning">
+                                <i class="fas fa-exclamation-triangle"></i> 缺貨: @Model.Count(p => p.Stock <= 0)
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- DataTales Example -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                <i class="fas fa-table mr-2"></i>商品詳細資料表
+                            </h6>
+                            <!-- 🔥 新增：快速操作按鈕 -->
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshData()">
+                                    <i class="fas fa-sync-alt"></i> 重新整理
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="exportData()">
+                                    <i class="fas fa-download"></i> 匯出 Excel
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- 🔥 新增：篩選器 -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label for="stockFilter">庫存狀態篩選:</label>
+                                    <select id="stockFilter" class="form-control form-control-sm">
+                                        <option value="">全部</option>
+                                        <option value="正常">正常</option>
+                                        <option value="低庫存">低庫存</option>
+                                        <option value="缺貨">缺貨</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="sellerFilter">供應商篩選:</label>
+                                    <select id="sellerFilter" class="form-control form-control-sm">
+                                        <option value="">全部供應商</option>
+                                        @foreach (var seller in Model.Select(p => p.SellerName).Distinct().OrderBy(s => s))
+                                        {
+                                            <option value="@seller">@seller</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th style="width: 80px;">商品圖片</th>
+                                            <th style="width: 120px;">SKU</th>
+                                            <th style="min-width: 200px;">商品名稱</th>
+                                            <th style="width: 100px;">價格</th>
+                                            <th style="width: 80px;">庫存數量</th>
+                                            <th style="width: 100px;">安全庫存量</th>
+                                            <th style="width: 100px;">庫存狀態</th>
+                                            <th style="width: 120px;">商品狀態</th>
+                                            <th style="width: 150px;">供應商資訊</th>
+                                            <th style="width: 120px;">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var product in Model)
+                                        {
+                                            <tr data-product-id="@product.Id">
+                                                <!-- 🔥 修復：商品圖片顯示 -->
+                                                <td class="text-center">
+                                                    @if (!string.IsNullOrEmpty(product.ImageUrl))
+                                                    {
+                                                        <img src="@product.ImageUrl"
+                                                             alt="@product.Name"
+                                                             class="product-image"
+                                                             onclick="showImageModal('@product.ImageUrl', '@product.Name')"
+                                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                                        <div class="no-image" style="display: none;">
+                                                            <span>載入失敗</span>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="no-image">
+                                                            <span>無圖片</span>
+                                                        </div>
+                                                    }
+                                                </td>
+
+                                                <!-- SKU -->
+                                                <td>
+                                                    <code class="text-muted">@(string.IsNullOrEmpty(product.Sku) ? "未設定" : product.Sku)</code>
+                                                </td>
+
+                                                <!-- 🔥 改善：商品名稱顯示 -->
+                                                <td>
+                                                    <div class="product-name" title="@product.Name">
+                                                        <strong>@product.Name</strong>
+                                                    </div>
+                                                    <!-- 🔥 新增：商品 ID 顯示 -->
+                                                    <small class="text-muted">ID: @product.Id</small>
+                                                </td>
+
+                                                <!-- 🔥 改善：價格顯示 -->
+                                                <td>
+                                                    <span class="price-display">
+                                                        NT$ @product.Price.ToString("N0")
+                                                    </span>
+                                                </td>
+
+                                                <!-- 🔥 改善：庫存數量顯示 -->
+                                                <td class="text-center">
+                                                    <span class="badge @(product.Stock > 0 ? "badge-success" : "badge-danger") badge-pill">
+                                                        @product.Stock
+                                                    </span>
+                                                </td>
+
+                                                <!-- 安全庫存量 -->
+                                                <td class="text-center">
+                                                    <span class="text-muted">@product.SafetyStock</span>
+                                                </td>
+
+                                                <!-- 🔥 改善：庫存狀態顯示 -->
+                                                <td class="text-center">
+                                                    @{
+                                                        var statusClass = "";
+                                                        var statusIcon = "";
+
+                                                        if (product.StockStatus == "正常")
+                                                        {
+                                                            statusClass = "stock-normal";
+                                                            statusIcon = "fas fa-check-circle";
+                                                        }
+                                                        else if (product.StockStatus == "低庫存")
+                                                        {
+                                                            statusClass = "stock-low";
+                                                            statusIcon = "fas fa-exclamation-triangle";
+                                                        }
+                                                        else
+                                                        {
+                                                            statusClass = "stock-out";
+                                                            statusIcon = "fas fa-times-circle";
+                                                        }
+                                                    }
+                                                    <span class="stock-status @statusClass">
+                                                        <i class="@statusIcon mr-1"></i>@product.StockStatus
+                                                    </span>
+                                                </td>
+
+                                                <!-- 🔥 新增：商品狀態顯示（上架/下架） -->
+                                                <td class="text-center">
+                                                    @{
+
+                                                        var toggleIcon = product.IsActive ? "fas fa-toggle-on" : "fas fa-toggle-off";
+                                                        var toggleClass = product.IsActive ? "status-active" : "status-inactive";
+                                                    }
+                                                    <span class="@toggleClass" title="點擊切換狀態" onclick="toggleProductStatus(@product.Id, this)">
+                                                        <i class="@toggleIcon mr-1"></i>@(product.IsActive ? "上架" : "下架")
+                                                    </span>
+                                                </td>
+
+                                                <!-- 供應商資訊 -->
+                                                <td>
+                                                    <span class="badge badge-info">@product.SellerName</span>
+                                                </td>
+
+                                                <!-- 🔥 新增：操作按鈕 -->
+                                                <td class="text-center">
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                                                onclick="viewProduct(@product.Id)" title="查看詳情">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-success"
+                                                                onclick="editStock(@product.Id, @product.Stock)" title="編輯庫存">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                                onclick="confirmDeleteProduct(@product.Id, '@product.Name')" title="刪除商品">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End of Main Content -->
+        </div>
+        <!-- End of Content Wrapper -->
+    </div>
+    <!-- End of Page Wrapper -->
+    <!-- 🔥 新增：圖片預覽模態框 -->
+    <div id="imageModal" class="image-modal">
+        <span class="close-modal" onclick="closeImageModal()">&times;</span>
+        <img class="modal-image" id="modalImage" alt="商品圖片">
+    </div>
+
+    <!-- 🔥 新增：庫存編輯模態框 -->
+    <div class="modal fade" id="stockEditModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">編輯庫存</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="stockEditForm">
+                        <input type="hidden" id="editProductId" />
+                        <div class="form-group">
+                            <label for="newStock">新庫存數量:</label>
+                            <input type="number" class="form-control" id="newStock" min="0" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="stockNote">備註:</label>
+                            <textarea class="form-control" id="stockNote" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="updateStock()">更新庫存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 新增：刪除確認 Modal -->
+    <div class="modal fade" id="deleteProductModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">確認刪除商品</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>確定要刪除此商品嗎？此操作無法復原。</p>
+                    <div class="alert alert-warning" id="deleteProductName"></div>
+                    <input type="hidden" id="deleteProductId" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteProduct()">確定刪除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="~/vendor/jquery/jquery.min.js"></script>
+    <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- Core plugin JavaScript-->
+    <script src="~/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <!-- Custom scripts for all pages-->
+    <script src="~/js/sb-admin-2.min.js"></script>
+    <!-- Page level plugins -->
+    <script src="~/vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+
+    <!-- 🔥 新增：自訂 JavaScript -->
+    <script>
+    const FRONTEND_BASE_URL = 'http://localhost:8084';
+
+        $(document).ready(function() {
+            var table = $('#dataTable').DataTable({
+                "language": { "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Chinese-traditional.json" },
+                "pageLength": 25,
+                "order": [[ 2, "asc" ]],
+                "columnDefs": [ { "orderable": false, "targets": [0, 9] } ]
+            });
+            $('#stockFilter').on('change', function() { table.column(6).search(this.value).draw(); });
+            $('#sellerFilter').on('change', function() { table.column(8).search(this.value).draw(); });
+        });
+
+        // 🔥 圖片預覽功能
+        function showImageModal(imageUrl, productName) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+
+            modal.style.display = "block";
+            modalImg.src = imageUrl;
+            modalImg.alt = productName;
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').style.display = "none";
+        }
+
+        // 點擊模態框背景關閉
+        document.getElementById('imageModal').onclick = function(event) {
+            if (event.target === this) {
+                closeImageModal();
+            }
+        }
+
+        // 🔥 切換商品狀態
+        async function toggleProductStatus(productId, el) {
+            try {
+                const response = await fetch('/Product/ToggleStatus', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `id=${productId}` });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const result = await response.json();
+                if (result.success) {
+                    const isActive = result.isActive === true;
+                    el.classList.remove('status-active', 'status-inactive');
+                    el.classList.add(isActive ? 'status-active' : 'status-inactive');
+                    el.title = isActive ? '點擊下架' : '點擊上架';
+                    const icon = el.querySelector('i');
+                    if (icon) { icon.className = isActive ? 'fas fa-toggle-on mr-1' : 'fas fa-toggle-off mr-1'; }
+                    el.lastChild.nodeValue = isActive ? '上架' : '下架';
+                } else { alert(result.message || '更新失敗'); }
+            } catch (err) { console.error(err); alert('切換狀態失敗，請稍後再試'); }
+        }
+
+        // 🔥 刪除相關
+        function confirmDeleteProduct(productId, productName) {
+            $('#deleteProductId').val(productId);
+            $('#deleteProductName').text(`商品：${productName}`);
+            $('#deleteProductModal').modal('show');
+        }
+
+        async function deleteProduct() {
+            const productId = $('#deleteProductId').val();
+            if (!productId) return;
+            try {
+                const response = await fetch('/Product/DeletePermanent', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `id=${productId}` });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const result = await response.json();
+                if (result.success) {
+                    $('#deleteProductModal').modal('hide');
+                    // location.reload();
+                    // 改用 DataTable API 移除列
+                    const table = $('#dataTable').DataTable();
+                    table.row($(`tr[data-product-id="${productId}"]`)).remove().draw();
+                } else {
+                    alert(result.message || '刪除失敗');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('刪除失敗，請稍後再試');
+            }
+        }
+
+        function editStock(productId, currentStock) {
+            document.getElementById('editProductId').value = productId;
+            document.getElementById('newStock').value = currentStock;
+            document.getElementById('stockNote').value = '';
+            $('#stockEditModal').modal('show');
+        }
+        function updateStock() {
+            const productId = document.getElementById('editProductId').value;
+            const newStock = document.getElementById('newStock').value;
+            const note = document.getElementById('stockNote').value;
+            if (!newStock || newStock < 0) { alert('請輸入有效的庫存數量'); return; }
+            alert(`商品 ID ${productId} 的庫存將更新為 ${newStock}`);
+            $('#stockEditModal').modal('hide');
+        }
+
+        // 🔥 查看商品詳情
+        function viewProduct(productId) {
+            if (productId === undefined || productId === null) { alert('找不到商品 ID'); return; }
+            const url = `${FRONTEND_BASE_URL}/product/${productId}`;
+            window.open(url, '_blank');
+        }
+        // 🔥 重新整理資料
+        function refreshData() { location.reload(); }
+        // 🔥 匯出功能（匯出目前篩選出的資料）
+        async function exportData() {
+            try {
+                const table = $('#dataTable').DataTable();
+                // 取得符合搜尋的所有列的 DOM 節點
+                const nodes = table.rows({ search: 'applied' }).nodes();
+                const ids = [];
+                $(nodes).each(function () {
+                    const id = parseInt($(this).data('product-id'));
+                    if (!isNaN(id)) ids.push(id);
+                });
+                if (ids.length === 0) { alert('目前沒有可匯出的資料'); return; }
+
+                const response = await fetch('/Product/Export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids })
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `products_${new Date().toISOString().slice(0,19).replace(/[-:T]/g,'')}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } catch (err) {
+                console.error(err);
+                alert('匯出失敗，請稍後再試');
+            }
+        }
+        // ESC 鍵關閉圖片預覽
+        document.addEventListener('keydown', function(event) { if (event.key === 'Escape') { closeImageModal(); } });
+    </script>
+</body>
+</html>

@@ -1,0 +1,665 @@
+﻿@model Team.Backend.Models.EfModel.Banner
+@{
+    ViewData["Title"] = "廣告詳細資訊 - " + Model.Title;
+}
+
+<style>
+    :root {
+        --primary-color: #022c5c;
+        --danger-color: #eb5757;
+        --secondary-color: #e4dcd1;
+        --bg-light: #faf6eb;
+        --success-color: #28a745;
+        --warning-color: #ffc107;
+    }
+
+    .custom-text-color {
+        color: var(--primary-color) !important;
+    }
+
+    .btn-custom {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: #fff;
+    }
+
+        .btn-custom:hover {
+            background-color: #011a36;
+            border-color: #011a36;
+            color: #fff;
+        }
+
+    .detail-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .detail-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #034a7b 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .detail-body {
+        padding: 2rem;
+    }
+
+    .info-row {
+        display: flex;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+    .info-label {
+        font-weight: 600;
+        color: var(--primary-color);
+        width: 140px;
+        flex-shrink: 0;
+    }
+
+    .info-value {
+        flex: 1;
+        margin-left: 1rem;
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+    }
+
+    .status-active {
+        background: var(--success-color);
+        color: white;
+    }
+
+    .status-inactive {
+        background: #6c757d;
+        color: white;
+    }
+
+    .status-expired {
+        background: var(--danger-color);
+        color: white;
+    }
+
+    .status-scheduled {
+        background: var(--warning-color);
+        color: #333;
+    }
+
+    .banner-preview {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+
+        .banner-preview:hover {
+            transform: scale(1.02);
+        }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+
+    .stat-card {
+        background: #011a36;
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 2rem;
+        justify-content: center;
+    }
+
+    .timeline-item {
+        display: flex;
+        align-items: center;
+        margin: 0.5rem 0;
+    }
+
+    .timeline-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        color: white;
+        font-size: 0.8rem;
+    }
+
+    .timeline-success {
+        background: var(--success-color);
+    }
+
+    .timeline-danger {
+        background: var(--danger-color);
+    }
+
+    .timeline-warning {
+        background: var(--warning-color);
+    }
+
+    .preview-modal .modal-content {
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+   
+        .detail-header
+
+    {
+        padding: 1.5rem;
+    }
+
+    .detail-body {
+        padding: 1.5rem;
+    }
+
+    .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .info-label {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-value {
+        margin-left: 0;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- 返回按鈕 -->
+    <div class="mb-3">
+        <a href="@Url.Action("Splash")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>返回廣告列表
+        </a>
+    </div>
+
+    <!-- 成功/錯誤訊息 -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- 廣告詳細資訊卡片 -->
+    <div class="detail-card">
+        <div class="detail-header">
+            <h1 class="mb-3">
+                <i class="fas fa-window-restore me-2"></i>
+                @Model.Title
+            </h1>
+            <div class="d-flex justify-content-center align-items-center gap-3">
+                @{
+                    var now = DateTime.Now;
+                    var isActive = Model.IsActive == true;
+                    var isInTimeRange = Model.StartTime == null || Model.StartTime <= now;
+                    var isNotExpired = Model.EndTime == null || Model.EndTime >= now;
+                    var isCurrentlyRunning = isActive && isInTimeRange && isNotExpired;
+                }
+
+                @if (isCurrentlyRunning)
+                {
+                    <span class="status-badge status-active">
+                        <i class="fas fa-circle fa-xs me-1"></i>進行中
+                    </span>
+                }
+                else if (!isActive)
+                {
+                    <span class="status-badge status-inactive">
+                        <i class="fas fa-pause fa-xs me-1"></i>已停用
+                    </span>
+                }
+                else if (!isNotExpired)
+                {
+                    <span class="status-badge status-expired">
+                        <i class="fas fa-clock fa-xs me-1"></i>已過期
+                    </span>
+                }
+                else if (!isInTimeRange)
+                {
+                    <span class="status-badge status-scheduled">
+                        <i class="fas fa-calendar fa-xs me-1"></i>已排程
+                    </span>
+                }
+            </div>
+        </div>
+
+        <div class="detail-body">
+            <!-- 統計數據 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">@(Model.ClickCount ?? 0)</div>
+                    <div class="stat-label">總點擊次數</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">@Model.DisplayOrder</div>
+                    <div class="stat-label">顯示順序</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">
+                        @if (Model.StartTime.HasValue && Model.EndTime.HasValue)
+                        {
+                            @((Model.EndTime.Value - Model.StartTime.Value).Days + "天")
+                        }
+                        else
+                        {
+                            @("永久")
+                        }
+                    </div>
+                    <div class="stat-label">投放期間</div>
+                </div>
+            </div>
+
+            <!-- 基本資訊 -->
+            <div class="row">
+                <div class="col-md-8">
+                    <h4 class="custom-text-color mb-3">
+                        <i class="fas fa-info-circle me-2"></i>基本資訊
+                    </h4>
+
+                    <div class="info-row">
+                        <div class="info-label">廣告ID:</div>
+                        <div class="info-value">
+                            <span class="badge bg-primary">#@Model.Id</span>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-label">觸發頁面:</div>
+                        <div class="info-value">
+                            <span class="badge bg-info">@Model.Page</span>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-label">彈窗位置:</div>
+                        <div class="info-value">
+                            <span class="badge bg-warning">@Model.Position</span>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-label">連結網址:</div>
+                        <div class="info-value">
+                            @if (!string.IsNullOrEmpty(Model.LinkUrl))
+                            {
+                                <a href="@Model.LinkUrl" target="_blank" class="text-decoration-none">
+                                    @Model.LinkUrl <i class="fas fa-external-link-alt ms-1"></i>
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">未設定</span>
+                            }
+                        </div>
+                    </div>
+
+                    @if (Model.ProductId.HasValue)
+                    {
+                        <div class="info-row">
+                            <div class="info-label">關聯商品:</div>
+                            <div class="info-value">
+                                <span class="badge bg-success">產品 ID: @Model.ProductId</span>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="info-row">
+                        <div class="info-label">內容描述:</div>
+                        <div class="info-value">
+                            @if (!string.IsNullOrEmpty(Model.Description))
+                            {
+                                <div class="border rounded p-3 bg-light">
+                                    @Model.Description
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted">無內容描述</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 廣告圖片預覽 -->
+                <div class="col-md-4">
+                    <h4 class="custom-text-color mb-3">
+                        <i class="fas fa-image me-2"></i>廣告預覽
+                    </h4>
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <div class="text-center">
+                            <img src="@Model.ImageUrl"
+                                 class="banner-preview"
+                                 alt="@Model.Title"
+                                 onclick="showImageModal('@Model.ImageUrl', '@Model.Title')">
+                            <p class="text-muted mt-2 small">點擊圖片查看大圖</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center p-5 bg-light border rounded">
+                            <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">未上傳廣告圖片</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- 時間軸資訊 -->
+            <div class="mt-4">
+                <h4 class="custom-text-color mb-3">
+                    <i class="fas fa-clock me-2"></i>時間軸
+                </h4>
+
+                <div class="timeline-item">
+                    <div class="timeline-icon timeline-success">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <div>
+                        <strong>建立時間:</strong>
+                        @if (Model.CreatedAt.HasValue)
+                        {
+                            @Model.CreatedAt.Value.ToString("yyyy年MM月dd日 HH:mm:ss")
+                        }
+                        else
+                        {
+                            <span class="text-muted">未知</span>
+                        }
+                        @if (Model.CreatedBy.HasValue)
+                        {
+                            <span class="text-muted">(建立者 ID: @Model.CreatedBy)</span>
+                        }
+                    </div>
+                </div>
+
+                @if (Model.UpdatedAt.HasValue)
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-icon timeline-warning">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div>
+                            <strong>最後更新:</strong>
+                            @Model.UpdatedAt.Value.ToString("yyyy年MM月dd日 HH:mm:ss")
+                        </div>
+                    </div>
+                }
+
+                @if (Model.StartTime.HasValue)
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-icon timeline-success">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <div>
+                            <strong>開始時間:</strong>
+                            @Model.StartTime.Value.ToString("yyyy年MM月dd日 HH:mm:ss")
+                        </div>
+                    </div>
+                }
+
+                @if (Model.EndTime.HasValue)
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-icon timeline-danger">
+                            <i class="fas fa-stop"></i>
+                        </div>
+                        <div>
+                            <strong>結束時間:</strong>
+                            @Model.EndTime.Value.ToString("yyyy年MM月dd日 HH:mm:ss")
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- 操作按鈕 -->
+            <div class="action-buttons">
+                <a href="@Url.Action("EditSplash", new { id = Model.Id })"
+                   class="btn btn-warning">
+                    <i class="fas fa-edit me-2"></i>編輯廣告
+                </a>
+
+                <button type="button"
+                        class="btn btn-success"
+                        onclick="previewBanner(@Model.Id, '@Model.Title', '@Model.Description', '@Model.ImageUrl')">
+                    <i class="fas fa-eye me-2"></i>預覽效果
+                </button>
+
+                <button type="button"
+                        class="btn @(Model.IsActive == true ? "btn-secondary" : "btn-primary")"
+                        onclick="toggleStatus(@Model.Id, @(Model.IsActive == true ? "true" : "false"))">
+                    <i class="fas fa-power-off me-2"></i>
+                    @(Model.IsActive == true ? "停用廣告" : "啟用廣告")
+                </button>
+
+                <form asp-action="Delete" method="post" class="d-inline">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit"
+                            class="btn btn-danger"
+                            onclick="return confirm('確定要刪除「@Model.Title」嗎？\n此操作無法復原！')">
+                        <i class="fas fa-trash me-2"></i>刪除廣告
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 圖片預覽 Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalTitle">廣告圖片預覽</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" style="max-height: 70vh; border-radius: 8px;">
+            </div>
+            <div class="modal-footer">
+                <a id="downloadLink" href="" download class="btn btn-primary">
+                    <i class="fas fa-download me-2"></i>下載圖片
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 廣告預覽 Modal -->
+<div class="modal fade preview-modal" id="bannerPreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: var(--primary-color); color: white;">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>廣告效果預覽
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="bannerPreviewContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    console.log('Splash Details 頁面載入完成');
+
+    // 顯示圖片 Modal
+    function showImageModal(imageUrl, title) {
+        console.log('顯示圖片 Modal:', title);
+        const modalImage = document.getElementById('modalImage');
+        const modalTitle = document.getElementById('imageModalTitle');
+        const downloadLink = document.getElementById('downloadLink');
+
+        modalImage.src = imageUrl;
+        modalTitle.textContent = title + ' - 圖片預覽';
+        downloadLink.href = imageUrl;
+
+        new bootstrap.Modal(document.getElementById('imageModal')).show();
+    }
+
+    // 切換廣告狀態
+    async function toggleStatus(id, currentStatus) {
+        console.log('切換狀態:', id, currentStatus);
+
+        const action = currentStatus === 'true' ? '停用' : '啟用';
+        if (!confirm(`確定要${action}這個廣告嗎？`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/Splash/ToggleStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: `id=${id}`
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('響應結果:', result);
+
+            if (result.success) {
+                alert(result.message || `廣告${action}成功`);
+                location.reload();
+            } else {
+                alert('操作失敗：' + (result.message || '未知錯誤'));
+            }
+        } catch (error) {
+            console.error('toggleStatus 錯誤:', error);
+            alert('操作失敗，請重試：' + error.message);
+        }
+    }
+
+    // 預覽廣告效果
+    function previewBanner(id, title, description, imageUrl) {
+        console.log('預覽廣告效果:', id, title);
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        const previewHtml = `
+            <div style="background: rgba(0,0,0,0.6); padding: 20px; min-height: 500px; display: flex; align-items: center; justify-content: center;">
+                <div class="card" style="max-width: 700px; width: 100%; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.4); animation: modalFadeIn 0.3s ease-out;">
+                    <div class="row g-0">
+                        ${imageUrl ? `
+                            <div class="col-md-6">
+                                <img src="${escapeHtml(imageUrl)}"
+                                     style="width: 100%; height: 350px; object-fit: cover;"
+                                     onerror="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.classList.remove('col-md-6'); this.parentElement.nextElementSibling.classList.add('col-12');">
+                            </div>
+                        ` : ''}
+                        <div class="col-md-${imageUrl ? '6' : '12'}">
+                            <div class="card-body" style="background-color: var(--primary-color); color: white; height: 350px; display: flex; flex-direction: column; justify-content: center; padding: 2.5rem;">
+                                <h3 class="mb-4" style="font-weight: 700; font-size: 1.8rem;">${escapeHtml(title || '無標題')}</h3>
+                                <p class="mb-4" style="opacity: 0.95; line-height: 1.8; font-size: 1.1rem;">${escapeHtml(description || '這是一個精彩的廣告內容，點擊了解更多詳情！')}</p>
+                                <button class="btn btn-light align-self-start" style="color: var(--primary-color); font-weight: 600; padding: 12px 28px; border-radius: 4px; border: 2px solid white;"
+                                        onmouseover="this.style.backgroundColor='var(--secondary-color)'"
+                                        onmouseout="this.style.backgroundColor='white'">
+                                    <i class="fas fa-external-link-alt me-2"></i>立即查看
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <style>
+     modalFadeIn {
+                    from { opacity: 0; transform: scale(0.9); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+            </style>
+        `;
+
+        const previewElement = document.getElementById('bannerPreviewContent');
+        if (previewElement) {
+            previewElement.innerHTML = previewHtml;
+            new bootstrap.Modal(document.getElementById('bannerPreviewModal')).show();
+        } else {
+            console.error('找不到 bannerPreviewContent 元素');
+        }
+    }
+
+    // 頁面載入完成後初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM 載入完成');
+
+        // 檢查必要元素
+        const requiredElements = [
+            'bannerPreviewModal',
+            'bannerPreviewContent',
+            'imageModal',
+            'modalImage',
+            'imageModalTitle',
+            'downloadLink'
+        ];
+
+        requiredElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (!element) {
+                console.warn(`找不到元素: ${id}`);
+            }
+        });
+    });
+</script>

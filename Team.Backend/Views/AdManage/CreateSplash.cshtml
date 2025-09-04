@@ -1,0 +1,573 @@
+﻿@model Team.Backend.Models.ViewModels.CreatePopupBannerViewModel
+@{
+    ViewData["Title"] = Model?.IsEdit == true ? "編輯彈出式廣告" : "新增彈出式廣告";
+}
+
+<style>
+    :root {
+        --primary-color: #022c5c;
+        --danger-color: #eb5757;
+        --secondary-color: #e4dcd1;
+        --bg-light: #faf6eb;
+    }
+
+    .custom-text-color {
+        color: var(--primary-color) !important;
+    }
+
+    .btn-custom {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: #fff;
+    }
+
+        .btn-custom:hover {
+            background-color: #011a36;
+            border-color: #011a36;
+            color: #fff;
+        }
+
+    .btn-secondary-custom {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+        color: var(--primary-color);
+    }
+
+        .btn-secondary-custom:hover {
+            background-color: #d6c8b8;
+            border-color: #d6c8b8;
+            color: var(--primary-color);
+        }
+
+    .form-label {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(2, 44, 92, 0.25);
+    }
+
+    .card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .card-header {
+        background-color: var(--bg-light);
+        border-bottom: 2px solid var(--primary-color);
+    }
+
+        .card-header h5 {
+            color: var(--primary-color) !important;
+            margin: 0;
+        }
+
+    .form-section {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .section-title {
+        color: var(--primary-color);
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+
+        .section-title i {
+            margin-right: 8px;
+            width: 20px;
+        }
+
+    .preview-container {
+        background: var(--bg-light);
+        border: 2px dashed var(--secondary-color);
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .preview-container.has-image {
+            border: none;
+            background: white;
+        }
+
+    .required::after {
+        content: ' *';
+        color: var(--danger-color);
+    }
+
+    .form-text {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+
+    .alert-info {
+        background-color: rgba(2, 44, 92, 0.1);
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    .text-danger {
+        color: var(--danger-color) !important;
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="custom-text-color">
+                    <i class="fas fa-plus-circle me-2"></i>@ViewData["Title"]
+                </h2>
+                <a href="@Url.Action("Splash")" class="btn btn-secondary-custom">
+                    <i class="fas fa-arrow-left me-1"></i>返回列表
+                </a>
+            </div>
+
+            <!-- 成功/錯誤訊息 -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- 提示訊息 -->
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>提示：</strong>彈出式廣告會在用戶進入網站時自動顯示，請確保內容吸引人且不會過於打擾用戶體驗。
+            </div>
+
+            <!-- MVC 表單 - 使用正確的 form 標籤 -->
+            @using (Html.BeginForm(Model?.IsEdit == true ? "EditSplash" : "CreateSplash", "Splash", FormMethod.Post, new { id = "popupBannerForm" }))
+            {
+                @Html.AntiForgeryToken()
+
+                if (Model?.IsEdit == true)
+                {
+                    @Html.HiddenFor(m => m.Id)
+                }
+
+                <div class="row">
+                    <!-- 左側：表單 -->
+                    <div class="col-lg-8">
+                        <!-- 基本資訊 -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-info-circle"></i>基本資訊
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label class="form-label required">廣告標題</label>
+                                        @Html.TextBoxFor(m => m.Title, new { @class = "form-control", @id = "titleInput", @maxlength = "100", @required = "required" })
+                                        @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger" })
+                                        <div class="form-text">建議不超過20個字元，將作為彈窗的主標題</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">狀態</label>
+                                        @Html.DropDownListFor(m => m.IsActive, new SelectList(new[]
+                                                 {
+                                    new { Value = "true", Text = "啟用" },
+                                    new { Value = "false", Text = "停用" }
+                                    }, "Value", "Text", Model?.IsActive.ToString() ?? "true"), new { @class = "form-select", @id = "isActiveSelect" })
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label required">廣告內容</label>
+                                @Html.TextAreaFor(m => m.Description, new { @class = "form-control", @id = "descriptionInput", @rows = "3", @maxlength = "500", @required = "required" })
+                                @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                                <div class="form-text">詳細的廣告內容描述，建議不超過100個字元</div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">按鈕文字</label>
+                                        <input type="text" class="form-control" id="buttonTextPreview" placeholder="立即查看" maxlength="20" readonly />
+                                        <div class="form-text">按鈕文字會根據連結自動判斷（購買/註冊/查看）</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">連結網址</label>
+                                        @Html.TextBoxFor(m => m.LinkUrl, new { @class = "form-control", @id = "linkUrlInput", @type = "url", @placeholder = "https://example.com" })
+                                        @Html.ValidationMessageFor(m => m.LinkUrl, "", new { @class = "text-danger" })
+                                        <div class="form-text">點擊按鈕後要跳轉的頁面</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 顯示設定 -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-desktop"></i>顯示設定
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label required">觸發頁面</label>
+                                        @Html.DropDownListFor(m => m.Page, new SelectList(new[]
+                                                 {
+                                    new { Value = "", Text = "請選擇頁面" },
+                                    new { Value = "home", Text = "首頁" },
+                                    new { Value = "shop", Text = "商品頁" },
+                                    new { Value = "posts", Text = "穿搭分享" },
+                                    new { Value = "member", Text = "會員中心" },
+                                    new { Value = "all", Text = "全站顯示" }
+                                    }, "Value", "Text", Model?.Page), new { @class = "form-select", @id = "pageSelect", @required = "required" })
+                                        @Html.ValidationMessageFor(m => m.Page, "", new { @class = "text-danger" })
+                                        <div class="form-text">選擇在哪個頁面顯示此廣告</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label required">彈窗類型</label>
+                                        @Html.DropDownListFor(m => m.Position, new SelectList(new[]
+                                                 {
+                                    new { Value = "popup", Text = "彈出視窗" },
+                                    new { Value = "splash", Text = "啟動畫面" }
+                                    }, "Value", "Text", Model?.Position ?? "popup"), new { @class = "form-select", @id = "positionSelect", @required = "required" })
+                                        <div class="form-text">選擇廣告顯示的形式</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">顯示順序</label>
+                                @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", @id = "displayOrderInput", @type = "number", @min = "1", @max = "999" })
+                                <div class="form-text">數字越小優先級越高</div>
+                            </div>
+                        </div>
+
+                        <!-- 時間設定 -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-clock"></i>時間設定
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">開始時間</label>
+                                        @Html.TextBoxFor(m => m.StartTime, "{0:yyyy-MM-ddTHH:mm}", new { @class = "form-control", @id = "startTimeInput", @type = "datetime-local" })
+                                        <div class="form-text">留空表示立即生效</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">結束時間</label>
+                                        @Html.TextBoxFor(m => m.EndTime, "{0:yyyy-MM-ddTHH:mm}", new { @class = "form-control", @id = "endTimeInput", @type = "datetime-local" })
+                                        <div class="form-text">留空表示永不過期</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 圖片設定 -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-image"></i>廣告圖片
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">圖片網址</label>
+                                @Html.TextBoxFor(m => m.ImageUrl, new { @class = "form-control", @id = "imageUrlInput", @type = "url", @placeholder = "https://example.com/image.jpg" })
+                                @Html.ValidationMessageFor(m => m.ImageUrl, "", new { @class = "text-danger" })
+                                <div class="form-text">建議尺寸：600x400 像素，支援 JPG、PNG 格式</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右側：預覽 -->
+                    <div class="col-lg-4">
+                        <div class="form-section sticky-top" style="top: 20px;">
+                            <div class="section-title">
+                                <i class="fas fa-eye"></i>廣告預覽
+                            </div>
+
+                            <div id="adPreview" class="preview-container">
+                                <div class="text-muted">
+                                    <i class="fas fa-image fa-2x mb-2"></i>
+                                    <div>填寫表單內容後即可看到預覽</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 表單按鈕 -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="@Url.Action("Splash")" class="btn btn-secondary-custom">
+                                <i class="fas fa-times me-1"></i>取消
+                            </a>
+                            <button type="button" id="previewBtn" class="btn btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>預覽效果
+                            </button>
+                            <button type="submit" class="btn btn-custom">
+                                <i class="fas fa-save me-1"></i>@(Model?.IsEdit == true ? "更新" : "儲存")廣告
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- 預覽 Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header" style="border: none; background: var(--primary-color); color: white;">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>廣告預覽效果
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="modalPreview"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 使用純 JavaScript，避免與 jQuery 衝突
+        (function() {
+            'use strict';
+
+            // DOM 載入完成後執行
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('CreateSplash 頁面載入完成');
+                initializeForm();
+                updatePreview();
+            });
+
+            function initializeForm() {
+                // 設定預設結束時間（30天後）
+                const endTimeInput = document.getElementById('endTimeInput');
+                if (endTimeInput && !endTimeInput.value) {
+                    const now = new Date();
+                    const future = new Date(now);
+                    future.setDate(future.getDate() + 30);
+                    endTimeInput.value = future.toISOString().slice(0, 16);
+                }
+
+                // 綁定事件監聽器
+                bindEventListeners();
+            }
+
+            function bindEventListeners() {
+                // 表單輸入監聽
+                const titleInput = document.getElementById('titleInput');
+                const descriptionInput = document.getElementById('descriptionInput');
+                const linkUrlInput = document.getElementById('linkUrlInput');
+                const imageUrlInput = document.getElementById('imageUrlInput');
+                const pageSelect = document.getElementById('pageSelect');
+                const positionSelect = document.getElementById('positionSelect');
+                const previewBtn = document.getElementById('previewBtn');
+
+                if (titleInput) {
+                    titleInput.addEventListener('input', updatePreview);
+                }
+
+                if (descriptionInput) {
+                    descriptionInput.addEventListener('input', updatePreview);
+                }
+
+                if (linkUrlInput) {
+                    linkUrlInput.addEventListener('input', function() {
+                        updateButtonText();
+                        updatePreview();
+                    });
+                }
+
+                if (imageUrlInput) {
+                    imageUrlInput.addEventListener('input', updatePreview);
+                }
+
+                if (pageSelect) {
+                    pageSelect.addEventListener('change', updatePreview);
+                }
+
+                if (positionSelect) {
+                    positionSelect.addEventListener('change', updatePreview);
+                }
+
+                if (previewBtn) {
+                    previewBtn.addEventListener('click', showPreviewModal);
+                }
+
+                // 表單提交前的驗證
+                const form = document.getElementById('popupBannerForm');
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        console.log('表單提交中...');
+                        const title = document.getElementById('titleInput').value;
+                        const description = document.getElementById('descriptionInput').value;
+                        const page = document.getElementById('pageSelect').value;
+                        const position = document.getElementById('positionSelect').value;
+
+                        console.log('表單資料：', { title, description, page, position });
+
+                        if (!title || !description || !page || !position) {
+                            e.preventDefault();
+                            alert('請填寫所有必填欄位');
+                            return false;
+                        }
+                    });
+                }
+            }
+
+            function updateButtonText() {
+                const linkUrlInput = document.getElementById('linkUrlInput');
+                const buttonPreview = document.getElementById('buttonTextPreview');
+
+                if (!linkUrlInput || !buttonPreview) return;
+
+                const linkUrl = linkUrlInput.value;
+
+                if (!linkUrl) {
+                    buttonPreview.value = '立即查看';
+                } else if (linkUrl.includes('/shop') || linkUrl.includes('/product')) {
+                    buttonPreview.value = '立即購買';
+                } else if (linkUrl.includes('/register') || linkUrl.includes('/signup')) {
+                    buttonPreview.value = '立即註冊';
+                } else if (linkUrl.includes('/login')) {
+                    buttonPreview.value = '立即登入';
+                } else if (linkUrl.includes('/posts') || linkUrl.includes('/blog')) {
+                    buttonPreview.value = '立即參加';
+                } else if (linkUrl.includes('/discount') || linkUrl.includes('/coupon')) {
+                    buttonPreview.value = '立即領取';
+                } else {
+                    buttonPreview.value = '立即查看';
+                }
+            }
+
+            function updatePreview() {
+                const titleInput = document.getElementById('titleInput');
+                const descriptionInput = document.getElementById('descriptionInput');
+                const imageUrlInput = document.getElementById('imageUrlInput');
+                const buttonPreview = document.getElementById('buttonTextPreview');
+
+                const title = titleInput ? titleInput.value || '廣告標題' : '廣告標題';
+                const description = descriptionInput ? descriptionInput.value || '這裡是廣告內容描述...' : '這裡是廣告內容描述...';
+                const buttonText = buttonPreview ? buttonPreview.value || '立即查看' : '立即查看';
+                const imageUrl = imageUrlInput ? imageUrlInput.value : '';
+
+                const previewHtml = `
+                    <div class="card" style="max-width: 350px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
+                        ${imageUrl ? `
+                            <img src="${imageUrl}" class="card-img-top" style="height: 180px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/350x180/f5f5f5/888?text=圖片載入失敗'">
+                        ` : `
+                            <div style="height: 180px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; color: #6c757d;">
+                                <i class="fas fa-image fa-2x"></i>
+                            </div>
+                        `}
+
+                        <div class="card-body" style="color: white; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <h5 class="card-title mb-2" style="font-size: 1.1rem; font-weight: 600;">${escapeHtml(title)}</h5>
+                            <p class="card-text mb-3" style="font-size: 0.9rem; opacity: 0.9; line-height: 1.4;">${escapeHtml(description)}</p>
+                            <button class="btn btn-light btn-sm" style="color: #333; font-weight: 500;">
+                                ${escapeHtml(buttonText)}
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                const previewElement = document.getElementById('adPreview');
+                if (previewElement) {
+                    previewElement.innerHTML = previewHtml;
+                    previewElement.classList.add('has-image');
+                }
+            }
+
+            function showPreviewModal() {
+                const titleInput = document.getElementById('titleInput');
+                const descriptionInput = document.getElementById('descriptionInput');
+                const imageUrlInput = document.getElementById('imageUrlInput');
+                const buttonPreview = document.getElementById('buttonTextPreview');
+
+                const title = titleInput ? titleInput.value || '廣告標題' : '廣告標題';
+                const description = descriptionInput ? descriptionInput.value || '這裡是廣告內容描述...' : '這裡是廣告內容描述...';
+                const buttonText = buttonPreview ? buttonPreview.value || '立即查看' : '立即查看';
+                const imageUrl = imageUrlInput ? imageUrlInput.value : '';
+
+                const modalPreviewHtml = `
+                    <div style="background: rgba(0,0,0,0.6); padding: 20px; min-height: 400px; display: flex; align-items: center; justify-content: center;">
+                        <div class="card" style="max-width: 600px; width: 100%; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+                            <div class="row g-0">
+                                ${imageUrl ? `
+                                    <div class="col-md-6">
+                                        <img src="${imageUrl}" style="width: 100%; height: 300px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/300x300/f5f5f5/888?text=圖片載入失敗'">
+                                    </div>
+                                ` : ''}
+
+                                <div class="col-md-${imageUrl ? '6' : '12'}">
+                                    <div class="card-body" style="color: white; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); height: 300px; display: flex; flex-direction: column; justify-content: center; padding: 2rem;">
+                                        <h3 class="mb-3" style="font-weight: 700;">${escapeHtml(title)}</h3>
+                                        <p class="mb-4" style="opacity: 0.9; line-height: 1.6;">${escapeHtml(description)}</p>
+                                        <button class="btn btn-light align-self-start" style="color: #333; font-weight: 600; padding: 10px 24px; border-radius: 25px;">
+                                            ${escapeHtml(buttonText)}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                const modalPreviewElement = document.getElementById('modalPreview');
+                if (modalPreviewElement) {
+                    modalPreviewElement.innerHTML = modalPreviewHtml;
+                    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+                    modal.show();
+                }
+            }
+
+            // 防止 XSS 攻擊的 HTML 轉義函數
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // 將函數提升到全域作用域
+            window.updatePreview = updatePreview;
+            window.updateButtonText = updateButtonText;
+
+        })();
+    </script>
+}

@@ -1,0 +1,312 @@
+@model List<Team.Backend.Models.EfModel.Order>
+@{
+    ViewData["Title"] = "待發送訂單管理";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="mb-0">
+                                <i class="fas fa-shipping-fast me-2 text-primary"></i>
+                                待發送訂單管理
+                            </h5>
+                            <p class="text-sm mb-0">管理所有賣家準備完成，等待統一發送的訂單</p>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="processSelectedOrders()">
+                                <i class="fas fa-paper-plane me-1"></i>
+                                批量發送
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshList()">
+                                <i class="fas fa-sync-alt me-1"></i>
+                                重新載入
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-0 pt-0 pb-2">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive p-0">
+                            <table class="table align-items-center mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            <input type="checkbox" id="selectAll" class="form-check-input">
+                                        </th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            訂單資訊
+                                        </th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                                            客戶資訊
+                                        </th>
+                                        <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            金額
+                                        </th>
+                                        <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            賣家狀態
+                                        </th>
+                                        <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            操作
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var order in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <input type="checkbox" class="form-check-input order-checkbox" value="@order.Id">
+                                            </td>
+                                            <td>
+                                                <div class="d-flex px-2 py-1">
+                                                    <div class="d-flex flex-column justify-content-center">
+                                                        <h6 class="mb-0 text-sm">訂單 #@order.Id</h6>
+                                                        <p class="text-xs text-secondary mb-0">
+                                                            @order.CreatedAt.ToString("yyyy/MM/dd HH:mm")
+                                                        </p>
+                                                        <span class="badge badge-sm bg-gradient-@(GetStatusColor(order.OrderStatus))">
+                                                            @GetStatusText(order.OrderStatus)
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex px-2 py-1">
+                                                    <div class="d-flex flex-column justify-content-center">
+                                                        <h6 class="mb-0 text-sm">@(order.Member?.Profile?.Name ?? "未知客戶")</h6>
+                                                        <p class="text-xs text-secondary mb-0">@order.Member?.Email</p>
+                                                        <p class="text-xs text-secondary mb-0">
+                                                            @order.RecipientName<br>
+                                                            @order.AddressDetail
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="align-middle text-center text-sm">
+                                                <h6 class="mb-0 text-sm">NT$ @order.TotalAmount.ToString("N0")</h6>
+                                                <p class="text-xs text-secondary mb-0">@order.PaymentMethod</p>
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                <button type="button" class="btn btn-link text-info p-0" 
+                                                        onclick="checkVendorStatus(@order.Id)">
+                                                    <i class="fas fa-eye"></i> 查看詳情
+                                                </button>
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                <button type="button" class="btn btn-success btn-sm" 
+                                                        onclick="processSingleOrder(@order.Id)">
+                                                    <i class="fas fa-paper-plane"></i> 立即發送
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-box-open text-secondary" style="font-size: 3rem;"></i>
+                            <h5 class="text-secondary mt-3">目前沒有待發送的訂單</h5>
+                            <p class="text-sm text-secondary">所有訂單都已處理完成或還在準備中</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 賣家狀態詳情 Modal -->
+<div class="modal fade" id="vendorStatusModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-store me-2"></i>
+                    賣家出貨狀態詳情
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="vendorStatusContent">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "pending" => "warning",
+            "paid" => "info",
+            "shipped" => "success",
+            "delivered" => "primary",
+            "completed" => "dark",
+            _ => "secondary"
+        };
+    }
+
+    private string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "pending" => "待付款",
+            "paid" => "已付款",
+            "shipped" => "已出貨",
+            "delivered" => "已送達",
+            "completed" => "已完成",
+            _ => "未知狀態"
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        // 全選功能
+        document.getElementById('selectAll').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.order-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+
+        // 批量發送選定訂單
+        function processSelectedOrders() {
+            const selectedOrders = Array.from(document.querySelectorAll('.order-checkbox:checked'))
+                .map(cb => parseInt(cb.value));
+
+            if (selectedOrders.length === 0) {
+                Swal.fire('提示', '請至少選擇一個訂單', 'warning');
+                return;
+            }
+
+            Swal.fire({
+                title: '確認發送',
+                text: `確定要發送 ${selectedOrders.length} 個訂單嗎？`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '確認發送',
+                cancelButtonText: '取消'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitShipments(selectedOrders);
+                }
+            });
+        }
+
+        // 發送單一訂單
+        function processSingleOrder(orderId) {
+            Swal.fire({
+                title: '確認發送',
+                text: `確定要發送訂單 #${orderId} 嗎？`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '確認發送',
+                cancelButtonText: '取消'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitShipments([orderId]);
+                }
+            });
+        }
+
+        // 提交發送請求
+        function submitShipments(orderIds) {
+            const formData = new FormData();
+            orderIds.forEach(id => formData.append('orderIds', id));
+
+            fetch('@Url.Action("ProcessShipments", "AdminLogistics")', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('成功', data.message, 'success')
+                        .then(() => window.location.reload());
+                } else {
+                    Swal.fire('失敗', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('錯誤', '發送失敗，請稍後再試', 'error');
+            });
+        }
+
+        // 查看賣家狀態詳情
+        function checkVendorStatus(orderId) {
+            document.getElementById('vendorStatusContent').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
+                </div>`;
+
+            const modal = new bootstrap.Modal(document.getElementById('vendorStatusModal'));
+            modal.show();
+
+            fetch(`@Url.Action("GetOrderVendorStatus", "AdminLogistics")?orderId=${orderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let html = '<div class="row">';
+                        data.data.forEach(vendor => {
+                            const statusClass = vendor.Status === 'ready' ? 'success' : 
+                                               vendor.Status === 'pending' ? 'warning' : 'secondary';
+                            const statusText = vendor.Status === 'ready' ? '已準備' : 
+                                              vendor.Status === 'pending' ? '準備中' : '未知';
+
+                            html += `
+                                <div class="col-md-6 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="mb-0">${vendor.VendorName}</h6>
+                                                <span class="badge bg-${statusClass}">${statusText}</span>
+                                            </div>
+                                            <p class="text-sm text-secondary mb-2">${vendor.ItemCount} 項商品</p>
+                                            <ul class="list-unstyled">`;
+                            
+                            vendor.Items.forEach(item => {
+                                html += `<li class="text-xs">• ${item.ProductName} × ${item.Quantity}</li>`;
+                            });
+                            
+                            html += `</ul></div></div></div>`;
+                        });
+                        html += '</div>';
+                        
+                        document.getElementById('vendorStatusContent').innerHTML = html;
+                    } else {
+                        document.getElementById('vendorStatusContent').innerHTML = 
+                            `<div class="alert alert-danger">${data.message}</div>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('vendorStatusContent').innerHTML = 
+                        '<div class="alert alert-danger">載入失敗，請稍後再試</div>';
+                });
+        }
+
+        // 重新載入列表
+        function refreshList() {
+            window.location.reload();
+        }
+    </script>
+}

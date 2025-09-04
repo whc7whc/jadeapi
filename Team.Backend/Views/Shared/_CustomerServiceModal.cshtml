@@ -1,0 +1,47 @@
+﻿<!-- 客服聊天對話框 Modal -->
+<div class="modal fade" id="customerServiceModal" tabindex="-1" role="dialog" aria-labelledby="customerServiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customerServiceModalLabel">
+                    <i class="fas fa-headset"></i>
+                    線上客服
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- 聊天記錄區域 -->
+                <div id="customerChatContainer" class="chat-container">
+                    <div class="text-muted text-center">
+                        <i class="fas fa-headset fa-2x mb-2"></i>
+                        <p>歡迎使用線上客服！我們將在最短時間內回覆您。</p>
+                    </div>
+                </div>
+
+                <!-- 輸入區域 -->
+                <div class="customer-input-container">
+                    <input type="text" id="customerMessageInput" class="form-control" placeholder="請輸入您的問題..." autocomplete="off">
+                    <button class="btn btn-primary" type="button" id="customerSendButton">
+                        <i class="fas fa-paper-plane"></i>
+                        發送
+                    </button>
+                </div>
+
+                <!-- 客服狀態指示 -->
+                <div class="customer-status">
+                    <i class="fas fa-circle text-success"></i>
+                    客服人員線上中 - 平均回覆時間：2-5分鐘
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+                <button type="button" class="btn btn-warning" id="clearCustomerChat">
+                    <i class="fas fa-trash"></i>
+                    清除對話
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

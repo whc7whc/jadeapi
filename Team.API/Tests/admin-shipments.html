@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物流管理 - 管理員後台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .admin-header {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        .sidebar {
+            background: #343a40;
+            min-height: calc(100vh - 76px);
+            padding: 1rem 0;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+            transition: all 0.3s;
+        }
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .stats-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            float: right;
+        }
+        .content-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .carrier-card {
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .carrier-card:hover {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+        .carrier-card.active {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+        .status-preparing { background: #fff3cd; color: #856404; }
+        .status-picked-up { background: #d1ecf1; color: #0c5460; }
+        .status-in-transit { background: #cce7f0; color: #0c5460; }
+        .status-out-delivery { background: #d4edda; color: #155724; }
+        .status-delivered { background: #c3e6cb; color: #155724; }
+        .status-failed { background: #f8d7da; color: #721c24; }
+        .status-returned { background: #e2e3e5; color: #383d41; }
+        
+        .tracking-card {
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s;
+        }
+        .tracking-card:hover {
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .map-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+        
+        .priority-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+        .priority-high { background: #dc3545; }
+        .priority-medium { background: #ffc107; }
+        .priority-low { background: #28a745; }
+        
+        .timeline-mini {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+        }
+        .timeline-step {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+        .timeline-step.completed {
+            background: #28a745;
+            color: white;
+        }
+        .timeline-step.current {
+            background: #ffc107;
+            color: white;
+        }
+        .timeline-line {
+            flex: 1;
+            height: 2px;
+            background: #e9ecef;
+        }
+        .timeline-line.completed {
+            background: #28a745;
+        }
+        
+        .performance-meter {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .meter-bar {
+            flex: 1;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .meter-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <!-- 導航欄 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="fas fa-shipping-fast"></i> 物流管理系統</a>
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-shield"></i> 物流管理員
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog"></i> 個人設定</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-bell"></i> 通知設定</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt"></i> 登出</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 標題 -->
+    <div class="admin-header">
+        <div class="container-fluid">
+            <h1 class="mb-0"><i class="fas fa-truck"></i> 物流管理中心</h1>
+            <p class="mb-0 opacity-75">統一管理全平台物流配送</p>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 側邊欄 -->
+            <div class="col-md-2 p-0">
+                <div class="sidebar">
+                    <nav class="nav flex-column">
+                        <a class="nav-link active" href="#"><i class="fas fa-tachometer-alt"></i> 總覽</a>
+                        <a class="nav-link" href="#"><i class="fas fa-truck"></i> 配送中</a>
+                        <a class="nav-link" href="#"><i class="fas fa-warehouse"></i> 倉庫管理</a>
+                        <a class="nav-link" href="#"><i class="fas fa-route"></i> 路線規劃</a>
+                        <a class="nav-link" href="#"><i class="fas fa-users"></i> 物流商管理</a>
+                        <a class="nav-link" href="#"><i class="fas fa-map-marked-alt"></i> 地區管理</a>
+                        <hr class="text-white-50">
+                        <a class="nav-link" href="#"><i class="fas fa-chart-line"></i> 績效分析</a>
+                        <a class="nav-link" href="#"><i class="fas fa-exclamation-triangle"></i> 異常處理</a>
+                        <a class="nav-link" href="#"><i class="fas fa-cog"></i> 系統設定</a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- 主要內容 -->
+            <div class="col-md-10">
+                <!-- 統計卡片 -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-icon bg-warning text-white">
+                                <i class="fas fa-boxes"></i>
+                            </div>
+                            <h3 class="mb-1 text-warning">342</h3>
+                            <p class="text-muted mb-0">待出貨</p>
+                            <small class="text-muted">較昨日 +15</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-icon bg-info text-white">
+                                <i class="fas fa-truck-moving"></i>
+                            </div>
+                            <h3 class="mb-1 text-info">128</h3>
+                            <p class="text-muted mb-0">配送中</p>
+                            <small class="text-muted">較昨日 +8</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-icon bg-success text-white">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h3 class="mb-1 text-success">567</h3>
+                            <p class="text-muted mb-0">今日完成</p>
+                            <small class="text-muted">較昨日 +12%</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="stats-icon bg-danger text-white">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <h3 class="mb-1 text-danger">23</h3>
+                            <p class="text-muted mb-0">異常件</p>
+                            <small class="text-muted">需要處理</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-8">
+                        <!-- 即時追蹤 -->
+                        <div class="content-card">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0"><i class="fas fa-map-marker-alt"></i> 即時追蹤</h5>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary active" onclick="switchView('list')">列表</button>
+                                    <button class="btn btn-outline-primary" onclick="switchView('map')">地圖</button>
+                                </div>
+                            </div>
+
+                            <!-- 搜尋和篩選 -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control" placeholder="搜尋追蹤號碼或訂單編號" id="tracking-search">
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" id="carrier-filter">
+                                        <option value="">所有物流商</option>
+                                        <option value="blackcat">黑貓宅急便</option>
+                                        <option value="post">中華郵政</option>
+                                        <option value="fedex">FedEx</option>
+                                        <option value="dhl">DHL</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" id="status-filter">
+                                        <option value="">所有狀態</option>
+                                        <option value="preparing">準備中</option>
+                                        <option value="picked-up">已取件</option>
+                                        <option value="in-transit">運送中</option>
+                                        <option value="out-delivery">配送中</option>
+                                        <option value="delivered">已送達</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn btn-primary w-100" onclick="searchShipments()">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 列表視圖 -->
+                            <div id="list-view">
+                                <div class="tracking-card">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-2">
+                                            <span class="priority-indicator priority-high"></span>
+                                            <strong>TW1234567890</strong>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <small class="text-muted">黑貓宅急便</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div>王小明 - iPhone 15 Pro</div>
+                                            <small class="text-muted">台北 → 高雄</small>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <span class="status-badge status-in-transit">運送中</span>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="timeline-mini">
+                                                <div class="timeline-step completed"><i class="fas fa-check"></i></div>
+                                                <div class="timeline-line completed"></div>
+                                                <div class="timeline-step completed"><i class="fas fa-truck"></i></div>
+                                                <div class="timeline-line"></div>
+                                                <div class="timeline-step current">3</div>
+                                            </div>
+                                            <small class="text-muted">3/5 步驟</small>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" onclick="viewShipment('TW1234567890')"><i class="fas fa-eye"></i> 查看詳情</a></li>
+                                                    <li><a class="dropdown-item" onclick="updateStatus('TW1234567890')"><i class="fas fa-edit"></i> 更新狀態</a></li>
+                                                    <li><a class="dropdown-item" onclick="contactCustomer('TW1234567890')"><i class="fas fa-phone"></i> 聯絡客戶</a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="tracking-card">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-2">
+                                            <span class="priority-indicator priority-medium"></span>
+                                            <strong>TW0987654321</strong>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <small class="text-muted">中華郵政</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div>李美華 - MacBook Air M3</div>
+                                            <small class="text-muted">台中 → 台北</small>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <span class="status-badge status-out-delivery">配送中</span>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="timeline-mini">
+                                                <div class="timeline-step completed"><i class="fas fa-check"></i></div>
+                                                <div class="timeline-line completed"></div>
+                                                <div class="timeline-step completed"><i class="fas fa-truck"></i></div>
+                                                <div class="timeline-line completed"></div>
+                                                <div class="timeline-step current">5</div>
+                                            </div>
+                                            <small class="text-muted">5/5 步驟</small>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" onclick="viewShipment('TW0987654321')"><i class="fas fa-eye"></i> 查看詳情</a></li>
+                                                    <li><a class="dropdown-item" onclick="updateStatus('TW0987654321')"><i class="fas fa-edit"></i> 更新狀態</a></li>
+                                                    <li><a class="dropdown-item" onclick="contactCustomer('TW0987654321')"><i class="fas fa-phone"></i> 聯絡客戶</a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="tracking-card">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-2">
+                                            <span class="priority-indicator priority-low"></span>
+                                            <strong>FX9876543210</strong>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <small class="text-muted">FedEx</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div>張志強 - AirPods Pro 2</div>
+                                            <small class="text-muted">台北 → 新竹</small>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <span class="status-badge status-delivered">已送達</span>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="timeline-mini">
+                                                <div class="timeline-step completed"><i class="fas fa-check"></i></div>
+                                                <div class="timeline-line completed"></div>
+                                                <div class="timeline-step completed"><i class="fas fa-truck"></i></div>
+                                                <div class="timeline-line completed"></div>
+                                                <div class="timeline-step completed"><i class="fas fa-home"></i></div>
+                                            </div>
+                                            <small class="text-success">已完成</small>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" onclick="viewShipment('FX9876543210')"><i class="fas fa-eye"></i> 查看詳情</a></li>
+                                                    <li><a class="dropdown-item" onclick="downloadPOD('FX9876543210')"><i class="fas fa-download"></i> 下載簽收單</a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 地圖視圖 -->
+                            <div id="map-view" style="display: none;">
+                                <div class="map-container">
+                                    <div class="text-center">
+                                        <i class="fas fa-map fa-4x text-primary mb-3"></i>
+                                        <h5>即時物流地圖</h5>
+                                        <p class="text-muted">顯示所有配送車輛的即時位置</p>
+                                        <button class="btn btn-primary" onclick="refreshMap()">
+                                            <i class="fas fa-sync-alt"></i> 重新整理
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 批量操作 -->
+                        <div class="content-card">
+                            <h5 class="mb-3"><i class="fas fa-tasks"></i> 批量操作</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <textarea class="form-control" placeholder="請輸入追蹤號碼，一行一個" id="bulk-tracking-numbers" style="height: 120px;"></textarea>
+                                        <label>追蹤號碼列表</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">批量操作</label>
+                                        <select class="form-select mb-2" id="bulk-action">
+                                            <option value="">選擇操作</option>
+                                            <option value="update-status">更新狀態</option>
+                                            <option value="assign-carrier">指派物流商</option>
+                                            <option value="change-route">變更路線</option>
+                                            <option value="notify-customer">通知客戶</option>
+                                        </select>
+                                        <select class="form-select mb-2" id="bulk-status" style="display: none;">
+                                            <option value="">選擇狀態</option>
+                                            <option value="picked-up">已取件</option>
+                                            <option value="in-transit">運送中</option>
+                                            <option value="out-delivery">配送中</option>
+                                            <option value="delivered">已送達</option>
+                                        </select>
+                                        <button class="btn btn-primary w-100" onclick="executeBulkAction()">
+                                            <i class="fas fa-play"></i> 執行操作
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右側邊欄 -->
+                    <div class="col-lg-4">
+                        <!-- 物流商狀態 -->
+                        <div class="content-card">
+                            <h5 class="mb-3"><i class="fas fa-truck-moving"></i> 物流商狀態</h5>
+                            
+                            <div class="carrier-card active" onclick="selectCarrier('blackcat')">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">黑貓宅急便</h6>
+                                        <small class="text-muted">台灣本島配送</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-success">正常</span>
+                                        <div class="performance-meter">
+                                            <span class="small">效率:</span>
+                                            <div class="meter-bar">
+                                                <div class="meter-fill bg-success" style="width: 92%;"></div>
+                                            </div>
+                                            <span class="small">92%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="carrier-card" onclick="selectCarrier('post')">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">中華郵政</h6>
+                                        <small class="text-muted">全台配送服務</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-warning">延遲</span>
+                                        <div class="performance-meter">
+                                            <span class="small">效率:</span>
+                                            <div class="meter-bar">
+                                                <div class="meter-fill bg-warning" style="width: 78%;"></div>
+                                            </div>
+                                            <span class="small">78%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="carrier-card" onclick="selectCarrier('fedex')">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">FedEx</h6>
+                                        <small class="text-muted">國際快遞</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-success">正常</span>
+                                        <div class="performance-meter">
+                                            <span class="small">效率:</span>
+                                            <div class="meter-bar">
+                                                <div class="meter-fill bg-success" style="width: 95%;"></div>
+                                            </div>
+                                            <span class="small">95%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 今日績效 -->
+                        <div class="content-card">
+                            <h5 class="mb-3"><i class="fas fa-chart-pie"></i> 今日績效</h5>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>準時率</span>
+                                    <strong class="text-success">94.2%</strong>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-success" style="width: 94.2%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>完成率</span>
+                                    <strong class="text-info">87.6%</strong>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-info" style="width: 87.6%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>客戶滿意度</span>
+                                    <strong class="text-warning">96.8%</strong>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-warning" style="width: 96.8%;"></div>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <h6 class="text-primary">567</h6>
+                                    <small class="text-muted">完成配送</small>
+                                </div>
+                                <div class="col-4">
+                                    <h6 class="text-warning">23</h6>
+                                    <small class="text-muted">延遲配送</small>
+                                </div>
+                                <div class="col-4">
+                                    <h6 class="text-danger">5</h6>
+                                    <small class="text-muted">配送失敗</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 異常警報 -->
+                        <div class="content-card">
+                            <h5 class="mb-3"><i class="fas fa-exclamation-triangle text-warning"></i> 異常警報</h5>
+                            
+                            <div class="alert alert-warning">
+                                <strong>中華郵政</strong> 延遲配送<br>
+                                <small>15個包裹超過預期送達時間</small>
+                                <div class="mt-2">
+                                    <button class="btn btn-warning btn-sm" onclick="handleAlert('delay')">處理</button>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-danger">
+                                <strong>颱風警報</strong> 影響配送<br>
+                                <small>東部地區配送暫停</small>
+                                <div class="mt-2">
+                                    <button class="btn btn-danger btn-sm" onclick="handleAlert('weather')">查看詳情</button>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <strong>系統維護</strong> 通知<br>
+                                <small>FedEx API將於今晚23:00維護</small>
+                                <div class="mt-2">
+                                    <button class="btn btn-info btn-sm" onclick="handleAlert('maintenance')">了解</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 快速操作 -->
+                        <div class="content-card">
+                            <h5 class="mb-3"><i class="fas fa-bolt"></i> 快速操作</h5>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary" onclick="createShipment()">
+                                    <i class="fas fa-plus"></i> 建立新物流單
+                                </button>
+                                <button class="btn btn-outline-success" onclick="batchAssign()">
+                                    <i class="fas fa-users"></i> 批量指派司機
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="routeOptimization()">
+                                    <i class="fas fa-route"></i> 路線最佳化
+                                </button>
+                                <button class="btn btn-outline-info" onclick="generateReports()">
+                                    <i class="fas fa-chart-bar"></i> 產生報表
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 物流管理 JavaScript -->
+    <script>
+        // 切換視圖
+        function switchView(view) {
+            if (view === 'list') {
+                document.getElementById('list-view').style.display = 'block';
+                document.getElementById('map-view').style.display = 'none';
+            } else {
+                document.getElementById('list-view').style.display = 'none';
+                document.getElementById('map-view').style.display = 'block';
+            }
+            
+            // 更新按鈕狀態
+            document.querySelectorAll('.btn-group .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // 搜尋物流
+        function searchShipments() {
+            const searchTerm = document.getElementById('tracking-search').value;
+            const carrier = document.getElementById('carrier-filter').value;
+            const status = document.getElementById('status-filter').value;
+            
+            showToast('正在搜尋物流資訊...', 'info');
+            setTimeout(() => {
+                showToast('搜尋完成', 'success');
+            }, 1000);
+        }
+
+        // 查看物流詳情
+        function viewShipment(trackingNumber) {
+            showToast(`正在載入 ${trackingNumber} 的詳細資訊...`, 'info');
+            setTimeout(() => {
+                window.open('shipment-tracking.html', '_blank');
+            }, 1000);
+        }
+
+        // 更新狀態
+        function updateStatus(trackingNumber) {
+            const newStatus = prompt('請選擇新狀態:\n1. 已取件\n2. 運送中\n3. 配送中\n4. 已送達\n\n請輸入數字 1-4:');
+            const statuses = ['picked-up', 'in-transit', 'out-delivery', 'delivered'];
+            
+            if (newStatus && newStatus >= 1 && newStatus <= 4) {
+                showToast(`${trackingNumber} 狀態已更新`, 'success');
+            }
+        }
+
+        // 聯絡客戶
+        function contactCustomer(trackingNumber) {
+            const method = prompt('聯絡方式:\n1. 電話\n2. 簡訊\n3. Email\n\n請輸入數字 1-3:');
+            if (method && method >= 1 && method <= 3) {
+                showToast('正在聯絡客戶...', 'info');
+            }
+        }
+
+        // 下載簽收單
+        function downloadPOD(trackingNumber) {
+            showToast(`正在下載 ${trackingNumber} 的簽收單...`, 'info');
+            setTimeout(() => {
+                showToast('簽收單下載完成', 'success');
+            }, 1500);
+        }
+
+        // 選擇物流商
+        function selectCarrier(carrierId) {
+            document.querySelectorAll('.carrier-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            showToast('已選擇物流商', 'info');
+        }
+
+        // 批量操作
+        function executeBulkAction() {
+            const trackingNumbers = document.getElementById('bulk-tracking-numbers').value.trim();
+            const action = document.getElementById('bulk-action').value;
+            
+            if (!trackingNumbers) {
+                showToast('請輸入追蹤號碼', 'warning');
+                return;
+            }
+            
+            if (!action) {
+                showToast('請選擇操作類型', 'warning');
+                return;
+            }
+            
+            const numbers = trackingNumbers.split('\n').filter(n => n.trim());
+            showToast(`正在批量處理 ${numbers.length} 個物流單...`, 'info');
+            
+            setTimeout(() => {
+                showToast(`成功處理 ${numbers.length} 個物流單`, 'success');
+                document.getElementById('bulk-tracking-numbers').value = '';
+            }, 2000);
+        }
+
+        // 處理警報
+        function handleAlert(type) {
+            const messages = {
+                'delay': '正在處理延遲配送問題...',
+                'weather': '正在查看天氣影響詳情...',
+                'maintenance': '已了解維護通知'
+            };
+            
+            showToast(messages[type], 'info');
+            setTimeout(() => {
+                event.target.closest('.alert').remove();
+            }, 1000);
+        }
+
+        // 建立新物流單
+        function createShipment() {
+            showToast('正在開啟建立物流單頁面...', 'info');
+        }
+
+        // 批量指派司機
+        function batchAssign() {
+            showToast('正在開啟批量指派功能...', 'info');
+        }
+
+        // 路線最佳化
+        function routeOptimization() {
+            showToast('正在計算最佳路線...', 'info');
+            setTimeout(() => {
+                showToast('路線最佳化完成，預估可節省15%配送時間', 'success');
+            }, 3000);
+        }
+
+        // 產生報表
+        function generateReports() {
+            showToast('正在產生物流績效報表...', 'info');
+            setTimeout(() => {
+                showToast('報表產生完成', 'success');
+            }, 2000);
+        }
+
+        // 重新整理地圖
+        function refreshMap() {
+            showToast('正在重新整理地圖資料...', 'info');
+            setTimeout(() => {
+                showToast('地圖資料已更新', 'success');
+            }, 1500);
+        }
+
+        // 監聽批量操作下拉選單
+        document.getElementById('bulk-action').addEventListener('change', function() {
+            const statusSelect = document.getElementById('bulk-status');
+            if (this.value === 'update-status') {
+                statusSelect.style.display = 'block';
+            } else {
+                statusSelect.style.display = 'none';
+            }
+        });
+
+        // 顯示提示訊息
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'} position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 3000);
+        }
+
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化數據
+            refreshMap();
+        });
+    </script>
+</body>
+</html>

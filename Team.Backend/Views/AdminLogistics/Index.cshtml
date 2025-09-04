@@ -1,0 +1,188 @@
+﻿@using Team.Backend.Models.ViewModels.Logistics
+@model LogisticsIndexVm
+
+@{
+    ViewData["Title"] = "物流管理";
+    var today = DateTime.Now.ToString("yyyy/MM/dd");
+}
+
+<!-- 設定資料屬性 -->
+<div id="logisticsConfig"
+     data-list-url="@Url.Action("ListPartial", "AdminLogistics")"
+     data-detail-url-base="@Url.Action("DetailPartial", "AdminLogistics")"
+     data-delete-url-base="@Url.Action("Delete", "AdminLogistics")"></div>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="m-0">
+        <i class="fas fa-truck text-primary"></i>
+        物流管理
+    </h3>
+    <div class="text-muted small">今天：@today</div>
+</div>
+
+<!-- 成功/錯誤訊息 -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    </div>
+}
+
+<!-- 搜尋和操作列 -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-4">
+                <label class="form-label">選擇物流商</label>
+                <select id="carrierSelect" name="CarrierId" class="form-select">
+                    <option value="">全部物流商</option>
+                    @if (ViewBag.CarrierOptions != null)
+                    {
+                        @foreach (var carrier in (List<Team.Backend.Models.ViewModels.Logistics.CarrierOptionVm>)ViewBag.CarrierOptions)
+                        {
+                            var isSelected = Model.Query.CarrierId == carrier.Id ? "selected" : "";
+                            <option value="@carrier.Id" selected="@isSelected">
+                                @carrier.Name (@carrier.ECPayCode)
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="button" id="clearBtn" class="btn btn-secondary">
+                        <i class="fas fa-sync-alt"></i> 重置
+                    </button>
+                </div>
+            </div>
+            <div class="col-lg-6 text-end">
+                <a href="@Url.Action("PendingShipments")" class="btn btn-primary">
+                    <i class="fas fa-shipping-fast"></i> 待發送訂單
+                </a>
+                <a href="@Url.Action("Create")" class="btn btn-success">
+                    <i class="fas fa-plus"></i> 新增物流商
+                </a>
+                <a href="@Url.Action("Settings")" class="btn btn-info">
+                    <i class="fas fa-cog"></i> 運費設定
+                </a>
+                <a href="@Url.Action("Statistics")" class="btn btn-warning">
+                    <i class="fas fa-chart-bar"></i> 統計報表
+                </a>
+                <a href="@Url.Action("ExportCarriers")" class="btn btn-outline-primary">
+                    <i class="fas fa-download"></i> 匯出
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 物流商列表區域 -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-list"></i>
+            物流商清單
+        </h5>
+        <span class="badge badge-info">
+            共 @Model.TotalCount 筆資料
+        </span>
+    </div>
+    
+    <!-- 載入中指示器 -->
+    <div id="loadingIndicator" class="text-center p-4" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">載入中...</span>
+        </div>
+        <div class="mt-2">載入中...</div>
+    </div>
+    
+    <!-- 列表內容區域 -->
+    <div id="carrierListContainer">
+        @if (Model.CanConnect)
+        {
+            @await Html.PartialAsync("_CarrierList", Model)
+        }
+        else
+        {
+            <div class="card-body text-center">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    資料庫連線失敗，請檢查網路連線或聯絡系統管理員
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- 物流商詳細資訊 Modal -->
+<div class="modal fade" id="carrierDetailModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle"></i>
+                    物流商詳細資訊
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div id="carrierDetailContent" class="modal-body">
+                <!-- 內容由 AJAX 載入 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 刪除確認 Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                    確認刪除
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>您確定要刪除這個物流商嗎？</p>
+                <p class="text-danger">
+                    <i class="fas fa-warning"></i>
+                    <strong>注意：如果該物流商有相關訂單記錄，將無法刪除。</strong>
+                </p>
+                <div id="deleteCarrierInfo" class="alert alert-info">
+                    <!-- 物流商資訊 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+                <button type="button" id="confirmDeleteBtn" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> 確定刪除
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin-logistics.js"></script>
+}

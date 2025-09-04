@@ -1,0 +1,474 @@
+// 會員等級管理 JavaScript
+class MembershipLevelsManager {
+    constructor() {
+        this.currentEditId = null;
+        this.currentDeleteId = null;
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.loadLevels();
+        this.loadCouponOptions();
+    }
+
+    bindEvents() {
+        // 儲存等級按鈕
+        document.getElementById('saveLevelBtn').addEventListener('click', () => {
+            this.saveLevel();
+        });
+
+        // 發放每月券按鈕
+        document.getElementById('dispatchBtn').addEventListener('click', () => {
+            this.dispatchMonthly();
+        });
+
+        // 刪除確認按鈕
+        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+            this.confirmDelete();
+        });
+
+        // Modal 隱藏時重置表單 (Bootstrap 4 事件)
+        $('#levelModal').on('hidden.bs.modal', () => {
+            this.resetLevelForm();
+        });
+
+        $('#dispatchModal').on('hidden.bs.modal', () => {
+            this.resetDispatchForm();
+        });
+
+        // 等級選擇變更時更新預設券顯示
+        document.getElementById('dispatchLevelId').addEventListener('change', (e) => {
+            this.updateDefaultCoupon(e.target.value);
+        });
+    }
+
+    // 載入等級列表
+    async loadLevels() {
+        try {
+            const response = await fetch('/MembershipLevels/List');
+            const result = await response.json();
+
+            if (result.success) {
+                this.renderLevelsTable(result.data);
+                this.updateDispatchLevelOptions(result.data);
+            } else {
+                this.showToast(result.message || '載入等級列表失敗', 'error');
+            }
+        } catch (error) {
+            console.error('載入等級列表失敗:', error);
+            this.showToast('載入等級列表失敗', 'error');
+        }
+    }
+
+    // 載入優惠券選項
+    async loadCouponOptions() {
+        try {
+            const response = await fetch('/Coupons/GetOptions');
+            const result = await response.json();
+
+            if (result.success) {
+                this.updateCouponSelect('monthlyCouponId', result.data);
+                this.updateCouponSelect('dispatchCouponId', result.data);
+            } else {
+                console.warn('載入優惠券選項失敗:', result.message);
+            }
+        } catch (error) {
+            console.error('載入優惠券選項失敗:', error);
+        }
+    }
+
+    // 更新優惠券下拉選單
+    updateCouponSelect(selectId, coupons) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+
+        // 保留第一個選項，清除其他
+        const firstOption = select.querySelector('option');
+        select.innerHTML = '';
+        if (firstOption) {
+            select.appendChild(firstOption);
+        }
+
+        coupons.forEach(coupon => {
+            const option = document.createElement('option');
+            option.value = coupon.Id || coupon.id;
+            option.textContent = coupon.Title || coupon.title;
+            select.appendChild(option);
+        });
+    }
+
+    // 渲染等級表格
+    renderLevelsTable(levels) {
+        const tbody = document.getElementById('levelsTableBody');
+        tbody.innerHTML = '';
+
+        if (levels.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">暫無資料</td></tr>';
+            return;
+        }
+
+        levels.forEach(level => {
+            // 同時支援 camelCase / PascalCase
+            const id = level.id || level.Id;
+            const levelName = level.levelName || level.LevelName;
+            const requiredAmount = Number(level.requiredAmount || level.RequiredAmount || 0);
+            const monthlyCouponTitle = level.monthlyCouponTitle || level.MonthlyCouponTitle;
+            const isActive = (level.isActive !== undefined ? level.isActive : level.IsActive) ? true : false;
+            const createdAt = level.createdAt || level.CreatedAt;
+            const description = level.description || level.Description;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${this.escapeHtml(levelName)}</td>
+                <td>NT$ ${requiredAmount.toLocaleString()}</td>
+                <td>${monthlyCouponTitle || '未設定'}</td>
+                <td>
+                    <span class="badge badge-${isActive ? 'success' : 'secondary'}">
+                        ${isActive ? '啟用' : '停用'}
+                    </span>
+                </td>
+                <td>${new Date(createdAt).toLocaleDateString('zh-TW')}</td>
+                <td>${this.escapeHtml(description) || '-'}</td>
+                <td>
+                    <button class="btn btn-outline-primary btn-sm mr-1" onclick="membershipLevelsManager.editLevel(${id})">
+                        <i class="bi bi-pencil"></i> 編輯
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="membershipLevelsManager.deleteLevel(${id})">
+                        <i class="bi bi-trash"></i> 刪除
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // 更新發放等級選項
+    updateDispatchLevelOptions(levels) {
+        const select = document.getElementById('dispatchLevelId');
+        const firstOption = select.querySelector('option');
+        select.innerHTML = '';
+        if (firstOption) {
+            select.appendChild(firstOption);
+        }
+
+        levels.filter(l => (l.isActive !== undefined ? l.isActive : l.IsActive)).forEach(level => {
+            const id = level.id || level.Id;
+            const levelName = level.levelName || level.LevelName;
+            const monthlyCouponId = level.monthlyCouponId || level.MonthlyCouponId;
+            const monthlyCouponTitle = level.monthlyCouponTitle || level.MonthlyCouponTitle;
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = levelName;
+            option.dataset.monthlyCouponId = monthlyCouponId || '';
+            option.dataset.monthlyCouponTitle = monthlyCouponTitle || '';
+            select.appendChild(option);
+        });
+    }
+
+    // 編輯等級
+    async editLevel(id) {
+        try {
+            const response = await fetch(`/MembershipLevels/List`);
+            const result = await response.json();
+
+            if (result.success) {
+                const level = result.data.find(l => (l.id || l.Id) === id);
+                if (level) {
+                    this.currentEditId = id;
+                    this.populateLevelForm(level);
+                    document.getElementById('levelModalLabel').textContent = '編輯等級';
+                    $('#levelModal').modal('show');
+                }
+            }
+        } catch (error) {
+            console.error('載入等級資料失敗:', error);
+            this.showToast('載入等級資料失敗', 'error');
+        }
+    }
+
+    // 填充等級表單
+    populateLevelForm(level) {
+        document.getElementById('levelName').value = (level.levelName || level.LevelName) || '';
+        document.getElementById('requiredAmount').value = Number(level.requiredAmount || level.RequiredAmount || 0);
+        document.getElementById('monthlyCouponId').value = (level.monthlyCouponId || level.MonthlyCouponId) || '';
+        document.getElementById('description').value = (level.description || level.Description) || '';
+        document.getElementById('isActive').checked = (level.isActive !== undefined ? level.isActive : level.IsActive) ? true : false;
+    }
+
+    // 刪除等級
+    deleteLevel(id) {
+        this.currentDeleteId = id;
+        $('#deleteModal').modal('show');
+    }
+
+    // 儲存等級
+    async saveLevel() {
+        const form = document.getElementById('levelForm');
+        const formData = new FormData(form);
+        
+        // 驗證表單
+        if (!this.validateLevelForm()) {
+            return;
+        }
+
+        const data = {
+            LevelName: formData.get('LevelName'),
+            RequiredAmount: parseInt(formData.get('RequiredAmount')),
+            MonthlyCouponId: formData.get('MonthlyCouponId') ? parseInt(formData.get('MonthlyCouponId')) : null,
+            Description: formData.get('Description'),
+            IsActive: formData.get('IsActive') === 'on'
+        };
+
+        try {
+            const url = this.currentEditId 
+                ? `/MembershipLevels/Update/${this.currentEditId}`
+                : '/MembershipLevels/Create';
+            const method = this.currentEditId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showToast(result.message, 'success');
+                $('#levelModal').modal('hide');
+                this.loadLevels();
+            } else {
+                this.showValidationErrors(result.errors);
+                this.showToast(result.message, 'error');
+            }
+        } catch (error) {
+            console.error('儲存等級失敗:', error);
+            this.showToast('儲存等級失敗', 'error');
+        }
+    }
+
+    // 確認刪除
+    async confirmDelete() {
+        if (!this.currentDeleteId) return;
+
+        try {
+            const response = await fetch(`/MembershipLevels/Delete/${this.currentDeleteId}`, {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showToast(result.message, 'success');
+                $('#deleteModal').modal('hide');
+                this.loadLevels();
+            } else {
+                this.showToast(result.message, 'error');
+            }
+        } catch (error) {
+            console.error('刪除等級失敗:', error);
+            this.showToast('刪除等級失敗', 'error');
+        }
+
+        this.currentDeleteId = null;
+    }
+
+    // 發放每月券
+    async dispatchMonthly() {
+        const form = document.getElementById('dispatchForm');
+        const formData = new FormData(form);
+
+        if (!formData.get('LevelId')) {
+            this.showToast('請選擇等級', 'error');
+            return;
+        }
+
+        const data = {
+            LevelId: parseInt(formData.get('LevelId')),
+            CouponId: formData.get('CouponId') || null
+        };
+
+        try {
+            const response = await fetch('/MembershipLevels/DispatchMonthly', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showToast(result.message, 'success');
+                if (result.data) {
+                    this.showDispatchResult(result.data);
+                }
+                $('#dispatchModal').modal('hide');
+            } else {
+                this.showToast(result.message, 'error');
+            }
+        } catch (error) {
+            console.error('發放每月券失敗:', error);
+            this.showToast('發放每月券失敗', 'error');
+        }
+    }
+
+    // 顯示發放結果
+    showDispatchResult(data) {
+        const successCount = data.successCount || data.SuccessCount || 0;
+        const skippedCount = data.skippedCount || data.SkippedCount || 0;
+        const errorCount = data.errorCount || data.ErrorCount || 0;
+        const message = `發放結果：\n成功：${successCount} 張\n略過：${skippedCount} 張\n錯誤：${errorCount} 張`;
+        alert(message);
+    }
+
+    // 更新預設券顯示
+    updateDefaultCoupon(levelId) {
+        if (!levelId) return;
+
+        const option = document.querySelector(`#dispatchLevelId option[value="${levelId}"]`);
+        if (option) {
+            const defaultCouponTitle = option.dataset.monthlyCouponTitle;
+            const helpText = document.querySelector('#dispatchCouponId + .form-text');
+            if (helpText) {
+                helpText.textContent = defaultCouponTitle 
+                    ? `預設券：${defaultCouponTitle}` 
+                    : '該等級未設定預設每月優惠券';
+            }
+        }
+    }
+
+    // 驗證等級表單
+    validateLevelForm() {
+        let isValid = true;
+        this.clearValidationErrors();
+
+        const levelName = document.getElementById('levelName').value.trim();
+        const requiredAmount = document.getElementById('requiredAmount').value;
+
+        if (!levelName) {
+            this.showFieldError('levelName', '等級名稱不能為空');
+            isValid = false;
+        }
+
+        if (!requiredAmount || parseInt(requiredAmount) < 0) {
+            this.showFieldError('requiredAmount', '所需金額必須大於等於 0');
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    // 顯示欄位錯誤
+    showFieldError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        const feedback = field.nextElementSibling;
+        
+        field.classList.add('is-invalid');
+        if (feedback && feedback.classList.contains('invalid-feedback')) {
+            feedback.textContent = message;
+        }
+    }
+
+    // 清除驗證錯誤
+    clearValidationErrors() {
+        document.querySelectorAll('.is-invalid').forEach(field => {
+            field.classList.remove('is-invalid');
+        });
+        document.querySelectorAll('.invalid-feedback').forEach(feedback => {
+            feedback.textContent = '';
+        });
+    }
+
+    // 顯示服務端驗證錯誤
+    showValidationErrors(errors) {
+        if (!errors) return;
+
+        Object.keys(errors).forEach(fieldName => {
+            const message = errors[fieldName];
+            // 嘗試找到對應的欄位
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            if (field) {
+                this.showFieldError(field.id, message);
+            }
+        });
+    }
+
+    // 重置等級表單
+    resetLevelForm() {
+        document.getElementById('levelForm').reset();
+        document.getElementById('isActive').checked = true;
+        this.clearValidationErrors();
+        this.currentEditId = null;
+        document.getElementById('levelModalLabel').textContent = '新增等級';
+    }
+
+    // 重置發放表單
+    resetDispatchForm() {
+        document.getElementById('dispatchForm').reset();
+        const helpText = document.querySelector('#dispatchCouponId + .form-text');
+        if (helpText) {
+            helpText.textContent = '留空則使用該等級的預設每月優惠券';
+        }
+    }
+
+    // 顯示 Toast 訊息
+    showToast(message, type = 'info') {
+        // 簡單的 toast 實現（使用 Bootstrap 4 alert）
+        const toastContainer = this.getOrCreateToastContainer();
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show`;
+        toast.style.position = 'relative';
+        toast.style.marginBottom = '10px';
+        
+        toast.innerHTML = `
+            ${message}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        // 自動移除
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 5000);
+    }
+
+    // 獲取或創建 Toast 容器
+    getOrCreateToastContainer() {
+        let container = document.getElementById('toastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.style.position = 'fixed';
+            container.style.top = '20px';
+            container.style.right = '20px';
+            container.style.zIndex = '9999';
+            container.style.maxWidth = '350px';
+            document.body.appendChild(container);
+        }
+        return container;
+    }
+
+    // HTML 轉義
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// 初始化管理器
+let membershipLevelsManager;
+document.addEventListener('DOMContentLoaded', function() {
+    membershipLevelsManager = new MembershipLevelsManager();
+});

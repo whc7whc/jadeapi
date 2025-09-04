@@ -1,0 +1,91 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+
+@model Team.Backend.Models.ViewModels.OfficialPostViewModel
+
+@{
+    ViewData["Title"] = "文章詳情";
+}
+
+<div class="back">
+    <div class="header">
+        <h1>@ViewData["Title"]</h1>
+    </div>
+
+    <div>
+        <h2>@Model.Title</h2>
+        <p><strong>ID:</strong> @Model.Id</p>
+        <p><strong>內容:</strong> @Html.Raw(Model.Content)</p>
+        <p><strong>分類:</strong> @Model.Category</p>
+        <p><strong>狀態:</strong> @Model.Status</p>
+        <p>
+            <strong>封面圖片:</strong>
+            @if (!string.IsNullOrEmpty(Model.CoverImage))
+            {
+                <img src="@Model.CoverImage" alt="封面圖片" style="max-width: 200px;" />
+            }
+            else
+            {
+                <span>無圖片</span>
+            }
+        </p>
+        <p>
+            <strong>其他圖片:</strong>
+            @if (Model.UploadedImageUrls != null && Model.UploadedImageUrls.Any())
+            {
+                <ul>
+                    @foreach (var url in Model.UploadedImageUrls)
+                    {
+                        <li><img src="@url" alt="文章圖片" style="max-width: 200px;" /></li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <span>無其他圖片</span>
+            }
+        </p>
+        <p><strong>發布時間:</strong> @(Model.PublishedAt?.ToString("yyyy/MM/dd HH:mm") ?? "未發布")</p>
+        <p><strong>創建者:</strong> @Model.CreatedBy</p>
+        <p><strong>創建時間:</strong> @Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</p>
+        <p><strong>更新時間:</strong> @(Model.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? "未更新")</p>
+        <a asp-action="PostManagement" asp-controller="Blog" class="btn btn-primary">返回列表</a>
+    </div>
+</div>
+
+<style>
+    .back {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+    .btn-primary {
+        background-color: #eb5757;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background-color: #d14545;
+        }
+</style>

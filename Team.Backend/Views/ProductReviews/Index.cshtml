@@ -1,0 +1,296 @@
+@model List<Team.Backend.Models.ViewModels.ProductReviewViewModel>
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-star mr-2"></i>商品評價管理</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-comments mr-2"></i>評論清單</h6>
+            <div class="d-flex align-items-center">
+                <form class="form-inline" method="get">
+                    <div class="input-group">
+                        <input type="number" class="form-control" name="productId" placeholder="商品ID" min="1" />
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> 搜尋</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="ml-2">
+                    <button class="btn btn-sm btn-outline-success mr-1" id="btnBatchApprove" title="將選取評論設為已核可">
+                        <i class="fas fa-check"></i> 批次核可
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="btnBatchUnapprove" title="將選取評論設為未核可">
+                        <i class="fas fa-ban"></i> 批次取消
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="afToken" style="display:none">@Html.AntiForgeryToken()</div>
+            <style>
+                /* 與商品庫存管理頁一致的狀態標籤視覺 */
+                .status-active {
+                    background-color: #e0f3ff;
+                    color: #0c5460;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                }
+
+                .status-inactive {
+                    background-color: #fbeaea;
+                    color: #7f1d1d;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                }
+            </style>
+            <div class="table-responsive">
+                <table class="table table-bordered" id="reviewsTable" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th style="width:40px;" class="text-center">
+                                <input type="checkbox" id="selectAll" />
+                            </th>
+                            <th style="width:80px;">ID</th>
+                            <th style="min-width:200px;">商品</th>
+                            <th style="min-width:160px;">會員</th>
+                            <th style="width:100px;">評分</th>
+                            <th>內容</th>
+                            <th style="width:120px;">建立時間</th>
+                            <th style="width:120px;">狀態</th>
+                            <th style="width:130px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model)
+                        {
+                            <tr data-id="@r.Id">
+                                <td class="text-center">
+                                    <input type="checkbox" class="select-row" value="@r.Id" />
+                                </td>
+                                <td>@r.Id</td>
+                                <td>
+                                    <div><strong>@r.ProductName</strong></div>
+                                    <small class="text-muted">ID: @r.ProductId</small>
+                                </td>
+                                <td>
+                                    <div>@r.CustomerName</div>
+                                    @if (r.MemberId.HasValue)
+                                    {
+                                        <small class="text-muted">MemberId: @r.MemberId</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge badge-warning">@r.Rating 星</span>
+                                </td>
+                                <td>@r.Comment</td>
+                                <td>
+                                    <small class="text-muted">@r.CreatedAt?.ToString("yyyy/MM/dd HH:mm")</small>
+                                </td>
+                                <td class="text-center">
+                                    @{
+                                        var isVerified = r.IsVerified;
+                                        var toggleIcon = isVerified ? "fas fa-toggle-on" : "fas fa-toggle-off";
+                                        var toggleClass = isVerified ? "status-active" : "status-inactive";
+                                        var labelText = isVerified ? "已核可" : "未核可";
+                                    }
+                                    <span class="@toggleClass verify-toggle" title="點擊切換核可狀態"
+                                        onclick="toggleReviewVerify(@r.Id, this)">
+                                        <i class="@toggleIcon mr-1"></i><span class="verify-label">@labelText</span>
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary mr-1" onclick="viewProduct(@r.ProductId)"
+                                        title="查看詳情">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteReview(@r.Id)" title="刪除評論">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 刪除確認 Modal -->
+<div class="modal fade" id="deleteReviewModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle mr-2"></i>刪除確認</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">確定要刪除此筆評論嗎？此操作無法復原。</p>
+                <input type="hidden" id="deleteReviewId" />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteReviewBtn" onclick="performDeleteReview()">
+                    <i class="fas fa-trash mr-1"></i>確定刪除
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const FRONTEND_BASE_URL = window.FRONTEND_BASE_URL || 'http://localhost:8084';
+        $(function () {
+            const dt = $('#reviewsTable').DataTable({
+                language: { url: '//cdn.datatables.net/plug-ins/1.10.25/i18n/Chinese-traditional.json' },
+                pageLength: 25,
+                order: [[1, 'desc']],
+                columnDefs: [
+                    { orderable: false, targets: [0, 7, 8] }
+                ]
+            });
+
+            // 全選/全不選（僅目前頁）
+            $('#selectAll').on('change', function () {
+                const checked = this.checked;
+                $('#reviewsTable tbody input.select-row').prop('checked', checked);
+            });
+
+            // 批次核可/取消
+            $('#btnBatchApprove').on('click', () => batchSetVerify(true));
+            $('#btnBatchUnapprove').on('click', () => batchSetVerify(false));
+
+            // 關閉時還原按鈕
+            $('#deleteReviewModal').on('hidden.bs.modal', function() {
+                $('#confirmDeleteReviewBtn').prop('disabled', false).html('<i class="fas fa-trash mr-1"></i>確定刪除');
+                $('#deleteReviewId').val('');
+            });
+        });
+
+        // 查看商品詳情（前台）
+        function viewProduct(productId) {
+            if (!productId || productId <= 0) { alert('找不到商品 ID'); return; }
+            const url = `${FRONTEND_BASE_URL}/product/${productId}`;
+            window.open(url, '_blank');
+        }
+
+        function setVerifyUI(el, isVerified) {
+            const $el = $(el);
+            $el.removeClass('status-active status-inactive');
+            $el.addClass(isVerified ? 'status-active' : 'status-inactive');
+            const icon = $el.find('i').get(0);
+            if (icon) { icon.className = isVerified ? 'fas fa-toggle-on mr-1' : 'fas fa-toggle-off mr-1'; }
+            const $label = $el.find('.verify-label');
+            if ($label.length) { $label.text(isVerified ? '已核可' : '未核可'); }
+        }
+
+        async function toggleReviewVerify(id, el) {
+            if (!id || !el) return;
+            try {
+                const token = $('input[name="__RequestVerificationToken"]').val();
+                const res = await fetch('/ProductReviews/ToggleVerify', {
+                    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `__RequestVerificationToken=${encodeURIComponent(token)}&id=${encodeURIComponent(id)}`
+                });
+                const data = await res.json();
+                if (data && data.success) { setVerifyUI(el, !!data.isVerified); }
+                else { alert((data && data.message) || '操作失敗'); }
+            } catch (err) { console.error(err); alert('操作失敗'); }
+        }
+
+        function getSelectedIds() {
+            const ids = [];
+            $('#reviewsTable tbody input.select-row:checked').each(function () {
+                const v = parseInt(this.value, 10);
+                if (!isNaN(v)) ids.push(v);
+            });
+            return ids;
+        }
+
+        async function batchSetVerify(desired) {
+            const ids = getSelectedIds();
+            if (ids.length === 0) { alert('請先勾選要批次處理的評論'); return; }
+            const $btnApprove = $('#btnBatchApprove');
+            const $btnUnapprove = $('#btnBatchUnapprove');
+            $btnApprove.prop('disabled', true);
+            $btnUnapprove.prop('disabled', true);
+            try {
+                const token = $('input[name="__RequestVerificationToken"]').val();
+                let successCount = 0, skipCount = 0, failCount = 0;
+                for (const id of ids) {
+                    const row = $(`#reviewsTable tbody tr[data-id='${id}']`).get(0);
+                    if (!row) { skipCount++; continue; }
+                    const toggleEl = $(row).find('.verify-toggle').get(0);
+                    if (!toggleEl) { skipCount++; continue; }
+                    const curIsVerified = $(toggleEl).hasClass('status-active');
+                    if (curIsVerified === desired) { skipCount++; continue; }
+                    try {
+                        const res = await fetch('/ProductReviews/ToggleVerify', {
+                            method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: `__RequestVerificationToken=${encodeURIComponent(token)}&id=${encodeURIComponent(id)}`
+                        });
+                        const data = await res.json();
+                        if (data && data.success) { setVerifyUI(toggleEl, !!data.isVerified); successCount++; }
+                        else { failCount++; }
+                    } catch (_) { failCount++; }
+                }
+                const msg = `批次完成：成功 ${successCount}，略過 ${skipCount}，失敗 ${failCount}`;
+                if (failCount > 0) alert(msg);
+            } finally {
+                $btnApprove.prop('disabled', false);
+                $btnUnapprove.prop('disabled', false);
+            }
+        }
+
+        // 新增：刪除確認流程（使用 Modal）
+        function confirmDeleteReview(id) {
+            $('#deleteReviewId').val(id);
+            $('#deleteReviewModal').modal('show');
+        }
+
+        async function performDeleteReview() {
+            const id = $('#deleteReviewId').val();
+            if (!id) return;
+            try {
+                const btn = $('#confirmDeleteReviewBtn');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>處理中...');
+                const token = $('input[name="__RequestVerificationToken"]').val();
+                const res = await fetch('/ProductReviews/Delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `__RequestVerificationToken=${encodeURIComponent(token)}&id=${encodeURIComponent(id)}`
+                });
+                const data = await res.json();
+                if (data.success) {
+                    $('#deleteReviewModal').modal('hide');
+                    // 為避免 DataTables 狀態不一致，簡單刷新
+                    location.reload();
+                } else {
+                    alert(data.message || '刪除失敗');
+                    btn.prop('disabled', false).html('<i class="fas fa-trash mr-1"></i>確定刪除');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('刪除失敗');
+                $('#confirmDeleteReviewBtn').prop('disabled', false).html('<i class="fas fa-trash mr-1"></i>確定刪除');
+            }
+        }
+    </script>
+}

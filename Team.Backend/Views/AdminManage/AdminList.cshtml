@@ -1,0 +1,247 @@
+﻿@model List<Team.Backend.Models.ViewModels.AdminFullViewModel>
+
+<link rel="stylesheet" href="~/css/MemberInfo.css" />
+<link href="~/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+<div id="admin-tab" class="tab-content active">
+    <div class="table-container mb-3">
+        <!-- 搜尋區塊 -->
+        <div class="row g-2 mb-3">
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="searchEmail" placeholder="搜尋 Email">
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filterVerified">
+                    <option value="">所有角色</option>
+                    <option value="2">一般管理員</option>
+
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filterActive">
+                    <option value="">所有狀態</option>
+                    <option value="true">已啟用</option>
+                    <option value="false">已停用</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-primary w-100" onclick="searchAdmins()">篩選</button>
+            </div>
+            <div class="col-md-3 text-end">
+                <button class="btn btn-success" onclick="showAddAdminModal()">
+                    <i class="bi bi-person-plus"></i> 新增管理員
+                </button>
+            </div>
+        </div>
+
+        <!-- 管理員資料表格 -->
+        <table id="adminTable" class="table table-bordered" width="100%" cellspacing="0">
+            <thead>
+                <tr>
+                    <th class="text-center">Email</th>
+                    <th class="text-center">角色名稱</th>
+                    <th class="text-center">啟用狀態</th>
+                    <th class="text-center">最後登入時間</th>
+                    <th class="text-center">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var admin in Model)
+                {
+                    <tr class="text-center">
+                        <td>@admin.UserEmail</td>
+                        <td>@admin.RoleName</td>
+                        <td>
+                            @if (admin.UserIsActive)
+                            {
+                                <span class="badge bg-success">啟用</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">停用</span>
+                            }
+                        </td>
+                        <td>@admin.UserLastLoginAt</td>
+
+                        <td>
+                            <button type="button" class="btn btn-sm btn-info" onclick="showAdminDetail(@admin.UserId)">
+                                <i class="bi bi-eye"></i> 檢視
+                            </button>
+                            <button type="button" class="btn btn-sm btn-warning" onclick="resendPassword(@admin.UserId)">
+                                <i class="bi bi-envelope"></i> 重寄密碼
+                            </button>
+                    
+                           
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 詳細資料 Modal -->
+<div class="modal fade" id="adminDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="adminDetailContent"></div>
+    </div>
+</div>
+
+
+
+<!-- 新增管理員 Modal -->
+<div class="modal fade" id="addAdminModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="addAdminContent">
+            <div class="modal-header">
+                <h5 class="modal-title">邀請新管理員</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times text-danger fs-4 text-white"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addAdminForm">
+                    <div class="mb-3">
+                        <label for="newAdminEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="newAdminEmail" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newAdminRole" class="form-label">角色</label>
+                        <select class="form-select" id="newAdminRole" name="role" required>
+                        
+                            <option value="2">一般管理員</option>
+                        </select>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">發送邀請</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#adminTable').DataTable({
+                paging: false,
+                info: false,
+                searching: false,
+                ordering: false
+            });
+        });
+
+        function showAddAdminModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addAdminModal'));
+            modal.show();
+        }
+
+        function showAdminDetail(id) {
+            $.get('/AdminManage/AdminDetail', { id: id }, function (html) {
+                $('#adminDetailContent').html(html);
+                const modal = new bootstrap.Modal(document.getElementById('adminDetailModal'));
+                modal.show();
+            }).fail(function () {
+                alert("載入失敗，請稍後再試");
+            });
+        }
+
+        function showEditAdmin(id) {
+            $.get('/AdminManage/EditPartial', { id }, function (html) {
+                $('#editAdminContent').html(html);
+                const modal = new bootstrap.Modal(document.getElementById('editAdminModal'));
+                modal.show();
+                bindEditFormSubmit();
+            }).fail(function () {
+                alert("載入失敗，請稍後再試");
+            });
+        }
+
+        function bindEditFormSubmit() {
+            $('#editAdminForm').off('submit').on('submit', function (e) {
+                e.preventDefault();
+                const form = $(this);
+                const formData = form.serialize();
+                const submitBtn = form.find('button[type="submit"]');
+                const originalText = submitBtn.text();
+
+                submitBtn.prop('disabled', true).text('儲存中...');
+
+                $.post('/AdminManage/EditPartial', formData, function (result) {
+                    if (result.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('editAdminModal')).hide();
+                        location.reload();
+                    } else {
+                        $('#editAdminContent').html(result);
+                        bindEditFormSubmit();
+                    }
+                }).fail(function () {
+                    alert("儲存失敗，請稍後再試");
+                    submitBtn.prop('disabled', false).text(originalText);
+                });
+            });
+        }
+        //新增管理員
+
+                  $('#addAdminForm').on('submit', function (e) {
+            e.preventDefault();
+            const form = $(this);
+            const formData = form.serialize();
+            const submitBtn = form.find('button[type="submit"]');
+            const originalText = submitBtn.text();
+
+            submitBtn.prop('disabled', true).text('儲存中...');
+
+            $.post('/AdminManage/AddAdmin', formData, function (result) {
+                if (result.success) {
+                    alert('寄送成功');  // 成功發信後跳出訊息
+                    bootstrap.Modal.getInstance(document.getElementById('addAdminModal')).hide();
+                    location.reload();
+                } else {
+                    alert(result.message || '新增管理員失敗');
+                    submitBtn.prop('disabled', false).text(originalText);
+                }
+            }).fail(function () {
+                alert("新增失敗，請稍後再試");
+                submitBtn.prop('disabled', false).text(originalText);
+            });
+        });
+
+             function searchAdmins() {
+            const email = $('#searchEmail').val();
+            const role = $('#filterVerified').val();
+            const active = $('#filterActive').val();
+        window.location.href = `/AdminManage/AdminList?email=${email}&role=${role}&active=${active}`;
+
+
+        }
+
+        //忘記密碼?
+                  function resendPassword(userId) {
+            if (!confirm("確定要重新寄送密碼設定邀請嗎？")) return;
+
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.post('/AdminManage/ResendPasswordInvite', {
+                userId: userId,
+                __RequestVerificationToken: token
+            })
+            .done(function(result) {
+                alert(result.message);
+            })
+            .fail(function() {
+                alert("發生錯誤，請稍後再試");
+            });
+        }
+
+
+   
+    </script>
+}

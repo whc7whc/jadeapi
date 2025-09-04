@@ -1,0 +1,139 @@
+@model OrderDetailVm
+
+@if (Model == null)
+{
+    <div class="alert alert-warning">找不到此訂單的詳細資料。</div>
+}
+else
+{
+    <div class="order-detail">
+        <!-- 基本資訊 -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h6 class="text-muted mb-2">訂單資訊</h6>
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="text-muted" style="width: 80px;">訂單編號</td>
+                        <td><strong>@Model.Code</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">金額</td>
+                        <td><strong>NT$ @Model.Total.ToString("#,0")</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">運費</td>
+                        <td>NT$ @Model.ShippingFee.ToString("#,0")</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-muted mb-2">收件資訊</h6>
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="text-muted" style="width: 80px;">收件人</td>
+                        <td>@Model.RecipientName</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">電話</td>
+                        <td>@Model.Phone</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">地址</td>
+                        <td>@Model.Address</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- 商品明細 -->
+        <div class="mb-3">
+            <h6 class="text-muted mb-2">商品明細</h6>
+            
+            @if (Model.VendorOrderGroups?.Any() == true)
+            {
+                <!-- 分組顯示各賣家的商品 -->
+                @foreach (var vendorGroup in Model.VendorOrderGroups)
+                {
+                    <div class="vendor-group mb-4 border rounded p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="m-0 text-primary">
+                                <i class="fas fa-store"></i> @vendorGroup.VendorName
+                            </h6>
+                            <div>
+                                <span class="badge badge-status" data-status="@(vendorGroup.OrderStatus?.Trim() ?? "")">
+                                    @Team.Backend.Constants.OrderStatusOptions.Text(vendorGroup.OrderStatus)
+                                </span>
+                                <small class="text-muted ml-2">訂單號: @vendorGroup.OrderCode</small>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-2">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>商品名稱</th>
+                                        <th class="text-center" style="width: 80px;">數量</th>
+                                        <th class="text-right" style="width: 120px;">單價</th>
+                                        <th class="text-right" style="width: 120px;">小計</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in vendorGroup.Items)
+                                    {
+                                        <tr>
+                                            <td>@item.Name</td>
+                                            <td class="text-center">@item.Qty</td>
+                                            <td class="text-right">NT$ @item.Price.ToString("#,0")</td>
+                                            <td class="text-right">NT$ @item.Subtotal.ToString("#,0")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="3" class="text-right"><strong>商品小計：</strong></td>
+                                        <td class="text-right"><strong>NT$ @vendorGroup.SubTotal.ToString("#,0")</strong></td>
+                                    </tr>
+                                    @if (vendorGroup.ShippingFee > 0)
+                                    {
+                                        <tr>
+                                            <td colspan="3" class="text-right"><strong>運費：</strong></td>
+                                            <td class="text-right"><strong>NT$ @vendorGroup.ShippingFee.ToString("#,0")</strong></td>
+                                        </tr>
+                                    }
+                                    <tr class="table-warning">
+                                        <td colspan="3" class="text-right"><strong>該賣家總計：</strong></td>
+                                        <td class="text-right"><strong>NT$ @vendorGroup.Total.ToString("#,0")</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        
+                        @if (!string.IsNullOrEmpty(vendorGroup.TrackingNumber))
+                        {
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-truck"></i> 追蹤號碼: <code>@vendorGroup.TrackingNumber</code>
+                                </small>
+                            </div>
+                        }
+                    </div>
+                }
+                
+                <!-- 總計區域 -->
+                <div class="border-top pt-3">
+                    <div class="row">
+                        <div class="col-md-6 offset-md-6">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td class="text-right"><strong>訂單總金額：</strong></td>
+                                    <td class="text-right"><strong class="text-success h5">NT$ @Model.Total.ToString("#,0")</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+            <!-- 移除舊版向後兼容代碼，因為現在總是使用 VendorOrderGroups -->
+        </div>
+    </div>
+}

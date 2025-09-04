@@ -1,0 +1,1247 @@
+﻿@model IEnumerable<Team.Backend.Models.EfModel.Post>
+
+@{
+    ViewData["Title"] = "會員貼文管理";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    :root {
+        --primary-color: #022c5c;
+        --danger-color: #eb5757;
+        --secondary-color: #e4dcd1;
+        --bg-light: #faf6eb;
+        --success-color: #1e7e34;
+        --warning-color: #ffc107;
+        --info-color: #17a2b8;
+    }
+
+    /* Custom text color */
+    .custom-text-color {
+        color: var(--primary-color) !important;
+    }
+
+    /* Button styles */
+    .btn-custom {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: #fff;
+        transition: all 0.3s ease;
+    }
+
+        .btn-custom:hover {
+            background-color: #011a36;
+            border-color: #011a36;
+            color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+    .btn-approve {
+        background-color: var(--success-color);
+        border-color: var(--success-color);
+        color: #fff;
+    }
+
+        .btn-approve:hover {
+            background-color: #155724;
+            border-color: #155724;
+            color: #fff;
+        }
+
+    .btn-reject {
+        background-color: var(--danger-color);
+        border-color: var(--danger-color);
+        color: #fff;
+    }
+
+        .btn-reject:hover {
+            background-color: #b92d2d;
+            border-color: #b92d2d;
+            color: #fff;
+        }
+
+    .btn-pending {
+        background-color: var(--warning-color);
+        border-color: var(--warning-color);
+        color: #212529;
+    }
+
+        .btn-pending:hover {
+            background-color: #e0a800;
+            border-color: #e0a800;
+            color: #212529;
+        }
+
+    .btn-info-custom {
+        background-color: var(--info-color);
+        border-color: var(--info-color);
+        color: #fff;
+    }
+
+        .btn-info-custom:hover {
+            background-color: #138496;
+            border-color: #138496;
+            color: #fff;
+        }
+
+    /* Checkbox style */
+    .select-checkbox {
+        transform: scale(1.3);
+        margin-right: 5px;
+        accent-color: var(--primary-color);
+    }
+
+    /* Table header styles */
+    .table thead th {
+        background-color: var(--primary-color);
+        color: #fff !important;
+        border: none;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.875rem;
+        letter-spacing: 0.5px;
+    }
+
+    /* Table row styles */
+    .table-striped > tbody > tr:nth-of-type(odd) {
+        background-color: #ffffff;
+    }
+
+    .table-striped > tbody > tr:nth-of-type(even) {
+        background-color: var(--bg-light);
+    }
+
+    .table tbody tr {
+        transition: all 0.3s ease;
+        border-bottom: 1px solid #e3f2fd;
+    }
+
+        .table tbody tr:hover {
+            background-color: #e3f2fd !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(2, 44, 92, 0.1);
+        }
+
+    .table tbody td {
+        vertical-align: middle;
+        padding: 1rem 0.75rem;
+        border-top: none;
+    }
+
+    /* Card styles */
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+    .card-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #034694 100%);
+        border: none;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1.25rem 1.5rem;
+    }
+
+        .card-header h6 {
+            color: #fff !important;
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Status badge styles */
+    .status-badge {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .badge-success {
+        background-color: #d4edda !important;
+        color: var(--success-color) !important;
+        border: 1px solid #c3e6cb;
+    }
+
+    .badge-warning {
+        background-color: #fff3cd !important;
+        color: #856404 !important;
+        border: 1px solid #ffeaa7;
+    }
+
+    .badge-danger {
+        background-color: #f8d7da !important;
+        color: #721c24 !important;
+        border: 1px solid #f5c6cb;
+    }
+
+    .badge-secondary {
+        background-color: #e2e3e5 !important;
+        color: #6c757d !important;
+        border: 1px solid #d6d8db;
+    }
+
+    /* Modal styles */
+    .modal-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #034694 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        border: none;
+    }
+
+    .modal-content {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-footer {
+        border: none;
+        padding: 1.5rem;
+    }
+
+    /* Form styles */
+    .form-control {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(2, 44, 92, 0.25);
+        }
+
+    /* Action button group */
+    .btn-group-sm > .btn, .btn-sm {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: 6px;
+        margin: 0 2px;
+        transition: all 0.3s ease;
+    }
+
+        .btn-group-sm > .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+    /* Content preview style */
+    .content-preview {
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #495057;
+    }
+
+    /* Author name style */
+    .author-name {
+        font-weight: 500;
+        color: var(--primary-color);
+    }
+
+    /* Title link style */
+    .title-link {
+        color: var(--primary-color);
+        text-decoration: none !important;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+        .title-link:hover {
+            color: #034694;
+            text-decoration: none !important;
+        }
+
+    /* Pagination styles */
+    .pagination {
+        margin-bottom: 0;
+    }
+
+        .pagination .page-link {
+            color: var(--primary-color);
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 0 2px;
+            transition: all 0.3s ease;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 4px rgba(2, 44, 92, 0.3);
+        }
+
+        .pagination .page-link:hover {
+            background-color: #e3f2fd;
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+        }
+
+    /* Filter section */
+    .filter-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, var(--bg-light) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Batch action buttons */
+    .batch-actions {
+        animation: slideInDown 0.3s ease;
+    }
+
+    slideInDown {
+        from
+
+    {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    }
+
+    /* Loading spinner */
+    .loading-spinner {
+        display: inline-block;
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+  spin {
+        0%
+
+    {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+
+    }
+
+    /* Alert styles */
+    .alert {
+        border: none;
+        border-radius: 10px;
+        font-weight: 500;
+    }
+
+    .alert-warning {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        color: #856404;
+        border-left: 4px solid #ffc107;
+    }
+
+    /* Responsive adjustments */
+    (max-width: 768px) {
+        .btn-group-sm > .btn
+
+    {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-0 custom-text-color">
+                <i class="fas fa-users-cog mr-2"></i>會員貼文管理
+            </h1>
+            <p class="text-muted mb-0">管理和審核會員提交的貼文內容</p>
+        </div>
+        <div class="batch-actions" id="batchActions">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-approve btn-sm" onclick="batchApprove()" id="batchApproveBtn" disabled>
+                    <i class="fas fa-check mr-1"></i>批次核准
+                </button>
+                <button type="button" class="btn btn-reject btn-sm" onclick="showBatchRejectModal()" id="batchRejectBtn" disabled>
+                    <i class="fas fa-times mr-1"></i>批次退回
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 篩選區域 -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h6 class="m-0">
+                <i class="fas fa-filter mr-2"></i>篩選條件
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="statusFilter" class="form-label custom-text-color font-weight-bold">
+                        <i class="fas fa-flag mr-1"></i>狀態篩選
+                    </label>
+                    <select id="statusFilter" class="form-control">
+                        <option value="">全部狀態</option>
+                        <option value="pending">🟡 待審核</option>
+                        <option value="published">🟢 已發布</option>
+                        <option value="rejected">🔴 已退回</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="searchInput" class="form-label custom-text-color font-weight-bold">
+                        <i class="fas fa-search mr-1"></i>關鍵字搜尋
+                    </label>
+                    <input type="text" id="searchInput" class="form-control" placeholder="搜尋標題、內容或作者姓名...">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">&nbsp;</label>
+                    <div>
+                        <button type="button" class="btn btn-custom btn-block" onclick="applyFilters()">
+                            <i class="fas fa-search mr-2"></i>開始搜尋
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 貼文列表 -->
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="m-0">
+                    <i class="fas fa-list mr-2"></i>貼文列表
+                </h6>
+                <span class="badge badge-light" id="totalCount" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+                    共 @Model.Count() 筆資料
+                </span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0" id="postsTable">
+                    <thead>
+                        <tr>
+                            <th width="50" class="text-center">
+                                <input type="checkbox" id="selectAll" class="select-checkbox">
+                            </th>
+                            <th width="80" class="text-center">ID</th>
+                            <th>標題</th>
+                            <th width="120">作者</th>
+                            <th width="100" class="text-center">狀態</th>
+                            <th width="140" class="text-center">建立時間</th>
+                            <th width="140" class="text-center">審核時間</th>
+                            <th width="200" class="text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var post in Model)
+                        {
+                            <tr>
+                                <td class="text-center">
+                                    <input type="checkbox" class="post-checkbox select-checkbox" value="@post.Id">
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge badge-light" style="font-size: 0.8rem;">@post.Id</span>
+                                </td>
+                                <td>
+                                    <a asp-controller="MemberPost" asp-action="MemberPostDetails" asp-route-id="@post.Id" class="title-link">
+                                        <i class="fas fa-file-alt mr-1 text-muted"></i>
+                                        @(post.Title?.Length > 60 ? post.Title.Substring(0, 60) + "..." : post.Title)
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="author-name">
+                                        <i class="fas fa-user mr-1 text-muted"></i>
+                                        @(post.Members?.Profile?.Name ?? "未知用戶")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if (post.Status == "published")
+                                    {
+                                        <span class="badge badge-success status-badge">
+                                            <i class="fas fa-check-circle"></i> 已發布
+                                        </span>
+                                    }
+                                    else if (post.Status == "pending")
+                                    {
+                                        <span class="badge badge-warning status-badge">
+                                            <i class="fas fa-clock"></i> 待審核
+                                        </span>
+                                    }
+                                    else if (post.Status == "rejected")
+                                    {
+                                        <span class="badge badge-danger status-badge">
+                                            <i class="fas fa-times-circle"></i> 已退回
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-secondary status-badge">
+                                            <i class="fas fa-edit"></i> 草稿
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-center text-muted">
+                                    <small>
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        @post.CreatedAt.ToString("MM/dd HH:mm")
+                                    </small>
+                                </td>
+                                <td class="text-center text-muted">
+                                    <small>
+                                        @if (post.ReviewedAt.HasValue)
+                                        {
+                                            <i class="fas fa-calendar-check mr-1"></i>
+                                            @post.ReviewedAt.Value.ToString("MM/dd HH:mm")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </small>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a asp-controller="MemberPost" asp-action="MemberPostDetails" asp-route-id="@post.Id"
+                                           class="btn btn-info-custom btn-sm" title="查看詳情">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+
+                                        @if (post.Status == "pending")
+                                        {
+                                            <button type="button" class="btn btn-approve btn-sm"
+                                                    onclick="reviewPost(@post.Id, 'approve')" title="核准發布">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-pending btn-sm"
+                                                    onclick="showRejectModal(@post.Id)" title="退回">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        }
+                                        else if (post.Status == "published")
+                                        {
+                                            <button type="button" class="btn btn-secondary btn-sm"
+                                                    onclick="reviewPost(@post.Id, 'pending')" title="撤銷發布">
+                                                <i class="fas fa-undo"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-pending btn-sm"
+                                                    onclick="showRejectModal(@post.Id)" title="退回">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        }
+                                        else if (post.Status == "rejected")
+                                        {
+                                            <button type="button" class="btn btn-approve btn-sm"
+                                                    onclick="reviewPost(@post.Id, 'approve')" title="重新核准">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-info-custom btn-sm"
+                                                    onclick="reviewPost(@post.Id, 'pending')" title="改為待審核">
+                                                <i class="fas fa-clock"></i>
+                                            </button>
+                                        }
+
+                                        <button type="button" class="btn btn-reject btn-sm"
+                                                onclick="deletePost(@post.Id)" title="刪除違規內容">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分頁區域 -->
+            <div class="d-flex justify-content-between align-items-center p-3 border-top">
+                <div class="text-muted">
+                    <small id="pageInfo">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        顯示第 1-@Model.Count() 筆，共 @Model.Count() 筆資料
+                    </small>
+                </div>
+                <nav aria-label="貼文分頁">
+                    <ul class="pagination pagination-sm mb-0" id="pagination">
+                        <!-- 分頁按鈕將由 JavaScript 動態生成 -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 退回原因 Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" role="dialog" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rejectModalLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>退回貼文
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    請詳細說明退回原因，這將幫助會員了解需要修改的地方。
+                </div>
+                <div class="form-group">
+                    <label for="rejectReason" class="form-label font-weight-bold">
+                        退回原因 <span class="text-danger">*</span>
+                    </label>
+                    <textarea id="rejectReason" class="form-control" rows="5"
+                              placeholder="請詳細說明退回的具體原因，例如：內容不符合社群規範、圖片解析度過低、標題不夠明確等..."
+                              required></textarea>
+                    <small class="form-text text-muted">
+                        <i class="fas fa-keyboard mr-1"></i>提示：可以按 Ctrl + Enter 快速提交
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-reject" onclick="confirmReject()" id="confirmRejectBtn">
+                    <i class="fas fa-paper-plane mr-1"></i>確認退回
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 批次退回 Modal -->
+<div class="modal fade" id="batchRejectModal" tabindex="-1" role="dialog" aria-labelledby="batchRejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="batchRejectModalLabel">
+                    <i class="fas fa-users-slash mr-2"></i>批次退回貼文
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    您即將同時退回 <strong><span id="selectedCount">0</span></strong> 篇貼文，此操作將影響多位會員。
+                </div>
+                <div class="form-group">
+                    <label for="batchRejectReason" class="form-label font-weight-bold">
+                        批次退回原因 <span class="text-danger">*</span>
+                    </label>
+                    <textarea id="batchRejectReason" class="form-control" rows="5"
+                              placeholder="請說明批次退回的共同原因，例如：集中清理低質量內容、統一審核標準調整等..."
+                              required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-reject" onclick="confirmBatchReject()" id="confirmBatchRejectBtn">
+                    <i class="fas fa-users-slash mr-1"></i>確認批次退回
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSRF Token -->
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        let currentPostId = 0;
+        let currentPage = 1;
+        let pageSize = 10;
+
+        $(document).ready(function() {
+            console.log('頁面載入完成');
+
+            // 檢查依賴項
+            console.log('jQuery:', typeof $ !== 'undefined' ? '✅' : '❌');
+            console.log('Bootstrap Modal:', typeof $.fn.modal !== 'undefined' ? '✅' : '❌');
+            console.log('toastr:', typeof toastr !== 'undefined' ? '✅' : '❌');
+            console.log('CSRF Token:', $('input[name="__RequestVerificationToken"]').length > 0 ? '✅' : '❌');
+
+            // 全選功能
+            $('#selectAll').change(function() {
+                $('.post-checkbox').prop('checked', this.checked);
+                updateBatchButtons();
+            });
+
+            // 單選功能
+            $(document).on('change', '.post-checkbox', function() {
+                updateBatchButtons();
+                const totalCheckboxes = $('.post-checkbox').length;
+                const checkedCheckboxes = $('.post-checkbox:checked').length;
+                $('#selectAll').prop('checked', totalCheckboxes === checkedCheckboxes);
+            });
+
+            // Modal 事件監聽
+            $('#rejectModal').on('shown.bs.modal', function () {
+                console.log('Reject modal 已顯示');
+                $('#rejectReason').focus();
+            });
+
+            $('#rejectModal').on('hidden.bs.modal', function () {
+                console.log('Reject modal 已隱藏');
+                $('#rejectReason').val('');
+                currentPostId = 0;
+                // 恢復按鈕狀態
+                $('#confirmRejectBtn').prop('disabled', false).html('<i class="fas fa-check"></i> 確認退回');
+            });
+
+            $('#batchRejectModal').on('hidden.bs.modal', function () {
+                console.log('Batch reject modal 已隱藏');
+                $('#batchRejectReason').val('');
+                $('#confirmBatchRejectBtn').prop('disabled', false).html('<i class="fas fa-check"></i> 確認批次退回');
+            });
+
+            // Enter 鍵快速提交
+            $('#rejectReason').on('keypress', function(e) {
+                if (e.which === 13 && e.ctrlKey) {
+                    confirmReject();
+                }
+            });
+
+            $('#batchRejectReason').on('keypress', function(e) {
+                if (e.which === 13 && e.ctrlKey) {
+                    confirmBatchReject();
+                }
+            });
+
+            // 載入初始資料
+            loadPosts();
+        });
+
+        function updateBatchButtons() {
+            const checkedCount = $('.post-checkbox:checked').length;
+            $('#batchApproveBtn, #batchRejectBtn').prop('disabled', checkedCount === 0);
+        }
+
+        function applyFilters() {
+            currentPage = 1;
+            loadPosts();
+        }
+
+        function loadPosts() {
+            const status = $('#statusFilter').val();
+            const search = $('#searchInput').val();
+
+            $.ajax({
+                url: '/Blog/FilterMemberPosts',
+                type: 'GET',
+                data: {
+                    status: status,
+                    search: search,
+                    page: currentPage,
+                    pageSize: pageSize
+                },
+                success: function(result) {
+                    if (result.success) {
+                        updatePostsTable(result.data);
+                        updatePagination(result);
+                        $('#totalCount').text(`共 ${result.totalCount} 筆`);
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('載入資料失敗');
+                        } else {
+                            alert('載入資料失敗');
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('載入資料錯誤:', error);
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('載入資料時發生錯誤');
+                    } else {
+                        alert('載入資料時發生錯誤');
+                    }
+                }
+            });
+        }
+
+        function updatePostsTable(posts) {
+            const tbody = $('#postsTable tbody');
+            tbody.empty();
+
+            posts.forEach(function(post) {
+                const statusBadge = getStatusBadge(post.status);
+                const actionButtons = getActionButtons(post);
+
+                const row = `
+                    <tr>
+                        <td><input type="checkbox" class="post-checkbox" value="${post.id}"></td>
+                        <td>${post.id}</td>
+                        <td>
+                            <a href="/Blog/MemberPostDetails/${post.id}" class="text-decoration-none">
+                                ${post.title.length > 50 ? post.title.substring(0, 50) + '...' : post.title}
+                            </a>
+                        </td>
+                        <td>${post.authorName}</td>
+                        <td>${statusBadge}</td>
+                        <td>${formatDate(post.createdAt)}</td>
+                        <td>${post.reviewedAt || '-'}</td>
+                        <td>${actionButtons}</td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+
+            // 重新綁定事件
+            $('.post-checkbox').change(function() {
+                updateBatchButtons();
+            });
+        }
+
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'published':
+                    return '<span class="badge badge-success">已發布</span>';
+                case 'pending':
+                    return '<span class="badge badge-warning">待審核</span>';
+                case 'rejected':
+                    return '<span class="badge badge-danger">已退回</span>';
+                default:
+                    return '<span class="badge badge-secondary">草稿</span>';
+            }
+        }
+
+        function getActionButtons(post) {
+            let buttons = `
+                <div class="btn-group btn-group-sm">
+                    <a href="/Blog/MemberPostDetails/${post.id}" class="btn btn-info btn-sm" title="查看詳情">
+                        <i class="fas fa-eye"></i>
+                    </a>
+            `;
+
+            switch(post.status) {
+                case 'pending':
+                    buttons += `
+                        <button type="button" class="btn btn-success btn-sm" onclick="reviewPost(${post.id}, 'approve')" title="核准發布">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button type="button" class="btn btn-warning btn-sm" onclick="showRejectModal(${post.id})" title="退回">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    break;
+                case 'published':
+                    buttons += `
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="reviewPost(${post.id}, 'pending')" title="撤銷發布">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <button type="button" class="btn btn-warning btn-sm" onclick="showRejectModal(${post.id})" title="退回">
+                            <i class="fas fa-ban"></i>
+                        </button>
+                    `;
+                    break;
+                case 'rejected':
+                    buttons += `
+                        <button type="button" class="btn btn-success btn-sm" onclick="reviewPost(${post.id}, 'approve')" title="重新核准">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button type="button" class="btn btn-info btn-sm" onclick="reviewPost(${post.id}, 'pending')" title="改為待審核">
+                            <i class="fas fa-clock"></i>
+                        </button>
+                    `;
+                    break;
+            }
+
+            buttons += `
+                    <button type="button" class="btn btn-danger btn-sm" onclick="deletePost(${post.id})" title="刪除（違規內容）">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+
+            return buttons;
+        }
+
+        function updatePagination(result) {
+            const pagination = $('#pagination');
+            pagination.empty();
+
+            if (result.currentPage > 1) {
+                pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="changePage(${result.currentPage - 1})">上一頁</a></li>`);
+            }
+
+            for (let i = 1; i <= result.totalPages; i++) {
+                const activeClass = i === result.currentPage ? 'active' : '';
+                pagination.append(`<li class="page-item ${activeClass}"><a class="page-link" href="#" onclick="changePage(${i})">${i}</a></li>`);
+            }
+
+            if (result.currentPage < result.totalPages) {
+                pagination.append(`<li class="page-item"><a class="page-link" href="#" onclick="changePage(${result.currentPage + 1})">下一頁</a></li>`);
+            }
+
+            const start = (result.currentPage - 1) * result.pageSize + 1;
+            const end = Math.min(result.currentPage * result.pageSize, result.totalCount);
+            $('#pageInfo').text(`顯示第 ${start}-${end} 筆，共 ${result.totalCount} 筆`);
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            loadPosts();
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        }
+
+        function reviewPost(postId, action) {
+            console.log('reviewPost called:', postId, action);
+
+            const button = $(`button[onclick="reviewPost(${postId}, '${action}')"]`);
+            const originalHtml = button.html();
+            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+            $.ajax({
+                url: '/Blog/ReviewPost',
+                type: 'POST',
+                data: {
+                    id: postId,
+                    action: action,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(result) {
+                    console.log('reviewPost success:', result);
+
+                    if (result.success) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(result.message);
+                        } else {
+                            alert(result.message);
+                        }
+                        loadPosts();
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(result.message);
+                        } else {
+                            alert('錯誤：' + result.message);
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('reviewPost error:', error, xhr.responseText);
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('操作失敗，請稍後重試');
+                    } else {
+                        alert('操作失敗，請稍後重試');
+                    }
+                },
+                complete: function() {
+                    button.prop('disabled', false).html(originalHtml);
+                }
+            });
+        }
+
+        function showRejectModal(postId) {
+            console.log('showRejectModal called:', postId);
+            currentPostId = postId;
+            $('#rejectReason').val('');
+            $('#rejectModal').modal('show');
+        }
+
+        // 🔥 修正的 confirmReject 函數
+        function confirmReject() {
+            console.log('confirmReject called for postId:', currentPostId);
+
+            const reason = $('#rejectReason').val().trim();
+            if (!reason) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning('請輸入退回原因');
+                } else {
+                    alert('請輸入退回原因');
+                }
+                return;
+            }
+
+            // 禁用確認按鈕
+            const confirmBtn = $('#confirmRejectBtn');
+            confirmBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> 處理中...');
+
+            $.ajax({
+                url: '/Blog/ReviewPost',
+                type: 'POST',
+                data: {
+                    id: currentPostId,
+                    action: 'reject',
+                    rejectReason: reason,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(result) {
+                    console.log('confirmReject success:', result);
+
+                    if (result.success) {
+                        // 🔥 關鍵修正：立即關閉 Modal
+                        $('#rejectModal').modal('hide');
+
+                        // 延遲執行其他操作，確保 Modal 完全關閉
+                        setTimeout(function() {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success(result.message);
+                            } else {
+                                alert(result.message);
+                            }
+                            loadPosts();
+                        }, 300);
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(result.message);
+                        } else {
+                            alert('錯誤：' + result.message);
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('confirmReject error:', error, xhr.responseText);
+
+                    // 🔥 即使錯誤也要關閉 Modal
+                    $('#rejectModal').modal('hide');
+
+                    setTimeout(function() {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('操作失敗，請稍後重試');
+                        } else {
+                            alert('操作失敗，請稍後重試');
+                        }
+                    }, 300);
+                },
+                complete: function() {
+                    // 恢復按鈕狀態（Modal 隱藏事件會處理）
+                    console.log('confirmReject completed');
+                }
+            });
+        }
+
+        function batchApprove() {
+            const selectedIds = $('.post-checkbox:checked').map(function() {
+                return this.value;
+            }).get();
+
+            if (selectedIds.length === 0) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning('請選擇要核准的貼文');
+                } else {
+                    alert('請選擇要核准的貼文');
+                }
+                return;
+            }
+
+            if (confirm(`確定要核准選中的 ${selectedIds.length} 篇貼文嗎？`)) {
+                $.ajax({
+                    url: '/Blog/BatchReview',
+                    type: 'POST',
+                    data: {
+                        postIds: selectedIds,
+                        action: 'approve',
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(result) {
+                        if (result.success) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success(result.message);
+                            } else {
+                                alert(result.message);
+                            }
+                            loadPosts();
+                            $('#selectAll').prop('checked', false);
+                            updateBatchButtons();
+                        } else {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(result.message);
+                            } else {
+                                alert('錯誤：' + result.message);
+                            }
+                        }
+                    },
+                    error: function() {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('批次操作失敗，請稍後重試');
+                        } else {
+                            alert('批次操作失敗，請稍後重試');
+                        }
+                    }
+                });
+            }
+        }
+
+        function showBatchRejectModal() {
+            const selectedCount = $('.post-checkbox:checked').length;
+            if (selectedCount === 0) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning('請選擇要退回的貼文');
+                } else {
+                    alert('請選擇要退回的貼文');
+                }
+                return;
+            }
+
+            $('#selectedCount').text(selectedCount);
+            $('#batchRejectReason').val('');
+            $('#batchRejectModal').modal('show');
+        }
+
+        // 🔥 修正的批次退回函數
+        function confirmBatchReject() {
+            console.log('confirmBatchReject called');
+
+            const reason = $('#batchRejectReason').val().trim();
+            if (!reason) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning('請輸入退回原因');
+                } else {
+                    alert('請輸入退回原因');
+                }
+                return;
+            }
+
+            const selectedIds = $('.post-checkbox:checked').map(function() {
+                return this.value;
+            }).get();
+
+            // 禁用確認按鈕
+            const confirmBtn = $('#confirmBatchRejectBtn');
+            confirmBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> 處理中...');
+
+            $.ajax({
+                url: '/Blog/BatchReview',
+                type: 'POST',
+                data: {
+                    postIds: selectedIds,
+                    action: 'reject',
+                    rejectReason: reason,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(result) {
+                    console.log('confirmBatchReject success:', result);
+
+                    if (result.success) {
+                        // 🔥 關鍵修正：立即關閉 Modal
+                        $('#batchRejectModal').modal('hide');
+
+                        setTimeout(function() {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success(result.message);
+                            } else {
+                                alert(result.message);
+                            }
+                            loadPosts();
+                            $('#selectAll').prop('checked', false);
+                            updateBatchButtons();
+                        }, 300);
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(result.message);
+                        } else {
+                            alert('錯誤：' + result.message);
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('confirmBatchReject error:', error, xhr.responseText);
+
+                    // 🔥 即使錯誤也要關閉 Modal
+                    $('#batchRejectModal').modal('hide');
+
+                    setTimeout(function() {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('批次操作失敗，請稍後重試');
+                        } else {
+                            alert('批次操作失敗，請稍後重試');
+                        }
+                    }, 300);
+                },
+                complete: function() {
+                    // 恢復按鈕狀態（Modal 隱藏事件會處理）
+                    console.log('confirmBatchReject completed');
+                }
+            });
+        }
+
+        function deletePost(postId) {
+            if (confirm('確定要刪除這篇貼文嗎？此操作無法復原。')) {
+                // 使用表單提交而不是 AJAX，因為 Controller 期望 RedirectToAction
+                const form = $('<form>', {
+                    method: 'POST',
+                    action: '/Blog/DeleteMemberPost'
+                });
+
+                form.append($('<input>', {
+                    type: 'hidden',
+                    name: 'id',
+                    value: postId
+                }));
+
+                form.append($('<input>', {
+                    type: 'hidden',
+                    name: '__RequestVerificationToken',
+                    value: $('input[name="__RequestVerificationToken"]').val()
+                }));
+
+                $('body').append(form);
+                form.submit();
+            }
+        }
+
+        // 🔥 測試函數（可以在 Console 中執行進行除錯）
+        function testModal() {
+            console.log('Testing modal...');
+            $('#rejectModal').modal('show');
+        }
+
+        function testAjax() {
+            console.log('Testing AJAX connection...');
+            $.ajax({
+                url: '/Blog/FilterMemberPosts',
+                type: 'GET',
+                data: { page: 1, pageSize: 1 },
+                success: function(result) {
+                    console.log('AJAX Test Success:', result);
+                },
+                error: function(xhr, status, error) {
+                    console.log('AJAX Test Error:', error);
+                }
+            });
+        }
+    </script>
+}

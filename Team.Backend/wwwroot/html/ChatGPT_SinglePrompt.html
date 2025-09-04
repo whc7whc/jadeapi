@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <title>ChatGPT - OpenAI API, Single Prompt</title>
+    <style>
+        input[type=text] {
+            width: 70%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="text-bg-info p-3 mb-4">
+        <h1>串接ChatGPT API做互動式聊天問答(單一問題，無前後文感知)</h1>
+    </div>
+
+    <input type="text" id="question" placeholder="請輸入你的問題" value="">
+    <input type="submit" id="btnSubmit" value="送出" autofocus>
+
+    <div id="container" class="mb-5"></div>
+    <div id="resultJson" class="text-bg-warning p-3 mb-4" style="visibility: hidden"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
+        crossorigin="anonymous"></script>
+    <script>
+        // NOTE: Do NOT put API keys in frontend code.
+        // The frontend should call a secure backend proxy which holds the OpenAI API key.
+        // This project already has an OpenAI controller. Use the existing endpoint below.
+        const chatgpt_ApiUrl = "/api/OpenAI/SendMessage"; // expects { message: string }
+        let input, btnSubmit, container, resultJson;
+
+        let requestData = {
+            "model": "gpt-3.5-turbo",
+            "messages": [{ "role": "user", "content": "Hello!" }],
+            "max_tokens": 2048,
+            "temperature": 1
+        };
+
+        let responseData = {};
+
+        window.onload = function () {
+            questionInput = document.getElementById("question");
+            btnSubmit = document.getElementById("btnSubmit");
+            container = document.getElementById("container");
+            resultJson = document.getElementById("resultJson");
+
+            //當input按下Enter按鈕後,觸發Submit事件
+            questionInput.addEventListener("keypress", (event) => {
+                if (event.key == "Enter") {
+                    event.preventDefault();
+                    btnSubmit.click();
+                }
+            });
+
+            //註冊Submit的Click事件
+            btnSubmit.addEventListener("click", () => {
+                container.innerHTML = `
+                    <div class="spinner-border text-danger" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                    </div>`;
+
+                resultJson.style.visibility = "hidden";
+
+
+                let question = questionInput.value;
+                if (question.length > 0) {
+                    requestData.messages[0].content = question;
+                }
+
+                // 建立Request請求，送到後端代理。後端需在伺服器端加入 Authorization: Bearer <OPENAI_KEY>
+                let request = new Request(chatgpt_ApiUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-type": "application/json; charset=UTF-8"
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                btnSubmit.disabled = true;
+
+                // fetch 發出請求給後端代理 (api/OpenAI/SendMessage)
+                fetch(request)
+                    .then(async response => {
+                        const json = await response.json().catch(() => null);
+                        if (!response.ok) throw json || { error: 'unknown error' };
+                        return json;
+                    })
+                    .then(data => {
+                        let question = `問題 : ${questionInput.value}` + "<br>";
+                        container.innerHTML = question;
+
+                        // 既有 controller 回傳格式: { success: true, reply: string }
+                        if (data && data.success && data.reply) {
+                            container.innerHTML = `回答 : ${data.reply}`;
+                        } else if (data && data.success && data.response) {
+                            container.innerHTML = `回答 : ${data.response}`;
+                        } else {
+                            container.innerHTML = `伺服器回應格式錯誤：${JSON.stringify(data)}`;
+                        }
+
+                        resultJson.innerText = JSON.stringify(data);
+                        resultJson.style.visibility = "visible";
+                    })
+                    .catch(ex => {
+                        console.error('OpenAI proxy error', ex);
+                        container.innerHTML = `<div class="text-danger">發生錯誤：${ex?.error || ex?.message || ex}</div>`;
+                    })
+                    .finally(() => {
+                        questionInput.value = "";
+                        btnSubmit.disabled = false;
+                    });
+            });
+        }
+    </script>
+</body>
+
+</html>

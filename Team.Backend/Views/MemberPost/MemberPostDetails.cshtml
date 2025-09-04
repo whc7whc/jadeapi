@@ -1,0 +1,475 @@
+﻿<!-- 增強版的 MemberPostDetails.cshtml - 支援狀態變更 -->
+@model Team.Backend.Models.EfModel.Post
+
+@{
+    ViewData["Title"] = "會員貼文詳情";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">會員貼文詳情</h1>
+        <div>
+            <a asp-controller="MemberPost" asp-action="MemberPosts" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> 返回列表
+            </a>
+        </div>
+    </div>
+
+    <!-- 成功/錯誤訊息 -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- 貼文詳情卡片 -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">貼文內容</h6>
+                </div>
+                <div class="card-body">
+                    <h2 class="mb-3">@Model.Title</h2>
+
+                    @if (!string.IsNullOrEmpty(Model.Image))
+                    {
+                        <div class="mb-4 text-center">
+                            <img src="@Model.Image" alt="貼文圖片" class="img-fluid rounded" style="max-height: 400px;">
+                        </div>
+                    }
+
+                    <div class="content">
+                        @Html.Raw(Model.Content?.Replace("\n", "<br>"))
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- 貼文資訊 -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">貼文資訊</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>狀態：</strong></td>
+                            <td>
+                                <span id="currentStatus">
+                                    @if (Model.Status == "published")
+                                    {
+                                        <span class="badge badge-success">已發布</span>
+                                    }
+                                    else if (Model.Status == "pending")
+                                    {
+                                        <span class="badge badge-warning">待審核</span>
+                                    }
+                                    else if (Model.Status == "rejected")
+                                    {
+                                        <span class="badge badge-danger">已退回</span>
+                                    }
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>建立時間：</strong></td>
+                            <td>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>更新時間：</strong></td>
+                            <td id="updatedAt">@(Model.UpdatedAt?.ToString("yyyy/MM/dd HH:mm") ?? "未更新")</td>
+                        </tr>
+                        <tr id="publishedAtRow" style="@(Model.PublishedAt.HasValue ? "" : "display: none;")">
+                            <td><strong>發布時間：</strong></td>
+                            <td id="publishedAt">@(Model.PublishedAt?.ToString("yyyy/MM/dd HH:mm"))</td>
+                        </tr>
+                        <tr id="reviewedAtRow" style="@(Model.ReviewedAt.HasValue ? "" : "display: none;")">
+                            <td><strong>審核時間：</strong></td>
+                            <td id="reviewedAt">@(Model.ReviewedAt?.ToString("yyyy/MM/dd HH:mm"))</td>
+                        </tr>
+                        <tr id="rejectedReasonRow" style="@(!string.IsNullOrEmpty(Model.RejectedReason) ? "" : "display: none;")">
+                            <td><strong>退回原因：</strong></td>
+                            <td class="text-danger" id="rejectedReason">@Model.RejectedReason</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 作者資訊 -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">作者資訊</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>姓名：</strong></td>
+                            <td>@(Model.Members?.Profile?.Name ?? "未知用戶")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Email：</strong></td>
+                            <td>@(Model.Members?.Email ?? "N/A")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>會員ID：</strong></td>
+                            <td>@Model.MembersId</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 🔥 增強的審核動作區塊 -->
+            <div class="card shadow mb-4" id="reviewActions">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">管理動作</h6>
+                </div>
+                <div class="card-body">
+                    <!-- 待審核狀態的動作 -->
+                    @if (Model.Status == "pending")
+                    {
+                        <div id="pendingActions">
+                            <div class="btn-group-vertical w-100">
+                                <button type="button" class="btn btn-success mb-2" onclick="reviewPost(@Model.Id, 'approve')">
+                                    <i class="fas fa-check"></i> 核准發布
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="showRejectModal(@Model.Id)">
+                                    <i class="fas fa-times"></i> 退回
+                                </button>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- 已發布狀態的動作 -->
+                    @if (Model.Status == "published")
+                    {
+                        <div id="publishedActions">
+                            <div class="alert alert-info mb-3">
+                                <small><i class="fas fa-info-circle"></i> 此貼文已發布，如有需要可進行以下動作：</small>
+                            </div>
+                            <div class="btn-group-vertical w-100">
+                                <button type="button" class="btn btn-warning mb-2" onclick="reviewPost(@Model.Id, 'unpublish')">
+                                    <i class="fas fa-undo"></i> 撤銷發布
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="showRejectModal(@Model.Id)">
+                                    <i class="fas fa-ban"></i> 直接退回
+                                </button>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- 已退回狀態的動作 -->
+                    @if (Model.Status == "rejected")
+                    {
+                        <div id="rejectedActions">
+                            <div class="alert alert-warning mb-3">
+                                <small><i class="fas fa-exclamation-triangle"></i> 此貼文已被退回，如需重新審核：</small>
+                            </div>
+                            <div class="btn-group-vertical w-100">
+                                <button type="button" class="btn btn-success mb-2" onclick="reviewPost(@Model.Id, 'approve')">
+                                    <i class="fas fa-check"></i> 重新核准
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="reviewPost(@Model.Id, 'pending')">
+                                    <i class="fas fa-clock"></i> 改為待審核
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 退回原因 Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">退回貼文</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="rejectReason">退回原因：</label>
+                    <textarea id="rejectReason" class="form-control" rows="4" placeholder="請說明退回的原因..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" onclick="confirmReject()">確認退回</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 確認撤銷發布 Modal -->
+<div class="modal fade" id="unpublishModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">撤銷發布</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>確定要撤銷此貼文的發布狀態嗎？</p>
+                <p class="text-muted">撤銷後，貼文將回到「待審核」狀態，不會在前台顯示。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-warning" onclick="confirmUnpublish()">確認撤銷</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSRF Token for AJAX requests -->
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        let currentPostId = 0;
+        let currentAction = '';
+
+        function reviewPost(postId, action) {
+            // 特殊處理撤銷發布
+            if (action === 'unpublish') {
+                currentPostId = postId;
+                currentAction = 'unpublish';
+                $('#unpublishModal').modal('show');
+                return;
+            }
+
+            // 直接處理其他動作
+            performReviewAction(postId, action);
+        }
+
+        function performReviewAction(postId, action) {
+            // 顯示載入狀態
+            const button = $('button[onclick*="' + action + '"]');
+            const originalText = button.html();
+            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> 處理中...');
+
+            $.ajax({
+                url: '/Blog/ReviewPost',
+                type: 'POST',
+                data: {
+                    id: postId,
+                    action: action,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(result) {
+                    if (result.success) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(result.message);
+                        } else {
+                            alert(result.message);
+                        }
+
+                        // 更新頁面狀態
+                        updatePageStatus(result.newStatus);
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(result.message);
+                        } else {
+                            alert('錯誤：' + result.message);
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', error);
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('操作失敗，請稍後重試');
+                    } else {
+                        alert('操作失敗，請稍後重試');
+                    }
+                },
+                complete: function() {
+                    // 恢復按鈕狀態
+                    button.prop('disabled', false).html(originalText);
+                }
+            });
+        }
+
+        function showRejectModal(postId) {
+            currentPostId = postId;
+            currentAction = 'reject';
+            $('#rejectReason').val('');
+            $('#rejectModal').modal('show');
+        }
+
+        function confirmReject() {
+            const reason = $('#rejectReason').val().trim();
+            if (!reason) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning('請輸入退回原因');
+                } else {
+                    alert('請輸入退回原因');
+                }
+                return;
+            }
+
+            const button = $('button[onclick="confirmReject()"]');
+            button.prop('disabled', true).text('處理中...');
+
+            $.ajax({
+                url: '/Blog/ReviewPost',
+                type: 'POST',
+                data: {
+                    id: currentPostId,
+                    action: 'reject',
+                    rejectReason: reason,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(result) {
+                    if (result.success) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(result.message);
+                        } else {
+                            alert(result.message);
+                        }
+
+                        $('#rejectModal').modal('hide');
+                        updatePageStatus(result.newStatus, reason);
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(result.message);
+                        } else {
+                            alert('錯誤：' + result.message);
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', error);
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('操作失敗，請稍後重試');
+                    } else {
+                        alert('操作失敗，請稍後重試');
+                    }
+                    $('#rejectModal').modal('hide');
+                },
+                complete: function() {
+                    button.prop('disabled', false).text('確認退回');
+                }
+            });
+        }
+
+        function confirmUnpublish() {
+            $('#unpublishModal').modal('hide');
+            performReviewAction(currentPostId, 'pending'); // 撤銷發布 = 改為待審核
+        }
+
+        // 🔥 更新頁面狀態顯示
+        function updatePageStatus(newStatus, rejectReason = null) {
+            const now = new Date();
+            const timeString = now.getFullYear() + '/' +
+                              String(now.getMonth() + 1).padStart(2, '0') + '/' +
+                              String(now.getDate()).padStart(2, '0') + ' ' +
+                              String(now.getHours()).padStart(2, '0') + ':' +
+                              String(now.getMinutes()).padStart(2, '0');
+
+            // 更新狀態標籤
+            let statusHtml = '';
+            switch(newStatus) {
+                case 'published':
+                    statusHtml = '<span class="badge badge-success">已發布</span>';
+                    $('#publishedAtRow').show();
+                    $('#publishedAt').text(timeString);
+                    break;
+                case 'pending':
+                    statusHtml = '<span class="badge badge-warning">待審核</span>';
+                    $('#publishedAtRow').hide();
+                    break;
+                case 'rejected':
+                    statusHtml = '<span class="badge badge-danger">已退回</span>';
+                    $('#publishedAtRow').hide();
+                    if (rejectReason) {
+                        $('#rejectedReasonRow').show();
+                        $('#rejectedReason').text(rejectReason);
+                    }
+                    break;
+            }
+
+            $('#currentStatus').html(statusHtml);
+            $('#updatedAt').text(timeString);
+            $('#reviewedAt').text(timeString);
+            $('#reviewedAtRow').show();
+
+            // 清除退回原因（如果不是退回狀態）
+            if (newStatus !== 'rejected') {
+                $('#rejectedReasonRow').hide();
+            }
+
+            // 🔥 更新動作按鈕區塊
+            updateActionButtons(newStatus);
+        }
+
+        function updateActionButtons(status) {
+            // 隱藏所有動作區塊
+            $('#pendingActions, #publishedActions, #rejectedActions').hide();
+
+            // 根據狀態顯示對應的動作按鈕
+            switch(status) {
+                case 'pending':
+                    $('#pendingActions').show();
+                    break;
+                case 'published':
+                    $('#publishedActions').show();
+                    break;
+                case 'rejected':
+                    $('#rejectedActions').show();
+                    break;
+            }
+        }
+
+        // Modal 事件處理
+        $('#rejectModal').on('hidden.bs.modal', function () {
+            $('#rejectReason').val('');
+            currentPostId = 0;
+            currentAction = '';
+        });
+
+        $('#unpublishModal').on('hidden.bs.modal', function () {
+            currentPostId = 0;
+            currentAction = '';
+        });
+    </script>
+}
+
+<style>
+    .alert {
+        font-size: 0.875rem;
+    }
+
+    .btn-group-vertical .btn {
+        margin-bottom: 0.5rem;
+    }
+
+        .btn-group-vertical .btn:last-child {
+            margin-bottom: 0;
+        }
+
+    #reviewActions .card-body {
+        padding: 1.5rem;
+    }
+</style>

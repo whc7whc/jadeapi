@@ -1,0 +1,423 @@
+@model Team.Backend.Models.ViewModels.RevenueAnalysisViewModel
+@{
+    ViewData["Title"] = "營收分析";
+    
+    // 安全處理 CategorySales 防止 null 輸出導致 JavaScript 語法錯誤
+    var safeCategorySales = Model.CategorySales ?? new List<Team.Backend.Models.ViewModels.CategorySalesData>();
+    var totalCategorySales = safeCategorySales.Sum(c => c.Sales);
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-money-bill-wave text-success"></i> 營收分析
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/AdminFinance">財務中心</a></li>
+                <li class="breadcrumb-item active">營收分析</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- 營收總覽卡片 -->
+    <div class="row">
+        <!-- 今日營收 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">今日營收</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">NT$ @Model.TodayRevenue.ToString("N0")</div>
+                            <div class="text-xs @(Model.DailyGrowthRate >= 0 ? "text-success" : "text-danger")">
+                                <i class="fas @(Model.DailyGrowthRate >= 0 ? "fa-arrow-up" : "fa-arrow-down")"></i> 
+                                @Model.DailyGrowthRate.ToString("F1")% vs 昨日
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 本週營收 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">本週營收</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">NT$ @Model.WeekRevenue.ToString("N0")</div>
+                            <div class="text-xs @(Model.WeeklyGrowthRate >= 0 ? "text-success" : "text-danger")">
+                                <i class="fas @(Model.WeeklyGrowthRate >= 0 ? "fa-arrow-up" : "fa-arrow-down")"></i> 
+                                @Model.WeeklyGrowthRate.ToString("F1")% vs 上週
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-week fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 本月營收 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">本月營收</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">NT$ @Model.MonthRevenue.ToString("N0")</div>
+                            <div class="text-xs @(Model.MonthlyGrowthRate >= 0 ? "text-success" : "text-danger")">
+                                <i class="fas @(Model.MonthlyGrowthRate >= 0 ? "fa-arrow-up" : "fa-arrow-down")"></i> 
+                                @Model.MonthlyGrowthRate.ToString("F1")% vs 上月
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 年度營收 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">年度營收</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">NT$ @Model.YearRevenue.ToString("N0")</div>
+                            <div class="text-xs @(Model.YearlyGrowthRate >= 0 ? "text-success" : "text-danger")">
+                                <i class="fas @(Model.YearlyGrowthRate >= 0 ? "fa-arrow-up" : "fa-arrow-down")"></i> 
+                                @Model.YearlyGrowthRate.ToString("F1")% vs 去年
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 營收對比詳情 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-bar"></i> 營收對比詳情 (真實資料庫數據)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>時期</th>
+                                    <th>當期營收</th>
+                                    <th>前期營收</th>
+                                    <th>成長金額</th>
+                                    <th>成長率</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><i class="fas fa-calendar-day text-success"></i> 今日 vs 昨日</td>
+                                    <td>NT$ @Model.TodayRevenue.ToString("N0")</td>
+                                    <td>NT$ @Model.YesterdayRevenue.ToString("N0")</td>
+                                    <td class="@(Model.DailyGrowthRate >= 0 ? "text-success" : "text-danger")">
+                                        NT$ @((Model.TodayRevenue - Model.YesterdayRevenue).ToString("N0"))
+                                    </td>
+                                    <td class="@(Model.DailyGrowthRate >= 0 ? "text-success" : "text-danger")">
+                                        @Model.DailyGrowthRate.ToString("F1")%
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-calendar-week text-primary"></i> 本週 vs 上週</td>
+                                    <td>NT$ @Model.WeekRevenue.ToString("N0")</td>
+                                    <td>NT$ @Model.LastWeekRevenue.ToString("N0")</td>
+                                    <td class="@(Model.WeeklyGrowthRate >= 0 ? "text-success" : "text-danger")">
+                                        NT$ @((Model.WeekRevenue - Model.LastWeekRevenue).ToString("N0"))
+                                    </td>
+                                    <td class="@(Model.WeeklyGrowthRate >= 0 ? "text-success" : "text-danger")">
+                                        @Model.WeeklyGrowthRate.ToString("F1")%
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-calendar-alt text-info"></i> 本月 vs 上月</td>
+                                    <td>NT$ @Model.MonthRevenue.ToString("N0")</td>
+                                    <td>NT$ @Model.LastMonthRevenue.ToString("N0")</td>
+                                    <td class="@(Model.MonthlyGrowthRate >= 0 ? "text-success" : "text-danger")">
+                                        NT$ @((Model.MonthRevenue - Model.LastMonthRevenue).ToString("N0"))
+                                    </td>
+                                    <td class="@(Model.MonthlyGrowthRate >= 0 ? "text-success" : "text-danger")">
+                                        @Model.MonthlyGrowthRate.ToString("F1")%
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-chart-line text-warning"></i> 今年 vs 去年</td>
+                                    <td>NT$ @Model.YearRevenue.ToString("N0")</td>
+                                    <td>NT$ @Model.LastYearRevenue.ToString("N0")</td>
+                                    <td class="@(Model.YearlyGrowthRate >= 0 ? "text-success" : "text-danger")">
+                                        NT$ @((Model.YearRevenue - Model.LastYearRevenue).ToString("N0"))
+                                    </td>
+                                    <td class="@(Model.YearlyGrowthRate >= 0 ? "text-success" : "text-danger")">
+                                        @Model.YearlyGrowthRate.ToString("F1")%
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 營收來源分析 -->
+    <div class="row">
+        <!-- 按分類 -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-tags"></i> 分類營收占比 (本月)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (safeCategorySales.Any())
+                    {
+                        <canvas id="categoryRevenueChart"></canvas>
+                        <div class="mt-3 text-center">
+                            @foreach (var category in safeCategorySales.Take(5))
+                            {
+                                var percentage = totalCategorySales > 0 ? 
+                                    (category.Sales / totalCategorySales * 100) : 0;
+                                <span class="mr-3">
+                                    <i class="fas fa-circle" style="color: @category.Color"></i> 
+                                    @category.CategoryName (@percentage.ToString("F1")%)
+                                </span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">本月暫無分類銷售數據</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- 資料來源說明 -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-database"></i> 資料來源說明
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-check-circle"></i> 真實資料庫數據</h6>
+                        <p class="mb-2">所有營收數據均來自資料庫即時查詢：</p>
+                        <ul class="mb-0">
+                            <li><strong>今日營收</strong>：查詢今天已完成訂單總金額</li>
+                            <li><strong>本週營收</strong>：查詢本週(週日到週六)已完成訂單</li>
+                            <li><strong>本月營收</strong>：查詢當月已完成訂單總金額</li>
+                            <li><strong>年度營收</strong>：查詢當年度已完成訂單總金額</li>
+                        </ul>
+                    </div>
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> 計算說明</h6>
+                        <p class="mb-0">
+                            <i class="fas fa-check text-success"></i> 只計算訂單狀態為「已完成」的訂單<br>
+                            <i class="fas fa-check text-success"></i> 成長率 = (當期 - 前期) / 前期 × 100%<br>
+                            <i class="fas fa-check text-success"></i> 如果沒有資料，顯示為 0<br>
+                            <i class="fas fa-check text-success"></i> 數據每次重新整理頁面都會更新
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 等待頁面載入完成
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('營收分析頁面載入完成');
+            
+            // 檢查 Chart.js 是否載入
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js 未載入，請檢查 Layout 載入');
+                return;
+            }
+
+            // 分類營收圓餅圖 - 使用真實資料
+            const categoryRevenueCtx = document.getElementById('categoryRevenueChart');
+            if (categoryRevenueCtx) {
+                // 安全的 JSON 處理，確保至少是空陣列
+                const categorySalesData = @Html.Raw(Json.Serialize(safeCategorySales)) || [];
+                console.log('CategorySales data:', categorySalesData);
+                
+                if (Array.isArray(categorySalesData) && categorySalesData.length > 0) {
+                    // 使用正確的 PascalCase 屬性名稱並提供 fallback
+                    const labels = categorySalesData.map(item => item.CategoryName || item.categoryName || '未知分類');
+                    const data = categorySalesData.map(item => Number(item.Sales || item.sales || 0));
+                    
+                    // 檢查是否所有數據都為 0
+                    const isAllZero = data.every(value => value === 0);
+                    console.log('數據是否全為零:', isAllZero);
+                    
+                    if (isAllZero) {
+                        // 數據全為 0 時，顯示特殊的視覺效果
+                        categoryRevenueCtx.style.display = 'none';
+                        const noDataDiv = document.createElement('div');
+                        noDataDiv.className = 'text-center py-5';
+                        noDataDiv.innerHTML = `
+                            <div class="mb-3">
+                                <i class="fas fa-chart-pie fa-4x text-muted opacity-50"></i>
+                            </div>
+                            <h5 class="text-muted">本月暫無分類銷售數據</h5>
+                            <p class="text-muted mb-3">當前分類結構：</p>
+                            <div class="d-flex justify-content-center flex-wrap">
+                                ${labels.map((label, index) => `
+                                    <span class="badge badge-secondary mr-2 mb-2" style="background-color: ${['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e'][index] || '#6c757d'}">
+                                        ${label}: NT$ 0
+                                    </span>
+                                `).join('')}
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> 
+                                當有完成狀態的訂單時，此圖表將顯示各分類的營收占比
+                            </small>
+                        `;
+                        categoryRevenueCtx.parentElement.appendChild(noDataDiv);
+                        console.log('已顯示零數據的友善提示');
+                    } else {
+                        // 有數據時正常顯示圓餅圖
+                        // 預設調色盤作為 fallback
+                        const defaultColors = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69'];
+                        const colors = categorySalesData.map((item, index) => 
+                            item.Color || item.color || defaultColors[index % defaultColors.length]
+                        );
+
+                        try {
+                            new Chart(categoryRevenueCtx, {
+                                type: 'doughnut',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        data: data,
+                                        backgroundColor: colors,
+                                        borderWidth: 2,
+                                        borderColor: '#ffffff'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const label = context.label || '';
+                                                    const value = Number(context.raw || 0);
+                                                
+                                                    // 安全的總計算法，避免空陣列錯誤
+                                                    const dataArray = Array.isArray(context.dataset.data) ? context.dataset.data : [];
+                                                    const total = dataArray.reduce((a, b) => Number(a || 0) + Number(b || 0), 0);
+                                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                                                
+                                                    return `${label}: NT$ ${value.toLocaleString()} (${percentage}%)`;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                            console.log('分類營收圓餅圖建立成功');
+                        } catch (error) {
+                            console.error('圓餅圖建立失敗:', error);
+                            // 不要覆蓋 canvas 父層，只是簡單返回
+                            categoryRevenueCtx.style.display = 'none';
+                            const messageDiv = document.createElement('div');
+                            messageDiv.className = 'text-center py-5';
+                            messageDiv.innerHTML = `
+                                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                                <p class="text-muted">圖表載入失敗</p>
+                            `;
+                            categoryRevenueCtx.parentElement.appendChild(messageDiv);
+                        }
+                    }
+                } else {
+                    console.log('沒有分類銷售數據，跳過圖表建立');
+                    // 數據為空時，圖表區域在 Razor 端已處理，這裡不需要額外操作
+                }
+            }
+
+            // 添加診斷按鈕（開發環境用）
+            if (typeof console !== 'undefined' && console.log) {
+                const debugInfo = document.createElement('div');
+                debugInfo.className = 'mt-3 text-center';
+                debugInfo.innerHTML = `
+                    <button class="btn btn-sm btn-outline-secondary" onclick="runCategoryDiagnosis()">
+                        <i class="fas fa-bug"></i> 診斷圖表問題
+                    </button>
+                `;
+                
+                // 將診斷按鈕加入到資料來源說明區域
+                const dataSourceCard = document.querySelector('.alert.alert-info');
+                if (dataSourceCard) {
+                    dataSourceCard.appendChild(debugInfo);
+                }
+            }
+        });
+
+        // 診斷函數
+        function runCategoryDiagnosis() {
+            console.log('?? 手動診斷分類營收占比問題...');
+            console.log('Chart.js 版本:', typeof Chart !== 'undefined' ? Chart.version : '未載入');
+            
+            const canvas = document.getElementById('categoryRevenueChart');
+            if (canvas) {
+                const chart = Chart.getChart('categoryRevenueChart');
+                if (chart) {
+                    console.log('圖表實例:', chart);
+                    console.log('數據:', chart.data.datasets[0].data);
+                    console.log('標籤:', chart.data.labels);
+                    console.log('背景色:', chart.data.datasets[0].backgroundColor);
+                    
+                    const total = chart.data.datasets[0].data.reduce((a, b) => Number(a) + Number(b), 0);
+                    console.log('數據總和:', total);
+                    
+                    if (total === 0) {
+                        console.log('? 診斷結果: 圖表正常，但數據全為 0');
+                        console.log('?? 解決方案:');
+                        console.log('1. 檢查資料庫中是否有 OrderStatus = "Completed" 或 "已完成" 的訂單');
+                        console.log('2. 檢查當月 (' + new Date().getFullYear() + '年' + (new Date().getMonth() + 1) + '月) 是否有完成的訂單');
+                        console.log('3. 檢查商品與分類的關聯是否正確（Product -> SubCategory -> Category）');
+                        console.log('4. 可以嘗試切換到有訂單數據的月份查看');
+                    }
+                } else {
+                    console.log('? 沒有找到圖表實例');
+                }
+            }
+        }
+    </script>
+}

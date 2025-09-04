@@ -1,0 +1,160 @@
+﻿@using Team.Backend.Models.ViewModels.Logistics
+@model CarrierEditVm
+
+@{
+    ViewData["Title"] = "編輯物流商";
+    var carrierId = ViewBag.CarrierId;
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="m-0">
+        <i class="fas fa-edit text-primary"></i>
+        編輯物流商
+    </h3>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> 返回列表
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-truck"></i>
+                    修改物流商資訊
+                </h5>
+            </div>
+            
+            <form asp-action="Edit" asp-route-id="@carrierId" method="post">
+                <div class="card-body">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            請檢查輸入的資料是否正確
+                        </div>
+                    }
+                    
+                    <div class="form-group mb-3">
+                        <label asp-for="Name" class="form-label">
+                            物流商名稱 <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Name" class="form-control" placeholder="例：黑貓宅急便">
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label asp-for="Contact" class="form-label">
+                            聯絡資訊 <span class="text-danger">*</span>
+                        </label>
+                        <textarea asp-for="Contact" class="form-control" rows="3" 
+                                  placeholder="例：客服專線: 0800-200-777&#10;服務時間: 週一至週五 09:00-18:00"></textarea>
+                        <span asp-validation-for="Contact" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            可包含客服電話、服務時間、官網等聯絡資訊
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 更新
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> 取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    注意事項
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <p class="mb-2">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>修改物流商名稱可能會影響：</strong>
+                    </p>
+                    <ul class="mb-0">
+                        <li>綠界代碼的自動判斷</li>
+                        <li>前台的顯示名稱</li>
+                        <li>運費計算規則</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-sync"></i>
+                    <strong>自動同步：</strong>
+                    <br>
+                    修改後會立即同步到前台，無需手動更新。
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar"></i>
+                    使用統計
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    <i class="fas fa-info-circle"></i>
+                    載入統計資料中...
+                </p>
+                <div id="carrierStats">
+                    <!-- 統計資料會通過 AJAX 載入 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // 載入物流商統計資料
+        $(document).ready(function() {
+            loadCarrierStats(@carrierId);
+        });
+        
+        function loadCarrierStats(carrierId) {
+            $.ajax({
+                url: '@Url.Action("GetCarrierStats")',
+                type: 'GET',
+                data: { id: carrierId },
+                success: function(data) {
+                    if (data && data.success) {
+                        $('#carrierStats').html(`
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h4 class="text-primary">${data.orderCount || 0}</h4>
+                                    <small class="text-muted">總訂單數</small>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-success">$${data.totalRevenue || 0}</h4>
+                                    <small class="text-muted">總運費</small>
+                                </div>
+                            </div>
+                        `);
+                    } else {
+                        $('#carrierStats').html('<p class="text-muted">暫無統計資料</p>');
+                    }
+                },
+                error: function() {
+                    $('#carrierStats').html('<p class="text-danger">載入統計資料失敗</p>');
+                }
+            });
+        }
+    </script>
+}

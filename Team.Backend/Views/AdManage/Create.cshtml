@@ -1,0 +1,467 @@
+﻿@model Team.Backend.Models.EfModel.Banner
+@{
+    ViewData["Title"] = "新增 Banner";
+}
+
+<style>
+    :root {
+        --primary-color: #022c5c;
+        --danger-color: #eb5757;
+        --secondary-color: #e4dcd1;
+        --bg-light: #faf6eb;
+    }
+
+    .custom-text-color {
+        color: var(--primary-color) !important;
+    }
+
+    .btn-custom {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: #fff;
+    }
+
+        .btn-custom:hover {
+            background-color: #011a36;
+            border-color: #011a36;
+            color: #fff;
+        }
+
+    .btn-secondary-custom {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+        color: var(--primary-color);
+    }
+
+        .btn-secondary-custom:hover {
+            background-color: #d1c4b5;
+            border-color: #d1c4b5;
+            color: var(--primary-color);
+        }
+
+    .card-header h5 {
+        color: var(--primary-color) !important;
+    }
+
+    .form-label {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(2, 44, 92, 0.25);
+    }
+
+    .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(2, 44, 92, 0.25);
+    }
+
+    .required {
+        color: var(--danger-color);
+    }
+
+    .image-preview-container {
+        border: 2px dashed #dee2e6;
+        border-radius: 0.375rem;
+        padding: 2rem;
+        text-align: center;
+        background-color: var(--bg-light);
+        transition: border-color 0.3s ease;
+    }
+
+        .image-preview-container:hover {
+            border-color: var(--primary-color);
+        }
+
+    .image-preview {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 0.375rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .help-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- 頁面標題 -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="custom-text-color">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    @if (Model != null && Model.Id > 0)
+                    {
+                        <span>編輯 Banner</span>
+                    }
+                    else
+                    {
+                        <span>新增 Banner</span>
+                    }
+                </h2>
+                <a href="@Url.Action("Banner")" class="btn btn-secondary-custom">
+                    <i class="fas fa-arrow-left me-1"></i>返回列表
+                </a>
+            </div>
+
+            <!-- 表單卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>Banner 資訊
+                    </h5>
+                </div>
+                <div class="card-body">
+                                  
+
+                    <form asp-action="Save" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="Id" value="@(Model?.Id ?? 0)" />
+
+                        <div class="row">
+                            <!-- 左側欄位 -->
+                            <div class="col-md-6">
+                                <!-- 標題 -->
+                                <div class="mb-3">
+                                    <label for="Title" class="form-label">
+                                        標題 <span class="required">*</span>
+                                    </label>
+                                    <input name="Title" id="Title" class="form-control"
+                                           value="@(Model?.Title)" placeholder="請輸入 Banner 標題">
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="Title" data-valmsg-replace="true"></span>
+                                </div>
+
+                                <!-- 頁面 -->
+                                <div class="mb-3">
+                                    <label for="Page" class="form-label">
+                                        頁面 <span class="required">*</span>
+                                    </label>
+                                    <select name="Page" id="Page" class="form-select">
+                                        <option value="">請選擇頁面</option>
+                                        @{
+                                            var currentPage = Model?.Page ?? string.Empty;
+                                        }
+
+                                        @if (currentPage == "首頁")
+                                        {
+                                            <option value="首頁" selected>首頁</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="首頁">首頁</option>
+                                        }
+
+                                        @if (currentPage == "商品頁")
+                                        {
+                                            <option value="商品頁" selected>商品頁</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="商品頁">商品頁</option>
+                                        }
+
+                                        @if (currentPage == "關於我們")
+                                        {
+                                            <option value="關於我們" selected>關於我們</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="關於我們">關於我們</option>
+                                        }
+
+                                        @if (currentPage == "聯絡我們")
+                                        {
+                                            <option value="聯絡我們" selected>聯絡我們</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="聯絡我們">聯絡我們</option>
+                                        }
+
+                                        @if (currentPage == "會員中心")
+                                        {
+                                            <option value="會員中心" selected>會員中心</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="會員中心">會員中心</option>
+                                        }
+                                    </select>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="Page" data-valmsg-replace="true"></span>
+                                </div>
+
+                                <!-- 位置 -->
+                                <div class="mb-3">
+                                    <label for="Position" class="form-label">
+                                        位置 <span class="required">*</span>
+                                    </label>
+                                    <select name="Position" id="Position" class="form-select">
+                                        <option value="">請選擇位置</option>
+                                        @{
+                                            var currentPosition = Model?.Position ?? string.Empty;
+                                        }
+
+                                        @if (currentPosition == "頂部")
+                                        {
+                                            <option value="頂部" selected>頂部</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="頂部">頂部</option>
+                                        }
+
+                                        @if (currentPosition == "中間")
+                                        {
+                                            <option value="中間" selected>中間</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="中間">中間</option>
+                                        }
+
+                                        @if (currentPosition == "底部")
+                                        {
+                                            <option value="底部" selected>底部</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="底部">底部</option>
+                                        }
+
+                                        @if (currentPosition == "側邊")
+                                        {
+                                            <option value="側邊" selected>側邊</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="側邊">側邊</option>
+                                        }
+                                    </select>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="Position" data-valmsg-replace="true"></span>
+                                </div>
+
+                                <!-- 連結網址 -->
+                                <div class="mb-3">
+                                    <label for="LinkUrl" class="form-label">連結網址</label>
+                                    <input name="LinkUrl" id="LinkUrl" class="form-control"
+                                           value="@(Model?.LinkUrl)" placeholder="https://example.com">
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="LinkUrl" data-valmsg-replace="true"></span>
+                                    <div class="help-text">
+                                        <i class="fas fa-info-circle me-1"></i>點擊 Banner 時要跳轉的網址
+                                    </div>
+                                </div>
+
+                                <!-- 產品編號 -->
+                                <div class="mb-3">
+                                    <label for="ProductId" class="form-label">關聯產品</label>
+                                    <input name="ProductId" id="ProductId" class="form-control" type="number"
+                                           value="@(Model?.ProductId)" placeholder="產品編號">
+                                    <div class="help-text">
+                                        <i class="fas fa-info-circle me-1"></i>選填，如果此 Banner 要關聯特定產品
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 右側欄位 -->
+                            <div class="col-md-6">
+                                <!-- 圖片上傳 -->
+                                <div class="mb-3">
+                                    <label for="ImageFile" class="form-label">
+                                        Banner 圖片
+                                        @if (Model == null || Model.Id == 0)
+                                        {
+                                            <span class="required">*</span>
+                                        }
+                                    </label>
+                                    <input name="ImageFile" id="ImageFile" class="form-control" type="file" accept="image/*">
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="ImageFile" data-valmsg-replace="true"></span>
+                                    <div class="help-text">
+                                        <i class="fas fa-info-circle me-1"></i>建議尺寸：1920x600px，支援 JPG、PNG 格式，檔案大小不超過 2MB
+                                        @if (Model != null && Model.Id > 0)
+                                        {
+                                            <br>
+
+                                            <small class="text-info">編輯時可選擇新圖片來替換現有圖片</small>
+                                        }
+                                    </div>
+
+                                    <!-- 圖片預覽區域 -->
+                                    <div class="image-preview-container mt-2" id="imagePreviewContainer">
+                                        @if (Model != null && !string.IsNullOrEmpty(Model.ImageUrl))
+                                        {
+                                            <div id="currentImagePreview">
+                                                <img src="@Model.ImageUrl" alt="目前的 Banner" class="image-preview">
+                                                <p class="text-muted mt-2 mb-0">目前的圖片</p>
+                                            </div>
+                                        }
+                                        <div id="imagePreviewPlaceholder" style="@(Model != null && !string.IsNullOrEmpty(Model.ImageUrl) ? "display: none;" : "")">
+                                            <i class="fas fa-upload fa-3x text-muted mb-2"></i>
+                                            <p class="text-muted mb-0">選擇圖片後可預覽</p>
+                                        </div>
+                                        <img id="imagePreview" class="image-preview" style="display: none;">
+                                    </div>
+                                </div>
+
+                                <!-- 排序 -->
+                                <div class="mb-3">
+                                    <label for="DisplayOrder" class="form-label">顯示順序</label>
+                                    <input name="DisplayOrder" id="DisplayOrder" class="form-control" type="number"
+                                           value="@(Model?.DisplayOrder ?? 1)" min="1">
+                                    <div class="help-text">
+                                        <i class="fas fa-info-circle me-1"></i>數字越小越靠前顯示
+                                    </div>
+                                </div>
+
+                                <!-- 狀態 -->
+                                <div class="mb-3">
+                                    <label class="form-label">狀態</label>
+                                    <div class="form-check form-switch">
+                                        <input name="IsActive" class="form-check-input" type="checkbox" id="isActiveSwitch"
+                                               value="true" @(Model?.IsActive != false ? "checked" : "")>
+                                        <input name="IsActive" type="hidden" value="false">
+                                        <label class="form-check-label" for="isActiveSwitch">
+                                            <span id="statusText">@(Model?.IsActive != false ? "啟用" : "停用")</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- 開始時間 -->
+                                <div class="mb-3">
+                                    <label for="StartTime" class="form-label">開始時間</label>
+                                    <input name="StartTime" id="StartTime" class="form-control" type="datetime-local"
+                                           value="@(Model?.StartTime?.ToString("yyyy-MM-ddTHH:mm"))">
+                                </div>
+
+                                <!-- 結束時間 -->
+                                <div class="mb-3">
+                                    <label for="EndTime" class="form-label">結束時間</label>
+                                    <input name="EndTime" id="EndTime" class="form-control" type="datetime-local"
+                                           value="@(Model?.EndTime?.ToString("yyyy-MM-ddTHH:mm"))">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 描述 -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-4">
+                                    <label for="Description" class="form-label">描述</label>
+                                    <textarea name="Description" id="Description" class="form-control" rows="3"
+                                              placeholder="請輸入 Banner 的詳細描述...">@(Model?.Description)</textarea>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="Description" data-valmsg-replace="true"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 按鈕區域 -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="@Url.Action("Banner")" class="btn btn-secondary-custom">
+                                <i class="fas fa-times me-1"></i>取消
+                            </a>
+                            <button type="submit" class="btn btn-custom">
+                                <i class="fas fa-save me-1"></i>儲存
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 圖片預覽功能
+    document.getElementById('ImageFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById('imagePreview');
+        const placeholder = document.getElementById('imagePreviewPlaceholder');
+        const currentImagePreview = document.getElementById('currentImagePreview');
+
+        if (file) {
+            // 檢查檔案類型
+            if (!file.type.startsWith('image/')) {
+                alert('請選擇圖片檔案！');
+                this.value = '';
+                return;
+            }
+
+            // 檢查檔案大小 (2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('圖片檔案不能超過 2MB！');
+                this.value = '';
+                return;
+            }
+
+            // 使用 FileReader 預覽圖片
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                if (currentImagePreview) {
+                    currentImagePreview.style.display = 'none';
+                }
+            };
+            reader.readAsDataURL(file);
+        } else {
+            preview.style.display = 'none';
+            placeholder.style.display = 'block';
+            if (currentImagePreview) {
+                currentImagePreview.style.display = 'block';
+            }
+        }
+    });
+
+    // 狀態切換文字
+    document.getElementById('isActiveSwitch').addEventListener('change', function() {
+        const statusText = document.getElementById('statusText');
+        statusText.textContent = this.checked ? '啟用' : '停用';
+    });
+
+    // 表單驗證
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const requiredFields = ['Title', 'Page', 'Position'];
+        const fileField = document.getElementById('ImageFile');
+        const isEdit = document.querySelector('input[name="Id"]')?.value > 0;
+        let isValid = true;
+
+        // 檢查文字欄位
+        requiredFields.forEach(fieldName => {
+            const field = document.getElementById(fieldName);
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+
+        // 檢查圖片檔案（新增時必須，編輯時可選）
+        if (!isEdit && (!fileField.files || fileField.files.length === 0)) {
+            isValid = false;
+            fileField.classList.add('is-invalid');
+        } else {
+            fileField.classList.remove('is-invalid');
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+            if (!isEdit) {
+                alert('請填寫所有必填欄位並選擇圖片檔案');
+            } else {
+                alert('請填寫所有必填欄位');
+            }
+        }
+    });
+</script>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
