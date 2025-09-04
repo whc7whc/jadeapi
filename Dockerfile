@@ -2,9 +2,17 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 
+# 設定UTF-8編碼環境
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
 # 使用 .NET 8 SDK 進行建置
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
+
+# 設定UTF-8編碼環境
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 # 複製專案檔案並還原依賴
 COPY ["Team.API/Team.API.csproj", "Team.API/"]
@@ -28,4 +36,4 @@ COPY --from=publish /app/publish .
 EXPOSE 8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-ENTRYPOINT ["dotnet", "Team.API.dll"]ENTRYPOINT ["dotnet", "Team.API.dll"]
+ENTRYPOINT ["dotnet", "Team.API.dll"]

@@ -28,35 +28,35 @@ namespace Team.API.Controllers
         }
 
         /// <summary>
-        /// ECPay 結帳 - 跳轉到綠界付款頁面
-        /// 直接使用訂單ID建立付款
+        /// ECPay checkout - redirect to ECPay payment page
+        /// Create payment based on order ID
         /// </summary>
-        /// <param name="orderId">訂單ID</param>
+        /// <param name="orderId">Order ID</param>
         [HttpGet("ecpay-checkout/{orderId}")]
         [AllowAnonymous] 
         public async Task<IActionResult> EcpayCheckout(int orderId, [FromServices] IConfiguration cfg)
         {
             try
             {
-                // 1) 取得訂單資料
+                // 1) Get order data
                 var order = await GetOrderForPaymentAsync(orderId);
                 if (order == null)
                 {
-                    return BadRequest(new { message = "找不到訂單資料" });
+                    return BadRequest(new { message = "Order not found" });
                 }
 
-                // 2) 統一用「後端重算後的整數金額」- 四捨五入到整數
+                // 2) Use backend recalculated integer amount - round to integer
                 var payable = Convert.ToInt32(Math.Round(order.TotalAmount, 0, MidpointRounding.AwayFromZero));
 
-                // 3) 先建 PaymentRecord（Pending）
+                // 3) Create PaymentRecord (Pending)
                 var merchantTradeNo = $"ORD{DateTime.Now:yyyyMMddHHmmss}"; // ≤20
                 var paymentRecord = new PaymentRecord
                 {
                     MerchantTradeNo = merchantTradeNo,
-                    TradeAmt = payable, // ★ 使用統一的 payable 整數
-                    RtnCode = 0, // 未付款
+                    TradeAmt = payable, // Use unified payable integer
+                    RtnCode = 0, // Unpaid
                     OrderId = orderId,
-                    MemberId = null, // 可以根據需要設定
+                    MemberId = null, // Can be set as needed
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -64,36 +64,36 @@ namespace Team.API.Controllers
                 _db.PaymentRecords.Add(paymentRecord);
                 await _db.SaveChangesAsync();
 
-                _logger.LogInformation("✅ 付款記錄建立成功 - MerchantTradeNo: {MerchantTradeNo}, PayableAmount: {PayableAmount}", 
+                _logger.LogInformation("Payment record created successfully - MerchantTradeNo: {MerchantTradeNo}, PayableAmount: {PayableAmount}", 
                     merchantTradeNo, payable);
 
-                // 4) 組表單欄位
+                // 4) Form fields
                 var fields = new Dictionary<string, string>
                 {
                     ["MerchantID"] = cfg["Ecpay:MerchantID"]!,
                     ["MerchantTradeNo"] = merchantTradeNo,
                     ["MerchantTradeDate"] = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"),
                     ["PaymentType"] = "aio",
-                    ["TotalAmount"] = payable.ToString(), // ★ 用同一個 payable
-                    ["TradeDesc"] = $"訂單編號：ORD{order.Id:D8}",
+                    ["TotalAmount"] = payable.ToString(), // Use same payable
+                    ["TradeDesc"] = $"Order Number: ORD{order.Id:D8}",
                     ["ItemName"] = GenerateItemNamesFromOrderDto(order),
                     ["ReturnURL"] = cfg["Ecpay:ReturnURL"]!,
                     ["ChoosePayment"] = "Credit",
                     ["EncryptType"] = "1"
                 };
 
-                // 生成檢查碼
+                // Generate check code
                 fields["CheckMacValue"] = GenCheckMac(fields, cfg["Ecpay:HashKey"]!, cfg["Ecpay:HashIV"]!);
 
                 var aioUrl = cfg["Ecpay:AioCheckOutUrl"]!;
                 var inputs = string.Join("", fields.Select(f =>
                     $"<input type='hidden' name='{f.Key}' value='{System.Net.WebUtility.HtmlEncode(f.Value)}' />"));
 
-                // 產生自動提交的 HTML 表單
+                // Generate auto-submit HTML form
                 var html = $@"<!DOCTYPE html>
 <html>
 <head>
-    <title>跳轉到綠界付款</title>
+    <title>Redirect to ECPay Payment</title>
     <meta charset='utf-8'>
     <style>
         body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
@@ -106,21 +106,21 @@ namespace Team.API.Controllers
 </head>
 <body>
     <div class='container'>
-        <h2>🛒 確認付款資訊</h2>
+        <h2>Confirm Payment Information</h2>
         <div class='info'>
-            <p><strong>訂單編號：</strong>ORD{order.Id:D8}</p>
-            <p><strong>總金額：</strong>NT$ {payable:N0}</p>
-            <p><strong>會員：</strong>{order.MemberName}</p>
+            <p><strong>Order Number:</strong>ORD{order.Id:D8}</p>
+            <p><strong>Total Amount:</strong>NT$ {payable:N0}</p>
+            <p><strong>Member:</strong>{order.MemberName}</p>
             <div style='margin-top: 15px;'>
-                <strong>商品明細：</strong>
+                <strong>Product Details:</strong>
                 {GenerateItemDisplayFromOrderDto(order)}
             </div>
         </div>
-        <p>🏦 請點擊下方按鈕前往綠界付款頁面</p>
+        <p>Please click the button below to proceed to ECPay payment page</p>
         
         <form id='ecpayForm' method='post' action='{aioUrl}'>
             {inputs}
-            <input type='submit' value='🏦 前往付款' class='btn' />
+            <input type='submit' value='Proceed to Payment' class='btn' />
         </form>
     </div>
 </body>
@@ -130,8 +130,8 @@ namespace Team.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "跳轉綠界付款時發生錯誤");
-                return BadRequest(new { message = "付款頁面載入失敗", error = ex.Message });
+                _logger.LogError(ex, "Error redirecting to ECPay payment");
+                return BadRequest(new { message = "Payment page load failed", error = ex.Message });
             }
         }
 
@@ -683,6 +683,7 @@ namespace Team.API.Controllers
         }
     }
 }
+
 
 
 

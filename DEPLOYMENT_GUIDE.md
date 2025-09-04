@@ -1,11 +1,17 @@
-# ?? API 雲端部署指南 (已修正)
+# ?? API 雲端部署指南 (已修正編碼問題)
 
 您的 Team API 已經修正並準備好部署到雲端平台了！
 
 ## ?? 問題修正
 
-**Railway 部署失敗原因**: `railway.toml` 文件格式錯誤
-**解決方案**: Railway 會自動檢測 Dockerfile，不需要 railway.toml 文件
+**Railway 部署失敗原因**: 
+1. ~~`railway.toml` 文件格式錯誤~~ ? 已修正
+2. **中文字符編碼問題** ? 已修正
+
+**解決方案**: 
+1. Railway 會自動檢測 Dockerfile，不需要 railway.toml 文件
+2. 修復了所有源代碼中的中文字符編碼問題
+3. 添加了 UTF-8 環境變數到 Dockerfile
 
 ## ?? 推薦平台
 
@@ -33,7 +39,7 @@
 ### 部署步驟
 
 #### 步驟 1: 推送修正後的代碼git add .
-git commit -m "修正 Railway 部署配置"
+git commit -m "Fix encoding issues and optimize for Railway deployment"
 git push origin main
 #### 步驟 2: 創建新項目
 1. 登入 Railway
@@ -70,7 +76,7 @@ Google__ClientId=905313427248-3vg0kd6474kbaif9ujg41n7376ua8ajp.apps.googleuserco
 
 # JWT 設定 (部署後更新 Issuer 為實際 URL)
 Jwt__Key=YourSuperSecretKeyThatIsLongAndComplex_123!@#
-Jwt__Issuer=https://your-railway-domain.railway.app
+Jwt__Issuer=https://your-railway-domain.up.railway.app
 Jwt__Audience=https://moonlit-klepon-a78f8c.netlify.app
 
 # 綠界金流 (如需要)
@@ -127,12 +133,12 @@ VUE_APP_API_URL=https://your-app-name.up.railway.app
 
 ### 常見問題與解決方案
 
-#### 1. 構建失敗
-**症狀**: Build 階段失敗
+#### 1. 構建失敗 - 編碼錯誤
+**症狀**: CS1009, CS1002, CS1010 等編譯錯誤
 **解決**: 
-- 檢查 Dockerfile 語法
-- 確認專案文件路徑正確
-- 查看 Build Logs
+- ? 已修復所有中文字符編碼問題
+- ? 添加了 UTF-8 環境變數到 Dockerfile
+- 檢查是否有其他特殊字符
 
 #### 2. 應用程式無法啟動
 **症狀**: Deploy 階段失敗，應用程式崩潰
@@ -171,10 +177,11 @@ VUE_APP_API_URL=https://your-app-name.up.railway.app
 - [ ] 資料庫連接使用加密連接
 - [ ] CORS 只允許信任的域名
 - [ ] Swagger 文檔已適當保護（可選）
+- [ ] 沒有硬編碼的中文字符
 
 ## ? 部署完成檢查清單
 
-- [ ] Railway 構建成功
+- [ ] Railway 構建成功（無編碼錯誤）
 - [ ] 應用程式成功啟動
 - [ ] 健康檢查端點正常 (`/health`)
 - [ ] 根端點正常 (`/`)
@@ -187,13 +194,20 @@ VUE_APP_API_URL=https://your-app-name.up.railway.app
 
 ## ?? 恭喜！
 
-您的 API 現已成功部署到 Railway！
+您的 API 現已成功修復編碼問題並準備部署到 Railway！
+
+**修復的問題**:
+- ? 移除了所有中文字符編碼問題
+- ? 優化了 Dockerfile 以支援 UTF-8
+- ? 移除了有問題的 railway.toml 文件
+- ? 確保所有源代碼使用英文註釋
 
 **下一步**:
-1. 更新前端 Vue.js 應用程式的 API URL
-2. 測試前端與 API 的整合
-3. 部署前端到 Netlify（如尚未完成）
-4. 測試完整的前後端整合
+1. 推送修正後的代碼到 GitHub
+2. 在 Railway 重新創建項目
+3. 配置環境變數
+4. 測試部署後的 API
+5. 更新前端 Vue.js 應用程式的 API URL
 
 ---
 

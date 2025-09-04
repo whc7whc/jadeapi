@@ -45,12 +45,12 @@ namespace Team.API.Controllers
                             kvp => kvp.Value!.Errors.First().ErrorMessage
                         );
 
-                    return BadRequest(VendorLoginResponseDto.ErrorResult("輸入驗證失敗", errors));
+                    return BadRequest(VendorLoginResponseDto.ErrorResult("Input validation failed", errors));
                 }
 
-                _logger.LogInformation("廠商登入嘗試: {Email}", dto.Email);
+                _logger.LogInformation("Vendor login attempt: {Email}", dto.Email);
 
-                // 查詢會員資料
+                // Find member
                 var member = await _context.Members
                     .Include(m => m.Seller)
                         .ThenInclude(s => s.SellerBankAccounts)
@@ -60,58 +60,58 @@ namespace Team.API.Controllers
 
                 if (member == null)
                 {
-                    _logger.LogWarning("廠商登入失敗 - 找不到會員: {Email}", dto.Email);
-                    return Unauthorized(VendorLoginResponseDto.ErrorResult("帳號或密碼錯誤"));
+                    _logger.LogWarning("Vendor login failed - member not found: {Email}", dto.Email);
+                    return Unauthorized(VendorLoginResponseDto.ErrorResult("Invalid email or password"));
                 }
 
-                // 驗證密碼
+                // Verify password
                 var passwordResult = _passwordHasher.VerifyHashedPassword(member, member.PasswordHash, dto.Password);
                 if (passwordResult != PasswordVerificationResult.Success)
                 {
-                    _logger.LogWarning("廠商登入失敗 - 密碼錯誤: {Email}", dto.Email);
-                    return Unauthorized(VendorLoginResponseDto.ErrorResult("帳號或密碼錯誤"));
+                    _logger.LogWarning("Vendor login failed - invalid password: {Email}", dto.Email);
+                    return Unauthorized(VendorLoginResponseDto.ErrorResult("Invalid email or password"));
                 }
 
-                // 檢查是否為廠商
+                // Check if vendor account exists
                 var seller = member.Seller;
                 if (seller == null)
                 {
-                    _logger.LogWarning("廠商登入失敗 - 非廠商帳號: {Email}", dto.Email);
-                    return Unauthorized(VendorLoginResponseDto.ErrorResult("此帳號非廠商帳號"));
+                    _logger.LogWarning("Vendor login failed - not a vendor account: {Email}", dto.Email);
+                    return Unauthorized(VendorLoginResponseDto.ErrorResult("This account is not a vendor account"));
                 }
 
-                // 檢查廠商狀態
+                // Check vendor status
                 if (!seller.IsActive)
                 {
-                    _logger.LogWarning("廠商登入失敗 - 帳號已停用: {Email}", dto.Email);
-                    return Unauthorized(VendorLoginResponseDto.ErrorResult("廠商帳號已停用"));
+                    _logger.LogWarning("Vendor login failed - account disabled: {Email}", dto.Email);
+                    return Unauthorized(VendorLoginResponseDto.ErrorResult("Vendor account is disabled"));
                 }
 
                 if (seller.ApplicationStatus != "approved")
                 {
-                    _logger.LogWarning("廠商登入失敗 - 申請未通過: {Email}, Status: {Status}", dto.Email, seller.ApplicationStatus);
-                    return Unauthorized(VendorLoginResponseDto.ErrorResult($"廠商申請狀態：{GetStatusLabel(seller.ApplicationStatus)}"));
+                    _logger.LogWarning("Vendor login failed - application not approved: {Email}, Status: {Status}", dto.Email, seller.ApplicationStatus);
+                    return Unauthorized(VendorLoginResponseDto.ErrorResult($"Vendor application status: {GetStatusLabel(seller.ApplicationStatus)}"));
                 }
 
-                // 產生JWT Token
+                // Generate JWT Token
                 var token = GenerateJwtToken(member, seller);
-                var expiresAt = DateTime.UtcNow.AddDays(7); // Token有效期7天
+                var expiresAt = DateTime.UtcNow.AddDays(7); // Token expires in 7 days
 
-                // 更新最後登入時間
+                // Update last login time
                 member.UpdatedAt = DateTime.Now;
                 await _context.SaveChangesAsync();
 
                 var vendorInfo = seller.ToDto();
                 vendorInfo.Email = member.Email;
 
-                _logger.LogInformation("廠商登入成功: {Email}, SellerId: {SellerId}", dto.Email, seller.Id);
+                _logger.LogInformation("Vendor login successful: {Email}, SellerId: {SellerId}", dto.Email, seller.Id);
 
                 return Ok(VendorLoginResponseDto.SuccessResult(token, seller.Id, vendorInfo, expiresAt));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "廠商登入過程發生錯誤: {Email}", dto.Email);
-                return StatusCode(500, VendorLoginResponseDto.ErrorResult("登入過程發生錯誤，請稍後再試"));
+                _logger.LogError(ex, "Vendor login process error: {Email}", dto.Email);
+                return StatusCode(500, VendorLoginResponseDto.ErrorResult("Login process error, please try again"));
             }
         }
 
@@ -130,30 +130,30 @@ namespace Team.API.Controllers
                             kvp => kvp.Value!.Errors.First().ErrorMessage
                         );
 
-                    return BadRequest(ApiResponseDto<object>.ErrorResult("輸入驗證失敗", errors));
+                    return BadRequest(ApiResponseDto<object>.ErrorResult("Input validation failed", errors));
                 }
 
-                _logger.LogInformation("廠商註冊申請: {Email}", dto.Email);
+                _logger.LogInformation("Vendor registration application: {Email}", dto.Email);
 
-                // 檢查Email是否已存在
+                // Check if email already exists
                 var existingMember = await _context.Members
                     .FirstOrDefaultAsync(m => m.Email == dto.Email);
 
                 if (existingMember != null)
                 {
-                    return Conflict(ApiResponseDto<object>.ErrorResult("此Email已被註冊"));
+                    return Conflict(ApiResponseDto<object>.ErrorResult("Email already registered"));
                 }
 
-                // 檢查身分證字號是否已存在
+                // Check if ID number already exists
                 var existingSeller = await _context.Sellers
                     .FirstOrDefaultAsync(s => s.IdNumber == dto.IdNumber);
 
                 if (existingSeller != null)
                 {
-                    return Conflict(ApiResponseDto<object>.ErrorResult("此身分證字號已被註冊"));
+                    return Conflict(ApiResponseDto<object>.ErrorResult("ID number already registered"));
                 }
 
-                // 建立會員帳號
+                // Create member account
                 var member = new Member
                 {
                     Email = dto.Email,
@@ -170,14 +170,14 @@ namespace Team.API.Controllers
                 _context.Members.Add(member);
                 await _context.SaveChangesAsync();
 
-                // 建立廠商申請
+                // Create vendor application
                 var seller = new Seller
                 {
                     MembersId = member.Id,
                     RealName = dto.RealName,
                     IdNumber = dto.IdNumber,
-                    ApplicationStatus = "pending", // 待審核
-                    IsActive = false, // 預設不啟用，等審核通過
+                    ApplicationStatus = "pending", // Pending review
+                    IsActive = false, // Default disabled, activate after approval
                     AppliedAt = DateTime.Now,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
@@ -186,17 +186,17 @@ namespace Team.API.Controllers
                 _context.Sellers.Add(seller);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("廠商註冊申請成功: {Email}, SellerId: {SellerId}", dto.Email, seller.Id);
+                _logger.LogInformation("Vendor registration application successful: {Email}, SellerId: {SellerId}", dto.Email, seller.Id);
 
                 return Ok(ApiResponseDto<object>.SuccessResult(
                     new { sellerId = seller.Id },
-                    "廠商申請已提交，請等候審核結果"
+                    "Vendor application submitted, please wait for review"
                 ));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "廠商註冊過程發生錯誤: {Email}", dto.Email);
-                return StatusCode(500, ApiResponseDto<object>.ErrorResult("註冊過程發生錯誤，請稍後再試"));
+                _logger.LogError(ex, "Vendor registration process error: {Email}", dto.Email);
+                return StatusCode(500, ApiResponseDto<object>.ErrorResult("Registration process error, please try again"));
             }
         }
 
@@ -214,18 +214,18 @@ namespace Team.API.Controllers
 
                 if (seller == null)
                 {
-                    return NotFound(ApiResponseDto<VendorInfoDto>.ErrorResult("找不到廠商資料"));
+                    return NotFound(ApiResponseDto<VendorInfoDto>.ErrorResult("Vendor not found"));
                 }
 
                 var vendorInfo = seller.ToDto();
                 vendorInfo.Email = seller.Members?.Email ?? string.Empty;
 
-                return Ok(ApiResponseDto<VendorInfoDto>.SuccessResult(vendorInfo, "獲取廠商資料成功"));
+                return Ok(ApiResponseDto<VendorInfoDto>.SuccessResult(vendorInfo, "Get vendor info successful"));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "獲取廠商資料失敗: SellerId: {SellerId}", sellerId);
-                return StatusCode(500, ApiResponseDto<VendorInfoDto>.ErrorResult("獲取廠商資料失敗"));
+                _logger.LogError(ex, "Get vendor info failed: SellerId: {SellerId}", sellerId);
+                return StatusCode(500, ApiResponseDto<VendorInfoDto>.ErrorResult("Get vendor info failed"));
             }
         }
 
@@ -246,7 +246,7 @@ namespace Team.API.Controllers
                             kvp => kvp.Value!.Errors.First().ErrorMessage
                         );
 
-                    return BadRequest(ApiResponseDto<VendorInfoDto>.ErrorResult("輸入驗證失敗", errors));
+                    return BadRequest(ApiResponseDto<VendorInfoDto>.ErrorResult("Input validation failed", errors));
                 }
 
                 var seller = await _context.Sellers
@@ -257,14 +257,14 @@ namespace Team.API.Controllers
 
                 if (seller == null)
                 {
-                    return NotFound(ApiResponseDto<VendorInfoDto>.ErrorResult("找不到廠商資料"));
+                    return NotFound(ApiResponseDto<VendorInfoDto>.ErrorResult("Vendor not found"));
                 }
 
-                // 更新基本資料
+                // Update basic info
                 seller.RealName = dto.RealName;
                 seller.UpdatedAt = DateTime.Now;
 
-                // 更新或建立銀行帳戶資料
+                // Update or create bank account
                 if (!string.IsNullOrEmpty(dto.BankName) || !string.IsNullOrEmpty(dto.AccountNumber))
                 {
                     var bankAccount = seller.SellerBankAccounts?.FirstOrDefault();
@@ -286,7 +286,7 @@ namespace Team.API.Controllers
                     bankAccount.UpdatedAt = DateTime.Now;
                 }
 
-                // 更新或建立退貨資料
+                // Update or create return info
                 if (!string.IsNullOrEmpty(dto.ContactName) || !string.IsNullOrEmpty(dto.ReturnAddress))
                 {
                     var returnInfo = seller.SellerReturnInfos?.FirstOrDefault();
@@ -312,19 +312,19 @@ namespace Team.API.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // 重新載入資料並回傳
+                // Reload updated data and return
                 await _context.Entry(seller).ReloadAsync();
                 var updatedVendorInfo = seller.ToDto();
                 updatedVendorInfo.Email = seller.Members?.Email ?? string.Empty;
 
-                _logger.LogInformation("廠商資料更新成功: SellerId: {SellerId}", sellerId);
+                _logger.LogInformation("Vendor info update successful: SellerId: {SellerId}", sellerId);
 
-                return Ok(ApiResponseDto<VendorInfoDto>.SuccessResult(updatedVendorInfo, "廠商資料更新成功"));
+                return Ok(ApiResponseDto<VendorInfoDto>.SuccessResult(updatedVendorInfo, "Vendor info update successful"));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "更新廠商資料失敗: SellerId: {SellerId}", sellerId);
-                return StatusCode(500, ApiResponseDto<VendorInfoDto>.ErrorResult("更新廠商資料失敗"));
+                _logger.LogError(ex, "Update vendor info failed: SellerId: {SellerId}", sellerId);
+                return StatusCode(500, ApiResponseDto<VendorInfoDto>.ErrorResult("Update vendor info failed"));
             }
         }
 
@@ -334,20 +334,20 @@ namespace Team.API.Controllers
         {
             try
             {
-                // 這裡可以加入登出邏輯，如果有使用 refresh token 的話
-                // 目前主要是記錄登出事件
-                _logger.LogInformation("廠商登出: SellerId: {SellerId}", sellerId);
+                // Here can add logout logic, such as invalidating refresh token
+                // Currently just record logout log
+                _logger.LogInformation("Vendor logout: SellerId: {SellerId}", sellerId);
 
-                return Ok(ApiResponseDto<object>.SuccessResult(null, "登出成功"));
+                return Ok(ApiResponseDto<object>.SuccessResult(null, "Logout successful"));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "廠商登出過程發生錯誤: SellerId: {SellerId}", sellerId);
-                return StatusCode(500, ApiResponseDto<object>.ErrorResult("登出過程發生錯誤"));
+                _logger.LogError(ex, "Vendor logout process error: SellerId: {SellerId}", sellerId);
+                return StatusCode(500, ApiResponseDto<object>.ErrorResult("Logout process error"));
             }
         }
 
-        // 私有方法：產生JWT Token
+        // Private method: Generate JWT Token
         private string GenerateJwtToken(Member member, Seller seller)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
@@ -379,15 +379,15 @@ namespace Team.API.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        // 私有方法：取得狀態標籤
+        // Private method: Get status label
         private static string GetStatusLabel(string status)
         {
             return status switch
             {
-                "pending" => "審核中",
-                "approved" => "已通過",
-                "rejected" => "已拒絕",
-                _ => "未知狀態"
+                "pending" => "Pending Review",
+                "approved" => "Approved",
+                "rejected" => "Rejected",
+                _ => "Unknown Status"
             };
         }
     }

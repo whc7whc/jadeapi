@@ -14,34 +14,34 @@ namespace Team.API.Controllers
         }
 
         /// <summary>
-        /// ECPay 付款完成後的返回頁面
+        /// ECPay payment completion return page
         /// </summary>
         [HttpPost("ecpay/return")]
         public IActionResult EcpayReturn()
         {
             try
             {
-                // 取得所有 POST 參數
+                // Get all POST parameters
                 var allParams = Request.Form.ToDictionary(x => x.Key, x => x.Value.ToString());
                 
-                _logger.LogInformation("🎉 ECPay Return - 收到參數: {@Params}", allParams);
+                _logger.LogInformation("ECPay Return - Received parameters: {@Params}", allParams);
 
-                // 檢查付款狀態
+                // Check payment status
                 if (allParams.TryGetValue("RtnCode", out var rtnCode) && rtnCode == "1")
                 {
                     var merchantTradeNo = allParams.GetValueOrDefault("MerchantTradeNo", "");
                     var tradeAmt = allParams.GetValueOrDefault("TradeAmt", "");
                     var tradeDate = allParams.GetValueOrDefault("TradeDate", "");
                     
-                    _logger.LogInformation("✅ 付款成功 - 訂單號: {OrderNo}, 金額: {Amount}, 時間: {Date}", 
+                    _logger.LogInformation("Payment successful - Order: {OrderNo}, Amount: {Amount}, Date: {Date}", 
                         merchantTradeNo, tradeAmt, tradeDate);
 
-                    // 返回成功頁面的 HTML
+                    // Return success page HTML
                     var successHtml = $@"
 <!DOCTYPE html>
 <html>
 <head>
-    <title>付款成功</title>
+    <title>Payment Successful</title>
     <meta charset='utf-8'>
     <style>
         body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f8f9fa; }}
@@ -54,26 +54,26 @@ namespace Team.API.Controllers
 </head>
 <body>
     <div class='container'>
-        <div class='success'>🎉 付款成功！</div>
+        <div class='success'>Payment Successful!</div>
         <div class='info'>
-            <h3>📋 交易詳情</h3>
-            <p><strong>📝 訂單編號：</strong>{merchantTradeNo}</p>
-            <p><strong>💰 付款金額：</strong>NT$ {tradeAmt}</p>
-            <p><strong>📅 交易時間：</strong>{tradeDate}</p>
-            <p><strong>🔢 回傳代碼：</strong>{rtnCode}</p>
+            <h3>Transaction Details</h3>
+            <p><strong>Order Number:</strong>{merchantTradeNo}</p>
+            <p><strong>Amount:</strong>NT$ {tradeAmt}</p>
+            <p><strong>Transaction Date:</strong>{tradeDate}</p>
+            <p><strong>Return Code:</strong>{rtnCode}</p>
         </div>
         
         <div class='params'>
-            <strong>🔍 完整回傳參數：</strong><br>
+            <strong>Complete Return Parameters:</strong><br>
             {string.Join("<br>", allParams.Select(p => $"{p.Key}: {p.Value}"))}
         </div>
         
-        <a href='/api/payments/quick-test' class='btn'>🔄 再次測試</a>
-        <a href='/' class='btn'>🏠 返回首頁</a>
+        <a href='/api/payments/quick-test' class='btn'>Test Again</a>
+        <a href='/' class='btn'>Home</a>
     </div>
     
     <script>
-        console.log('🎉 付款成功回呼收到:', {string.Join(", ", allParams.Select(p => $"'{p.Key}': '{p.Value}'"))});
+        console.log('Payment success callback received:', {string.Join(", ", allParams.Select(p => $"'{p.Key}': '{p.Value}'"))});
     </script>
 </body>
 </html>";
@@ -81,12 +81,12 @@ namespace Team.API.Controllers
                 }
                 else
                 {
-                    _logger.LogWarning("❌ 付款失敗 - 錯誤代碼: {Code}, 所有參數: {@Params}", rtnCode, allParams);
+                    _logger.LogWarning("Payment failed - Error code: {Code}, All params: {@Params}", rtnCode, allParams);
                     var failHtml = $@"
 <!DOCTYPE html>
 <html>
 <head>
-    <title>付款失敗</title>
+    <title>Payment Failed</title>
     <meta charset='utf-8'>
     <style>
         body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f8f9fa; }}
@@ -99,19 +99,19 @@ namespace Team.API.Controllers
 </head>
 <body>
     <div class='container'>
-        <div class='error'>❌ 付款失敗</div>
+        <div class='error'>Payment Failed</div>
         <div class='info'>
-            <h3>⚠️ 錯誤資訊</h3>
-            <p><strong>錯誤代碼：</strong>{rtnCode}</p>
-            <p><strong>訂單編號：</strong>{allParams.GetValueOrDefault("MerchantTradeNo", "未知")}</p>
+            <h3>Error Information</h3>
+            <p><strong>Error Code:</strong>{rtnCode}</p>
+            <p><strong>Order Number:</strong>{allParams.GetValueOrDefault("MerchantTradeNo", "Unknown")}</p>
         </div>
         
         <div class='params'>
-            <strong>🔍 完整回傳參數：</strong><br>
+            <strong>Complete Return Parameters:</strong><br>
             {string.Join("<br>", allParams.Select(p => $"{p.Key}: {p.Value}"))}
         </div>
         
-        <a href='/api/payments/quick-test' class='btn'>🔄 重新測試</a>
+        <a href='/api/payments/quick-test' class='btn'>Retry</a>
     </div>
 </body>
 </html>";
@@ -120,50 +120,50 @@ namespace Team.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ 處理 ECPay 返回時發生錯誤");
-                return BadRequest("處理付款結果時發生錯誤");
+                _logger.LogError(ex, "Error processing ECPay return");
+                return BadRequest("Error processing payment result");
             }
         }
 
         /// <summary>
-        /// ECPay 付款通知（背景通知）
+        /// ECPay payment notification (background notification)
         /// </summary>
         [HttpPost("ecpay/notify")]
         public IActionResult EcpayNotify()
         {
             try
             {
-                // 取得所有 POST 參數
+                // Get all POST parameters
                 var allParams = Request.Form.ToDictionary(x => x.Key, x => x.Value.ToString());
                 
-                _logger.LogInformation("ECPay Notify - 收到通知: {@Params}", allParams);
+                _logger.LogInformation("ECPay Notify - Received notification: {@Params}", allParams);
 
-                // 這裡應該要驗證 CheckMacValue，但為了測試先跳過
+                // Should verify CheckMacValue here, but skip for testing
                 
-                // 檢查付款狀態
+                // Check payment status
                 if (allParams.TryGetValue("RtnCode", out var rtnCode) && rtnCode == "1")
                 {
                     var merchantTradeNo = allParams.GetValueOrDefault("MerchantTradeNo", "");
                     var tradeAmt = allParams.GetValueOrDefault("TradeAmt", "");
                     
-                    _logger.LogInformation("付款通知成功 - 訂單號: {OrderNo}, 金額: {Amount}", 
+                    _logger.LogInformation("Payment notification successful - Order: {OrderNo}, Amount: {Amount}", 
                         merchantTradeNo, tradeAmt);
 
-                    // 在這裡更新你的資料庫，標記訂單為已付款
+                    // Update database here, mark order as paid
                     // await _orderService.UpdateOrderStatus(merchantTradeNo, "Paid");
                     
-                    // 必須回傳 "1|OK" 給 ECPay
+                    // Must return "1|OK" to ECPay
                     return Content("1|OK");
                 }
                 else
                 {
-                    _logger.LogWarning("付款通知失敗 - 錯誤代碼: {Code}", rtnCode);
+                    _logger.LogWarning("Payment notification failed - Error code: {Code}", rtnCode);
                     return Content("0|Error");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "處理 ECPay 通知時發生錯誤");
+                _logger.LogError(ex, "Error processing ECPay notification");
                 return Content("0|Error");
             }
         }

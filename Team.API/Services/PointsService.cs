@@ -39,13 +39,13 @@ namespace Team.API.Services
         // ?? 修復：簽到獎勵配置 - 直接對應顯示的 J幣數量
         private static readonly Dictionary<int, int> CheckinRewards = new()
         {
-            { 1, 1 },   // 第1天: 1 J幣 (資料庫儲存 1)
-            { 2, 2 },   // 第2天: 2 J幣 (資料庫儲存 2)
-            { 3, 3 },   // 第3天: 3 J幣 (資料庫儲存 3)
-            { 4, 4 },   // 第4天: 4 J幣 (資料庫儲存 4)
-            { 5, 5 },   // 第5天: 5 J幣 (資料庫儲存 5)
-            { 6, 6 },   // 第6天: 6 J幣 (資料庫儲存 6)
-            { 7, 10 }   // 第7天: 10 J幣 (資料庫儲存 10)
+            { 1, 1 },   // Day 1: 1 J-Coin (database stores 1)
+            { 2, 2 },   // Day 2: 2 J-Coins (database stores 2)
+            { 3, 3 },   // Day 3: 3 J-Coins (database stores 3)
+            { 4, 4 },   // Day 4: 4 J-Coins (database stores 4)
+            { 5, 5 },   // Day 5: 5 J-Coins (database stores 5)
+            { 6, 6 },   // Day 6: 6 J-Coins (database stores 6)
+            { 7, 10 }   // Day 7: 10 J-Coins (database stores 10)
         };
 
         public PointsService(AppDbContext context, ILogger<PointsService> logger)

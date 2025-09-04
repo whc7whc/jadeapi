@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 連接測試工具</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .result-box {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid #667eea;
+            background: #f8f9fa;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .result-box h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .result-box pre {
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        
+        .status-success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .status-error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .cors-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .cors-info h4 {
+            margin-top: 0;
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>?? API 連接測試工具</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            測試您的 Railway API 是否正常運作並與 Netlify 前端相容
+        </p>
+        
+        <div class="input-group">
+            <label for="apiUrl">API 基礎 URL:</label>
+            <input type="text" id="apiUrl" placeholder="https://your-app.up.railway.app" 
+                   value="https://localhost:7106">
+        </div>
+        
+        <div class="cors-info">
+            <h4>?? CORS 配置資訊</h4>
+            <p><strong>您的前端域名:</strong> https://moonlit-klepon-a78f8c.netlify.app</p>
+            <p><strong>允許的來源:</strong> API 已配置允許此域名的跨域請求</p>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn-primary" onclick="testHealth()">
+                <span id="healthBtn">?? 健康檢查</span>
+            </button>
+            
+            <button class="btn-success" onclick="testCors()">
+                <span id="corsBtn">?? CORS 測試</span>
+            </button>
+            
+            <button class="btn-warning" onclick="testSwagger()">
+                <span id="swaggerBtn">?? Swagger 文檔</span>
+            </button>
+            
+            <button class="btn-info" onclick="testProducts()">
+                <span id="productsBtn">??? 商品 API</span>
+            </button>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn-primary" onclick="testAuth()">
+                <span id="authBtn">?? 認證測試</span>
+            </button>
+            
+            <button class="btn-success" onclick="runAllTests()">
+                <span id="allTestsBtn">?? 執行所有測試</span>
+            </button>
+        </div>
+        
+        <div id="results" class="result-box" style="display: none;">
+            <h3>測試結果</h3>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = [];
+
+        function getApiUrl() {
+            return document.getElementById('apiUrl').value.trim().replace(/\/+$/, '');
+        }
+
+        function showResults(title, content, isSuccess = true) {
+            const resultsDiv = document.getElementById('results');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultsDiv.style.display = 'block';
+            resultsDiv.className = `result-box ${isSuccess ? 'status-success' : 'status-error'}`;
+            
+            resultContent.innerHTML = `
+                <h4>${title}</h4>
+                <pre>${JSON.stringify(content, null, 2)}</pre>
+            `;
+            
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function appendResult(title, content, isSuccess = true) {
+            testResults.push({ title, content, isSuccess, timestamp: new Date().toLocaleTimeString() });
+            
+            const resultsDiv = document.getElementById('results');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultsDiv.style.display = 'block';
+            resultsDiv.className = 'result-box';
+            
+            let html = '<h4>所有測試結果</h4>';
+            testResults.forEach(result => {
+                const status = result.isSuccess ? '?' : '?';
+                const color = result.isSuccess ? '#28a745' : '#dc3545';
+                html += `
+                    <div style="margin-bottom: 20px; padding: 10px; border-left: 3px solid ${color}; background: ${result.isSuccess ? '#f8fff8' : '#fff8f8'};">
+                        <strong>${status} ${result.title}</strong> <small>(${result.timestamp})</small>
+                        <pre style="margin: 10px 0 0 0; font-size: 12px;">${JSON.stringify(result.content, null, 2)}</pre>
+                    </div>
+                `;
+            });
+            
+            resultContent.innerHTML = html;
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function setButtonLoading(buttonId, loading = true) {
+            const button = document.getElementById(buttonId);
+            const originalText = button.textContent;
+            
+            if (loading) {
+                button.innerHTML = '<span class="loading"></span> 測試中...';
+                button.disabled = true;
+            } else {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        async function testHealth() {
+            setButtonLoading('healthBtn', true);
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    appendResult('健康檢查', {
+                        status: '成功',
+                        statusCode: response.status,
+                        data: data
+                    }, true);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                appendResult('健康檢查', {
+                    status: '失敗',
+                    error: error.message,
+                    suggestion: '確認 API URL 是否正確，或檢查 Railway 部署狀態'
+                }, false);
+            } finally {
+                setButtonLoading('healthBtn', false);
+            }
+        }
+
+        async function testCors() {
+            setButtonLoading('corsBtn', true);
+            
+            try {
+                // 模擬從 Netlify 域名發起的請求
+                const response = await fetch(`${getApiUrl()}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Origin': 'https://moonlit-klepon-a78f8c.netlify.app',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const corsHeaders = {
+                    'access-control-allow-origin': response.headers.get('access-control-allow-origin'),
+                    'access-control-allow-methods': response.headers.get('access-control-allow-methods'),
+                    'access-control-allow-headers': response.headers.get('access-control-allow-headers'),
+                    'access-control-allow-credentials': response.headers.get('access-control-allow-credentials')
+                };
+                
+                if (response.ok) {
+                    appendResult('CORS 測試', {
+                        status: '成功',
+                        statusCode: response.status,
+                        corsHeaders: corsHeaders,
+                        message: 'API 允許來自 Netlify 的跨域請求'
+                    }, true);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                appendResult('CORS 測試', {
+                    status: '失敗',
+                    error: error.message,
+                    suggestion: '檢查 API 的 CORS 配置是否包含您的 Netlify 域名'
+                }, false);
+            } finally {
+                setButtonLoading('corsBtn', false);
+            }
+        }
+
+        async function testSwagger() {
+            setButtonLoading('swaggerBtn', true);
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/swagger/v1/swagger.json`);
+                
+                if (response.ok) {
+                    const swaggerDoc = await response.json();
+                    appendResult('Swagger 文檔', {
+                        status: '成功',
+                        statusCode: response.status,
+                        swaggerInfo: {
+                            title: swaggerDoc.info?.title || 'Team API',
+                            version: swaggerDoc.info?.version || '1.0',
+                            pathsCount: Object.keys(swaggerDoc.paths || {}).length
+                        },
+                        swaggerUrl: `${getApiUrl()}/swagger`
+                    }, true);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                appendResult('Swagger 文檔', {
+                    status: '失敗',
+                    error: error.message,
+                    suggestion: '檢查 Swagger 是否在生產環境中啟用'
+                }, false);
+            } finally {
+                setButtonLoading('swaggerBtn', false);
+            }
+        }
+
+        async function testProducts() {
+            setButtonLoading('productsBtn', true);
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/api/products?page=1&pageSize=5`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    appendResult('商品 API', {
+                        status: '成功',
+                        statusCode: response.status,
+                        dataStructure: {
+                            success: data.success,
+                            dataType: typeof data.data,
+                            hasItems: Array.isArray(data.data?.items),
+                            itemsCount: data.data?.items?.length || 0
+                        }
+                    }, true);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                appendResult('商品 API', {
+                    status: '失敗',
+                    error: error.message,
+                    suggestion: '檢查資料庫連接或商品數據是否存在'
+                }, false);
+            } finally {
+                setButtonLoading('productsBtn', false);
+            }
+        }
+
+        async function testAuth() {
+            setButtonLoading('authBtn', true);
+            
+            try {
+                // 測試無需認證的會員相關端點
+                const response = await fetch(`${getApiUrl()}/api/members/check-email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email: 'test@example.com' })
+                });
+                
+                if (response.ok || response.status === 400) {
+                    // 400 是預期的，因為這可能是驗證錯誤
+                    const data = await response.json();
+                    appendResult('認證系統', {
+                        status: '成功',
+                        statusCode: response.status,
+                        message: '認證端點可正常訪問',
+                        responseStructure: {
+                            hasSuccess: 'success' in data,
+                            hasMessage: 'message' in data
+                        }
+                    }, true);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                appendResult('認證系統', {
+                    status: '失敗',
+                    error: error.message,
+                    suggestion: '檢查認證相關的服務和 JWT 配置'
+                }, false);
+            } finally {
+                setButtonLoading('authBtn', false);
+            }
+        }
+
+        async function runAllTests() {
+            setButtonLoading('allTestsBtn', true);
+            testResults = []; // 清除之前的結果
+            
+            try {
+                await testHealth();
+                await new Promise(resolve => setTimeout(resolve, 1000)); // 延遲1秒
+                
+                await testCors();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                await testSwagger();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                await testProducts();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                await testAuth();
+                
+                // 顯示總結
+                const successCount = testResults.filter(r => r.isSuccess).length;
+                const totalCount = testResults.length;
+                
+                appendResult('測試總結', {
+                    總測試數: totalCount,
+                    成功數: successCount,
+                    失敗數: totalCount - successCount,
+                    成功率: `${Math.round((successCount / totalCount) * 100)}%`,
+                    狀態: successCount === totalCount ? '?? 所有測試通過！' : '?? 部分測試失敗'
+                }, successCount === totalCount);
+                
+            } catch (error) {
+                appendResult('測試總結', {
+                    status: '測試執行失敗',
+                    error: error.message
+                }, false);
+            } finally {
+                setButtonLoading('allTestsBtn', false);
+            }
+        }
+
+        // 頁面載入時的提示
+        window.addEventListener('load', function() {
+            const apiUrlInput = document.getElementById('apiUrl');
+            
+            // 如果是 localhost，提示用戶更新為 Railway URL
+            if (apiUrlInput.value.includes('localhost')) {
+                appendResult('?? 使用說明', {
+                    步驟1: '將 API 部署到 Railway',
+                    步驟2: '將上方的 URL 更換為您的 Railway URL',
+                    步驟3: '點擊各個測試按鈕驗證功能',
+                    Railway_URL_格式: 'https://your-app-name.up.railway.app',
+                    注意事項: '確保 Railway 部署成功後再進行測試'
+                }, true);
+            }
+        });
+    </script>
+</body>
+</html>
