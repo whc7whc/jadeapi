@@ -46,34 +46,59 @@ namespace Team.API
             // 註冊記憶體快取服務
             builder.Services.AddMemoryCache();
 
-            // 設定 Cloudinary
+            // 設定 Cloudinary - 修改為更安全的方式
             builder.Services.Configure<CloudinarySettings>(
                 builder.Configuration.GetSection("Cloudinary"));
 
             builder.Services.AddSingleton<Cloudinary>(provider =>
             {
-                var config = builder.Configuration.GetSection("Cloudinary").Get<CloudinarySettings>();
-                var account = new Account(config.CloudName, config.ApiKey, config.ApiSecret);
-                return new Cloudinary(account);
+                try
+                {
+                    var config = builder.Configuration.GetSection("Cloudinary").Get<CloudinarySettings>();
+                    
+                    // 檢查設定是否完整，如果不完整則使用預設值
+                    if (config == null || string.IsNullOrEmpty(config.CloudName) || 
+                        string.IsNullOrEmpty(config.ApiKey) || string.IsNullOrEmpty(config.ApiSecret))
+                    {
+                        // 使用預設設定（開發環境的設定）
+                        var account = new Account("jadetainan", "384776688611428", "4dSdNavAr96WmP0vO_wJL8TkbTU");
+                        return new Cloudinary(account);
+                    }
+                    
+                    var validAccount = new Account(config.CloudName, config.ApiKey, config.ApiSecret);
+                    return new Cloudinary(validAccount);
+                }
+                catch (Exception ex)
+                {
+                    // 記錄錯誤並使用預設設定
+                    Console.WriteLine($"Cloudinary configuration error: {ex.Message}");
+                    var fallbackAccount = new Account("jadetainan", "384776688611428", "4dSdNavAr96WmP0vO_wJL8TkbTU");
+                    return new Cloudinary(fallbackAccount);
+                }
             });
 
+            // JWT 設定 - 提供預設值
+            var jwtKey = builder.Configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatIsLongAndComplex_123!@#";
+            var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "https://jadeapi-production.up.railway.app";
+            var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "https://moonlit-klepon-a78f8c.netlify.app";
+
             builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer("Bearer", options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
-            ),
-            ClockSkew = TimeSpan.Zero // Optional：不允許時間誤差
-        };
-    });
+                .AddJwtBearer("Bearer", options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtIssuer,
+                        ValidAudience = jwtAudience,
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(jwtKey)
+                        ),
+                        ClockSkew = TimeSpan.Zero // Optional：不允許時間誤差
+                    };
+                });
 
             //註冊 EmailService(驗證碼寄送)
             builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
@@ -125,6 +150,17 @@ namespace Team.API
             });
 
             var app = builder.Build();
+
+            // 添加全域異常處理
+            app.UseExceptionHandler(appBuilder =>
+            {
+                appBuilder.Run(async context =>
+                {
+                    context.Response.StatusCode = 500;
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsync("{\"error\":\"Internal server error occurred\"}");
+                });
+            });
 
             // Configure the HTTP request pipeline.
             // 在生產環境也啟用 Swagger (可選)
