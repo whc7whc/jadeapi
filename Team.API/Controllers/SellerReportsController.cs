@@ -19,11 +19,11 @@ namespace Team.API.Controllers
         }
 
         /// <summary>
-        /// 獲取賣家儀表板統計資料
+        /// Get seller dashboard statistics
         /// </summary>
-        /// <param name="sellerId">賣家ID</param>
-        /// <param name="startDate">開始日期</param>
-        /// <param name="endDate">結束日期</param>
+        /// <param name="sellerId">Seller ID</param>
+        /// <param name="startDate">Start date</param>
+        /// <param name="endDate">End date</param>
         /// <returns></returns>
         [HttpGet("{sellerId}/dashboard")]
         public async Task<ActionResult<ApiResponse<SellerDashboardResponseDto>>> GetSellerDashboard(
@@ -33,40 +33,40 @@ namespace Team.API.Controllers
         {
             try
             {
-                _logger.LogInformation("獲取賣家 {SellerId} 的儀表板資料", sellerId);
+                _logger.LogInformation("Getting dashboard data for seller {SellerId}", sellerId);
 
-                // 設定預設日期範圍（當月）
+                // Set default date range (current month)
                 var defaultStartDate = startDate ?? new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
                 var defaultEndDate = endDate ?? defaultStartDate.AddMonths(1).AddDays(-1);
 
-                // 驗證賣家是否存在
+                // Verify seller exists
                 var seller = await _context.Sellers
                     .AsNoTracking()
                     .FirstOrDefaultAsync(s => s.Id == sellerId && s.IsActive);
 
                 if (seller == null)
                 {
-                    return NotFound(ApiResponse<SellerDashboardResponseDto>.ErrorResult("找不到該賣家或賣家未啟用"));
+                    return NotFound(ApiResponse<SellerDashboardResponseDto>.ErrorResult("Seller not found or inactive"));
                 }
 
-                // 獲取當期訂單資料
+                // Get current period order data
                 var currentOrders = await GetSellerOrdersInPeriod(sellerId, defaultStartDate, defaultEndDate);
                 
-                // 獲取上期訂單資料（用於計算成長率）
+                // Get previous period order data (for calculating growth rates)
                 var previousStartDate = defaultStartDate.AddMonths(-1);
                 var previousEndDate = defaultStartDate.AddDays(-1);
                 var previousOrders = await GetSellerOrdersInPeriod(sellerId, previousStartDate, previousEndDate);
 
-                // 計算當期統計
+                // Calculate current period statistics
                 var currentStats = CalculateOrderStats(currentOrders);
                 
-                // 計算上期統計
+                // Calculate previous period statistics
                 var previousStats = CalculateOrderStats(previousOrders);
 
-                // 計算成長率
+                // Calculate growth rates
                 var growthRates = CalculateGrowthRates(currentStats, previousStats);
 
-                // 獲取商品總數
+                // Get total product count
                 var totalProducts = await _context.Products
                     .Where(p => p.SellersId == sellerId)
                     .CountAsync();
@@ -74,7 +74,7 @@ namespace Team.API.Controllers
                 var dashboard = new SellerDashboardResponseDto
                 {
                     SellerId = sellerId,
-                    SellerName = seller.RealName ?? "賣家",
+                    SellerName = seller.RealName ?? "Seller",
                     ReportPeriod = new ReportPeriodDto
                     {
                         StartDate = defaultStartDate,
@@ -91,23 +91,23 @@ namespace Team.API.Controllers
                     GrowthRates = growthRates
                 };
 
-                _logger.LogInformation("成功獲取賣家 {SellerId} 儀表板資料，營收：{Revenue}，訂單數：{Orders}", 
+                _logger.LogInformation("Successfully retrieved dashboard data for seller {SellerId}, revenue: {Revenue}, orders: {Orders}", 
                     sellerId, currentStats.TotalRevenue, currentStats.TotalOrders);
 
-                return Ok(ApiResponse<SellerDashboardResponseDto>.SuccessResult(dashboard, "獲取儀表板資料成功"));
+                return Ok(ApiResponse<SellerDashboardResponseDto>.SuccessResult(dashboard, "Dashboard data retrieved successfully"));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "獲取賣家 {SellerId} 儀表板資料失敗", sellerId);
-                return StatusCode(500, ApiResponse<SellerDashboardResponseDto>.ErrorResult("獲取儀表板資料失敗：" + ex.Message));
+                _logger.LogError(ex, "Failed to get dashboard data for seller {SellerId}", sellerId);
+                return StatusCode(500, ApiResponse<SellerDashboardResponseDto>.ErrorResult("Failed to get dashboard data: " + ex.Message));
             }
         }
 
         /// <summary>
-        /// 獲取賣家訂單列表
+        /// Get seller orders list
         /// </summary>
-        /// <param name="sellerId">賣家ID</param>
-        /// <param name="query">查詢參數</param>
+        /// <param name="sellerId">Seller ID</param>
+        /// <param name="query">Query parameters</param>
         /// <returns></returns>
         [HttpGet("{sellerId}/orders")]
         public async Task<ActionResult<ApiResponse<SellerOrderResponseDto>>> GetSellerOrders(
@@ -116,13 +116,13 @@ namespace Team.API.Controllers
         {
             try
             {
-                _logger.LogInformation("獲取賣家 {SellerId} 的訂單列表", sellerId);
+                _logger.LogInformation("Getting order list for seller {SellerId}", sellerId);
 
-                // 設定預設日期範圍
+                // Set default date range
                 var startDate = query.StartDate ?? DateTime.Today.AddDays(-30);
                 var endDate = query.EndDate ?? DateTime.Today.AddDays(1);
 
-                // 建立查詢
+                // Build query
                 var ordersQuery = _context.Orders
                     .Where(o => o.SellersId == sellerId &&
                                o.CreatedAt >= startDate &&
@@ -133,13 +133,13 @@ namespace Team.API.Controllers
                     .ThenInclude(od => od.Product)
                     .AsNoTracking();
 
-                // 狀態篩選
+                // Status filter
                 if (!string.IsNullOrEmpty(query.Status) && query.Status != "all")
                 {
                     ordersQuery = ordersQuery.Where(o => o.OrderStatus == query.Status);
                 }
 
-                // 排序
+                // Sorting
                 ordersQuery = query.SortBy.ToLower() switch
                 {
                     "totalamount" => query.SortDirection.ToLower() == "desc" 
@@ -153,30 +153,30 @@ namespace Team.API.Controllers
                         : ordersQuery.OrderBy(o => o.CreatedAt)
                 };
 
-                // 總數
+                // Total count
                 var totalCount = await ordersQuery.CountAsync();
 
-                // 分頁
+                // Pagination
                 var orders = await ordersQuery
                     .Skip((query.Page - 1) * query.PageSize)
                     .Take(query.PageSize)
                     .ToListAsync();
 
-                // 轉換為 DTO
+                // Convert to DTO
                 var orderDtos = orders.Select(order => new SellerOrderDto
                 {
                     Id = order.Id,
                     OrderNumber = $"ORD{order.Id:D8}",
                     OrderDate = order.CreatedAt,
-                    CustomerName = order.Member?.MemberProfile?.Name ?? "訪客",
-                    CustomerEmail = order.Member?.Email ?? "無Email",
+                    CustomerName = order.Member?.MemberProfile?.Name ?? "Guest",
+                    CustomerEmail = order.Member?.Email ?? "No Email",
                     Status = order.OrderStatus ?? "unknown",
                     StatusLabel = GetStatusLabel(order.OrderStatus),
                     TotalAmount = order.TotalAmount,
                     ItemCount = order.OrderDetails?.Count ?? 0,
                     Products = order.OrderDetails?.Select(od => new SellerOrderProductDto
                     {
-                        ProductName = od.Product?.Name ?? "未知商品",
+                        ProductName = od.Product?.Name ?? "Unknown Product",
                         Quantity = od.Quantity ?? 0,
                         UnitPrice = od.UnitPrice ?? 0,
                         Subtotal = (od.UnitPrice ?? 0) * (od.Quantity ?? 0)
@@ -195,24 +195,24 @@ namespace Team.API.Controllers
                     }
                 };
 
-                _logger.LogInformation("成功獲取賣家 {SellerId} 訂單列表，共 {Count} 筆", sellerId, totalCount);
+                _logger.LogInformation("Successfully retrieved order list for seller {SellerId}, total: {Count}", sellerId, totalCount);
 
-                return Ok(ApiResponse<SellerOrderResponseDto>.SuccessResult(response, "獲取訂單列表成功"));
+                return Ok(ApiResponse<SellerOrderResponseDto>.SuccessResult(response, "Order list retrieved successfully"));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "獲取賣家 {SellerId} 訂單列表失敗", sellerId);
-                return StatusCode(500, ApiResponse<SellerOrderResponseDto>.ErrorResult("獲取訂單列表失敗：" + ex.Message));
+                _logger.LogError(ex, "Failed to get order list for seller {SellerId}", sellerId);
+                return StatusCode(500, ApiResponse<SellerOrderResponseDto>.ErrorResult("Failed to get order list: " + ex.Message));
             }
         }
 
         /// <summary>
-        /// 獲取賣家統計資料
+        /// Get seller statistics
         /// </summary>
-        /// <param name="sellerId">賣家ID</param>
-        /// <param name="reportType">報表類型</param>
-        /// <param name="year">年份</param>
-        /// <param name="month">月份</param>
+        /// <param name="sellerId">Seller ID</param>
+        /// <param name="reportType">Report type</param>
+        /// <param name="year">Year</param>
+        /// <param name="month">Month</param>
         /// <returns></returns>
         [HttpGet("{sellerId}/statistics")]
         public async Task<ActionResult<ApiResponse<SellerStatisticsResponseDto>>> GetSellerStatistics(
@@ -223,7 +223,7 @@ namespace Team.API.Controllers
         {
             try
             {
-                _logger.LogInformation("獲取賣家 {SellerId} 統計資料，類型：{ReportType}", sellerId, reportType);
+                _logger.LogInformation("Getting statistics for seller {SellerId}, type: {ReportType}", sellerId, reportType);
 
                 var selectedYear = year ?? DateTime.Now.Year;
                 var selectedMonth = month ?? DateTime.Now.Month;
@@ -231,33 +231,33 @@ namespace Team.API.Controllers
                 DateTime startDate, endDate;
                 string period;
 
-                // 根據報表類型設定日期範圍
+                // Set date range based on report type
                 switch (reportType.ToLower())
                 {
                     case "daily":
                         startDate = DateTime.Today.AddDays(-6);
                         endDate = DateTime.Today.AddDays(1);
-                        period = $"{DateTime.Today:yyyy年M月d日} 前7天";
+                        period = $"{DateTime.Today:yyyy-MM-dd} Last 7 days";
                         break;
                     case "weekly":
                         var startOfWeek = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
-                        startDate = startOfWeek.AddDays(-21); // 過去3週
+                        startDate = startOfWeek.AddDays(-21); // Past 3 weeks
                         endDate = startOfWeek.AddDays(7);
-                        period = "過去4週";
+                        period = "Past 4 weeks";
                         break;
                     case "yearly":
                         startDate = new DateTime(selectedYear, 1, 1);
                         endDate = new DateTime(selectedYear + 1, 1, 1);
-                        period = $"{selectedYear}年";
+                        period = $"Year {selectedYear}";
                         break;
                     default: // monthly
                         startDate = new DateTime(selectedYear, selectedMonth, 1);
                         endDate = startDate.AddMonths(1);
-                        period = $"{selectedYear}年{selectedMonth}月";
+                        period = $"{selectedYear}-{selectedMonth:D2}";
                         break;
                 }
 
-                // 獲取期間內的訂單
+                // Get orders in period
                 var orders = await _context.Orders
                     .Where(o => o.SellersId == sellerId &&
                                o.CreatedAt >= startDate &&
@@ -267,13 +267,13 @@ namespace Team.API.Controllers
                     .AsNoTracking()
                     .ToListAsync();
 
-                // 計算每日銷售
+                // Calculate daily sales
                 var dailySales = CalculateDailySales(orders, startDate, endDate, reportType);
 
-                // 計算商品績效
+                // Calculate product performance
                 var productPerformance = CalculateProductPerformance(orders);
 
-                // 計算訂單狀態分布
+                // Calculate order status distribution
                 var orderStatus = CalculateOrderStatusDistribution(orders);
 
                 var statistics = new SellerStatisticsResponseDto
@@ -288,25 +288,25 @@ namespace Team.API.Controllers
                     }
                 };
 
-                _logger.LogInformation("成功獲取賣家 {SellerId} 統計資料", sellerId);
+                _logger.LogInformation("Successfully retrieved statistics for seller {SellerId}", sellerId);
 
-                return Ok(ApiResponse<SellerStatisticsResponseDto>.SuccessResult(statistics, "獲取統計資料成功"));
+                return Ok(ApiResponse<SellerStatisticsResponseDto>.SuccessResult(statistics, "Statistics retrieved successfully"));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "獲取賣家 {SellerId} 統計資料失敗", sellerId);
-                return StatusCode(500, ApiResponse<SellerStatisticsResponseDto>.ErrorResult("獲取統計資料失敗：" + ex.Message));
+                _logger.LogError(ex, "Failed to get statistics for seller {SellerId}", sellerId);
+                return StatusCode(500, ApiResponse<SellerStatisticsResponseDto>.ErrorResult("Failed to get statistics: " + ex.Message));
             }
         }
 
         /// <summary>
-        /// 獲取賣家商品分析
+        /// Get seller product analysis
         /// </summary>
-        /// <param name="sellerId">賣家ID</param>
-        /// <param name="startDate">開始日期</param>
-        /// <param name="endDate">結束日期</param>
-        /// <param name="sortBy">排序欄位</param>
-        /// <param name="sortDirection">排序方向</param>
+        /// <param name="sellerId">Seller ID</param>
+        /// <param name="startDate">Start date</param>
+        /// <param name="endDate">End date</param>
+        /// <param name="sortBy">Sort field</param>
+        /// <param name="sortDirection">Sort direction</param>
         /// <returns></returns>
         [HttpGet("{sellerId}/products")]
         public async Task<ActionResult<ApiResponse<SellerProductAnalysisResponseDto>>> GetSellerProducts(
@@ -318,13 +318,13 @@ namespace Team.API.Controllers
         {
             try
             {
-                _logger.LogInformation("獲取賣家 {SellerId} 商品分析", sellerId);
+                _logger.LogInformation("Getting product analysis for seller {SellerId}", sellerId);
 
-                // 設定預設日期範圍
+                // Set default date range
                 var defaultStartDate = startDate ?? DateTime.Today.AddDays(-30);
                 var defaultEndDate = endDate ?? DateTime.Today.AddDays(1);
 
-                // 獲取賣家的商品銷售資料
+                // Get seller's product sales data
                 var productSales = await _context.OrderDetails
                     .Where(od => od.Order.SellersId == sellerId &&
                                 od.Order.CreatedAt >= defaultStartDate &&
@@ -344,21 +344,21 @@ namespace Team.API.Controllers
                     })
                     .ToListAsync();
 
-                // 轉換為 DTO 並排序
+                // Convert to DTO and sort
                 var productAnalysis = productSales.Select(ps => new SellerProductAnalysisDto
                 {
                     ProductId = ps.ProductId,
-                    ProductName = ps.Product?.Name ?? "未知商品",
+                    ProductName = ps.Product?.Name ?? "Unknown Product",
                     TotalSales = ps.TotalSales,
                     TotalQuantity = ps.TotalQuantity,
                     AveragePrice = ps.TotalQuantity > 0 ? ps.TotalSales / ps.TotalQuantity : 0,
                     OrderCount = ps.OrderCount,
-                    ConversionRate = 0, // 需要更多資料計算轉換率
-                    StockLevel = 0, // 需要庫存資料
+                    ConversionRate = 0, // Requires more data to calculate conversion rate
+                    StockLevel = 0, // Requires inventory data
                     LastOrderDate = ps.LastOrderDate
                 }).ToList();
 
-                // 排序
+                // Sorting
                 productAnalysis = sortBy.ToLower() switch
                 {
                     "quantity" => sortDirection.ToLower() == "desc"
@@ -380,21 +380,21 @@ namespace Team.API.Controllers
                     Products = productAnalysis
                 };
 
-                _logger.LogInformation("成功獲取賣家 {SellerId} 商品分析，共 {Count} 個商品", sellerId, productAnalysis.Count);
+                _logger.LogInformation("Successfully retrieved product analysis for seller {SellerId}, total: {Count} products", sellerId, productAnalysis.Count);
 
-                return Ok(ApiResponse<SellerProductAnalysisResponseDto>.SuccessResult(response, "獲取商品分析成功"));
+                return Ok(ApiResponse<SellerProductAnalysisResponseDto>.SuccessResult(response, "Product analysis retrieved successfully"));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "獲取賣家 {SellerId} 商品分析失敗", sellerId);
-                return StatusCode(500, ApiResponse<SellerProductAnalysisResponseDto>.ErrorResult("獲取商品分析失敗：" + ex.Message));
+                _logger.LogError(ex, "Failed to get product analysis for seller {SellerId}", sellerId);
+                return StatusCode(500, ApiResponse<SellerProductAnalysisResponseDto>.ErrorResult("Failed to get product analysis: " + ex.Message));
             }
         }
 
-        #region 私有輔助方法
+        #region Private Helper Methods
 
         /// <summary>
-        /// 獲取特定期間的賣家訂單
+        /// Get seller orders in specific period
         /// </summary>
         private async Task<List<Order>> GetSellerOrdersInPeriod(int sellerId, DateTime startDate, DateTime endDate)
         {
@@ -407,7 +407,7 @@ namespace Team.API.Controllers
         }
 
         /// <summary>
-        /// 計算訂單統計
+        /// Calculate order statistics
         /// </summary>
         private (decimal TotalRevenue, int TotalOrders, decimal AverageOrderValue, decimal CompletionRate) CalculateOrderStats(List<Order> orders)
         {
@@ -421,7 +421,7 @@ namespace Team.API.Controllers
         }
 
         /// <summary>
-        /// 計算成長率
+        /// Calculate growth rates
         /// </summary>
         private SellerGrowthRatesDto CalculateGrowthRates(
             (decimal TotalRevenue, int TotalOrders, decimal AverageOrderValue, decimal CompletionRate) current,
@@ -439,7 +439,7 @@ namespace Team.API.Controllers
         }
 
         /// <summary>
-        /// 計算每日銷售
+        /// Calculate daily sales
         /// </summary>
         private List<DailySalesDto> CalculateDailySales(List<Order> orders, DateTime startDate, DateTime endDate, string reportType)
         {
@@ -461,7 +461,7 @@ namespace Team.API.Controllers
             }
             else
             {
-                // 按天分組
+                // Group by day
                 var groupedOrders = completedOrders
                     .GroupBy(o => o.CreatedAt.Date)
                     .OrderBy(g => g.Key)
@@ -482,17 +482,17 @@ namespace Team.API.Controllers
         }
 
         /// <summary>
-        /// 計算商品績效
+        /// Calculate product performance
         /// </summary>
         private List<ProductPerformanceDto> CalculateProductPerformance(List<Order> orders)
         {
-            // 這裡可以根據 OrderDetails 計算商品績效
-            // 暫時返回空列表，可以後續完善
+            // This can be calculated based on OrderDetails
+            // Temporarily return empty list, can be improved later
             return new List<ProductPerformanceDto>();
         }
 
         /// <summary>
-        /// 計算訂單狀態分布
+        /// Calculate order status distribution
         /// </summary>
         private List<OrderStatusDto> CalculateOrderStatusDistribution(List<Order> orders)
         {
@@ -515,19 +515,19 @@ namespace Team.API.Controllers
         }
 
         /// <summary>
-        /// 獲取狀態標籤
+        /// Get status label
         /// </summary>
         private string GetStatusLabel(string? status)
         {
             return status switch
             {
-                "completed" => "已完成",
-                "pending" => "待處理",
-                "processing" => "處理中",
-                "cancelled" => "已取消",
-                "shipped" => "已出貨",
-                "delivered" => "已送達",
-                _ => "未知"
+                "completed" => "Completed",
+                "pending" => "Pending",
+                "processing" => "Processing",
+                "cancelled" => "Cancelled",
+                "shipped" => "Shipped",
+                "delivered" => "Delivered",
+                _ => "Unknown"
             };
         }
 

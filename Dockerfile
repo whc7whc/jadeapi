@@ -12,7 +12,7 @@ RUN dotnet restore Team.API/Team.API.csproj
 # Copy source and build
 COPY Team.API/ Team.API/
 WORKDIR /src/Team.API
-RUN dotnet publish -c Release -o /app/publish
+RUN dotnet publish -c Release -o /app/publish --no-restore
 
 # Runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0

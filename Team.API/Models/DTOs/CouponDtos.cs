@@ -3,7 +3,7 @@ using Team.API.Models.EfModel;
 
 namespace Team.API.Models.DTOs
 {
-    // 簡化的優惠券回應 DTO
+    // Coupon response DTO
     public class CouponDto
     {
         public int Id { get; set; }
@@ -20,12 +20,12 @@ namespace Team.API.Models.DTOs
         public int UsedCount { get; set; }
         public bool IsActive { get; set; }
 
-        // 格式化顯示
+        // Formatted properties
         public string FormattedStartAt => StartAt.ToString("yyyy-MM-dd");
         public string FormattedExpiredAt => ExpiredAt.ToString("yyyy-MM-dd");
         public string FormattedDiscount => GetFormattedDiscount();
         public string ValidPeriod => $"{FormattedStartAt} ~ {FormattedExpiredAt}";
-        public string FormattedUsage => UsageLimit.HasValue ? $"{UsedCount}/{UsageLimit}" : $"{UsedCount}/無限";
+        public string FormattedUsage => UsageLimit.HasValue ? $"{UsedCount}/{UsageLimit}" : $"{UsedCount}/unlimited";
         public string Status => GetStatus();
         public bool IsExpired => DateTime.Now > ExpiredAt;
         public bool IsNotStarted => DateTime.Now < StartAt;
@@ -34,10 +34,10 @@ namespace Team.API.Models.DTOs
         {
             return DiscountType?.ToLower() switch
             {
-                "折扣碼" or "percentage" or "%數折扣" => $"{DiscountAmount}% 折扣",
-                "點數返還" or "j幣回饋" => $"{DiscountAmount} J幣回饋",
-                "滿減" => $"滿減 ${DiscountAmount}",
-                "免運費" => $"滿減 ${DiscountAmount}",
+                "percentage" or "percent_discount" => $"{DiscountAmount}% off",
+                "points_return" or "j_coin_return" => $"{DiscountAmount} J-Coin return",
+                "amount_off" => $"${DiscountAmount} off",
+                "free_shipping" => $"Free shipping (${DiscountAmount})",
                 _ => $"{DiscountAmount}"
             };
         }
@@ -45,13 +45,13 @@ namespace Team.API.Models.DTOs
         private string GetStatus()
         {
             var now = DateTime.Now;
-            if (now < StartAt) return "未開始";
-            if (now > ExpiredAt) return "已過期";
-            return "啟用";
+            if (now < StartAt) return "not_started";
+            if (now > ExpiredAt) return "expired";
+            return "active";
         }
     }
 
-    // 優惠券查詢參數 DTO
+    // Coupon query parameters DTO
     public class CouponQueryDto
     {
         public string Search { get; set; } = "";
@@ -59,25 +59,25 @@ namespace Team.API.Models.DTOs
         public string Status { get; set; } = "";
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
-        public int? SellerId { get; set; } // 廠商篩選
+        public int? SellerId { get; set; } // Seller filter
 
-        [Range(1, int.MaxValue, ErrorMessage = "頁碼必須大於 0")]
+        [Range(1, int.MaxValue, ErrorMessage = "Page number must be greater than 0")]
         public int Page { get; set; } = 1;
 
-        [Range(1, 100, ErrorMessage = "每頁筆數必須在 1-100 之間")]
+        [Range(1, 100, ErrorMessage = "Items per page must be between 1-100")]
         public int ItemsPerPage { get; set; } = 10;
 
         public string SortBy { get; set; } = "StartAt";
 
-        [RegularExpression("(?i)^(asc|desc)$", ErrorMessage = "排序方向只能是 asc 或 desc")]
+        [RegularExpression("(?i)^(asc|desc)$", ErrorMessage = "Sort direction must be asc or desc")]
         public string SortDirection { get; set; } = "desc";
     }
 
-    // 分頁回應 DTO
+    // Paged response DTO
     public class PagedResponseDto<T>
     {
         public bool Success { get; set; } = true;
-        public string Message { get; set; } = "操作成功";
+        public string Message { get; set; } = "Operation successful";
         public IEnumerable<T> Data { get; set; } = new List<T>();
         public int TotalCount { get; set; }
         public int CurrentPage { get; set; }
@@ -87,31 +87,31 @@ namespace Team.API.Models.DTOs
         public bool HasNextPage => CurrentPage < TotalPages;
     }
 
-    // 創建優惠券請求 DTO
+    // Create coupon request DTO
     public class CreateCouponDto
     {
-        [Required(ErrorMessage = "優惠券名稱不能為空")]
-        [StringLength(100, ErrorMessage = "優惠券名稱長度不能超過 100 個字元")]
+        [Required(ErrorMessage = "Coupon title is required")]
+        [StringLength(100, ErrorMessage = "Coupon title cannot exceed 100 characters")]
         public string Title { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "折扣類型不能為空")]
-        [StringLength(20, ErrorMessage = "折扣類型長度不能超過 20 個字元")]
+        [Required(ErrorMessage = "Discount type is required")]
+        [StringLength(20, ErrorMessage = "Discount type cannot exceed 20 characters")]
         public string DiscountType { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "折扣金額不能為空")]
-        [Range(1, int.MaxValue, ErrorMessage = "折扣金額必須大於 0")]
+        [Required(ErrorMessage = "Discount amount is required")]
+        [Range(1, int.MaxValue, ErrorMessage = "Discount amount must be greater than 0")]
         public int DiscountAmount { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "最低消費金額不能為負數")]
+        [Range(0, int.MaxValue, ErrorMessage = "Minimum spend amount cannot be negative")]
         public int? MinSpend { get; set; }
 
-        [Required(ErrorMessage = "開始時間不能為空")]
+        [Required(ErrorMessage = "Start time is required")]
         public DateTime StartAt { get; set; } = DateTime.Now;
 
-        [Required(ErrorMessage = "結束時間不能為空")]
+        [Required(ErrorMessage = "End time is required")]
         public DateTime ExpiredAt { get; set; }
 
-        [Range(1, int.MaxValue, ErrorMessage = "使用上限必須大於 0")]
+        [Range(1, int.MaxValue, ErrorMessage = "Usage limit must be greater than 0")]
         public int? UsageLimit { get; set; }
 
         public int? ApplicableLevelId { get; set; }
@@ -119,31 +119,31 @@ namespace Team.API.Models.DTOs
         public int? SellersId { get; set; }
     }
 
-    // 更新優惠券請求 DTO
+    // Update coupon request DTO
     public class UpdateCouponDto
     {
-        [Required(ErrorMessage = "優惠券名稱不能為空")]
-        [StringLength(100, ErrorMessage = "優惠券名稱長度不能超過 100 個字元")]
+        [Required(ErrorMessage = "Coupon title is required")]
+        [StringLength(100, ErrorMessage = "Coupon title cannot exceed 100 characters")]
         public string Title { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "折扣類型不能為空")]
-        [StringLength(20, ErrorMessage = "折扣類型長度不能超過 20 個字元")]
+        [Required(ErrorMessage = "Discount type is required")]
+        [StringLength(20, ErrorMessage = "Discount type cannot exceed 20 characters")]
         public string DiscountType { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "折扣金額不能為空")]
-        [Range(1, int.MaxValue, ErrorMessage = "折扣金額必須大於 0")]
+        [Required(ErrorMessage = "Discount amount is required")]
+        [Range(1, int.MaxValue, ErrorMessage = "Discount amount must be greater than 0")]
         public int DiscountAmount { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "最低消費金額不能為負數")]
+        [Range(0, int.MaxValue, ErrorMessage = "Minimum spend amount cannot be negative")]
         public int? MinSpend { get; set; }
 
-        [Required(ErrorMessage = "開始時間不能為空")]
+        [Required(ErrorMessage = "Start time is required")]
         public DateTime StartAt { get; set; } = DateTime.Now;
 
-        [Required(ErrorMessage = "結束時間不能為空")]
+        [Required(ErrorMessage = "End time is required")]
         public DateTime ExpiredAt { get; set; }
 
-        [Range(1, int.MaxValue, ErrorMessage = "使用上限必須大於 0")]
+        [Range(1, int.MaxValue, ErrorMessage = "Usage limit must be greater than 0")]
         public int? UsageLimit { get; set; }
 
         public int? ApplicableLevelId { get; set; }
@@ -151,16 +151,16 @@ namespace Team.API.Models.DTOs
         public int? SellersId { get; set; }
     }
 
-    // API 通用回應 DTO
+    // API generic response DTO
     public class ApiResponseDto<T>
     {
         public bool Success { get; set; } = true;
-        public string Message { get; set; } = "操作成功";
+        public string Message { get; set; } = "Operation successful";
         public T? Data { get; set; }
         public Dictionary<string, string> Errors { get; set; } = new();
         public DateTime Timestamp { get; set; } = DateTime.Now;
 
-        public static ApiResponseDto<T> SuccessResult(T data, string message = "操作成功")
+        public static ApiResponseDto<T> SuccessResult(T data, string message = "Operation successful")
         {
             return new ApiResponseDto<T>
             {
@@ -181,10 +181,10 @@ namespace Team.API.Models.DTOs
         }
     }
 
-    // 擴展方法類別
+    // Mapping extension methods
     public static class CouponMappingExtensions
     {
-        // Entity 轉 DTO
+        // Entity to DTO
         public static CouponDto ToDto(this Coupon coupon)
         {
             return new CouponDto
@@ -205,7 +205,7 @@ namespace Team.API.Models.DTOs
             };
         }
 
-        // DTO 轉 Entity (創建)
+        // DTO to Entity (Create)
         public static Coupon ToEntity(this CreateCouponDto dto)
         {
             return new Coupon
@@ -217,7 +217,7 @@ namespace Team.API.Models.DTOs
                 StartAt = dto.StartAt,
                 ExpiredAt = dto.ExpiredAt,
                 UsageLimit = dto.UsageLimit,
-                UsedCount = 0, // 新建時預設為0
+                UsedCount = 0, // Default to 0 for new coupons
                 ApplicableLevelId = dto.ApplicableLevelId,
                 CategoryId = dto.CategoryId,
                 SellersId = dto.SellersId,
@@ -227,7 +227,7 @@ namespace Team.API.Models.DTOs
             };
         }
 
-        // DTO 更新到 Entity
+        // DTO updates Entity
         public static void UpdateEntity(this UpdateCouponDto dto, Coupon coupon)
         {
             coupon.Title = dto.Title;
@@ -237,7 +237,7 @@ namespace Team.API.Models.DTOs
             coupon.StartAt = dto.StartAt;
             coupon.ExpiredAt = dto.ExpiredAt;
             coupon.UsageLimit = dto.UsageLimit;
-            // 注意：不更新 UsedCount，這應該由系統管理
+            // Note: Do not update UsedCount, this is managed by the system
             coupon.ApplicableLevelId = dto.ApplicableLevelId;
             coupon.CategoryId = dto.CategoryId;
             coupon.SellersId = dto.SellersId;

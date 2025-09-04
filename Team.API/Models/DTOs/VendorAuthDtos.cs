@@ -3,44 +3,44 @@ using Team.API.Models.EfModel;
 
 namespace Team.API.Models.DTOs
 {
-    // 廠商登入請求 DTO
+    // Vendor login request DTO
     public class VendorLoginDto
     {
-        [Required(ErrorMessage = "Email 為必填欄位")]
-        [EmailAddress(ErrorMessage = "Email 格式不正確")]
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Email format is incorrect")]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "密碼為必填欄位")]
-        [MinLength(6, ErrorMessage = "密碼長度至少6字元")]
+        [Required(ErrorMessage = "Password is required")]
+        [MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
         public string Password { get; set; } = string.Empty;
 
         public bool RememberMe { get; set; } = false;
     }
 
-    // 廠商註冊請求 DTO
+    // Vendor registration request DTO
     public class VendorRegisterDto
     {
-        [Required(ErrorMessage = "Email 為必填欄位")]
-        [EmailAddress(ErrorMessage = "Email 格式不正確")]
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Email format is incorrect")]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "密碼為必填欄位")]
-        [MinLength(6, ErrorMessage = "密碼長度至少6字元")]
+        [Required(ErrorMessage = "Password is required")]
+        [MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
         public string Password { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "真實姓名為必填欄位")]
-        [StringLength(50, ErrorMessage = "真實姓名長度不能超過50字元")]
+        [Required(ErrorMessage = "Real name is required")]
+        [StringLength(50, ErrorMessage = "Real name cannot exceed 50 characters")]
         public string RealName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "身分證字號為必填欄位")]
-        [StringLength(10, ErrorMessage = "身分證字號長度必須為10字元")]
+        [Required(ErrorMessage = "ID number is required")]
+        [StringLength(10, ErrorMessage = "ID number must be exactly 10 characters")]
         public string IdNumber { get; set; } = string.Empty;
 
-        [Phone(ErrorMessage = "手機號碼格式不正確")]
+        [Phone(ErrorMessage = "Phone number format is incorrect")]
         public string? Phone { get; set; }
     }
 
-    // 廠商資訊回應 DTO
+    // Vendor information response DTO
     public class VendorInfoDto
     {
         public int Id { get; set; }
@@ -53,26 +53,26 @@ namespace Team.API.Models.DTOs
         public DateTime? ApprovedAt { get; set; }
         public string? RejectedReason { get; set; }
 
-        // 銀行帳戶資訊
+        // Bank account information
         public VendorBankAccountDto? BankAccount { get; set; }
 
-        // 退貨資訊
+        // Return information
         public VendorReturnInfoDto? ReturnInfo { get; set; }
 
-        // 格式化顯示
+        // Formatted properties
         public string StatusLabel => ApplicationStatus switch
         {
-            "pending" => "審核中",
-            "approved" => "已通過",
-            "rejected" => "已拒絕",
-            _ => "未知狀態"
+            "pending" => "Pending review",
+            "approved" => "Approved",
+            "rejected" => "Rejected",
+            _ => "Unknown status"
         };
 
         public string FormattedAppliedAt => AppliedAt.ToString("yyyy-MM-dd HH:mm");
-        public string FormattedApprovedAt => ApprovedAt?.ToString("yyyy-MM-dd HH:mm") ?? "尚未審核";
+        public string FormattedApprovedAt => ApprovedAt?.ToString("yyyy-MM-dd HH:mm") ?? "Under review";
     }
 
-    // 廠商銀行帳戶 DTO
+    // Vendor bank account DTO
     public class VendorBankAccountDto
     {
         public string BankName { get; set; } = string.Empty;
@@ -82,7 +82,7 @@ namespace Team.API.Models.DTOs
         public bool IsVerified { get; set; }
     }
 
-    // 廠商退貨資訊 DTO
+    // Vendor return information DTO
     public class VendorReturnInfoDto
     {
         public string ContactName { get; set; } = string.Empty;
@@ -95,11 +95,11 @@ namespace Team.API.Models.DTOs
         public string FullAddress => $"{ZipCode} {City}{District}{ReturnAddress}";
     }
 
-    // 廠商登入回應 DTO
+    // Vendor login response DTO
     public class VendorLoginResponseDto
     {
         public bool Success { get; set; } = true;
-        public string Message { get; set; } = "登入成功";
+        public string Message { get; set; } = "Login successful";
         public string Token { get; set; } = string.Empty;
         public int SellerId { get; set; }
         public VendorInfoDto VendorInfo { get; set; } = new();
@@ -111,7 +111,7 @@ namespace Team.API.Models.DTOs
             return new VendorLoginResponseDto
             {
                 Success = true,
-                Message = "登入成功",
+                Message = "Login successful",
                 Token = token,
                 SellerId = sellerId,
                 VendorInfo = vendorInfo,
@@ -130,23 +130,23 @@ namespace Team.API.Models.DTOs
         }
     }
 
-    // 更新廠商資訊請求 DTO
+    // Update vendor information request DTO
     public class UpdateVendorInfoDto
     {
-        [Required(ErrorMessage = "真實姓名為必填欄位")]
-        [StringLength(50, ErrorMessage = "真實姓名長度不能超過50字元")]
+        [Required(ErrorMessage = "Real name is required")]
+        [StringLength(50, ErrorMessage = "Real name cannot exceed 50 characters")]
         public string RealName { get; set; } = string.Empty;
 
-        [Phone(ErrorMessage = "手機號碼格式不正確")]
+        [Phone(ErrorMessage = "Phone number format is incorrect")]
         public string? Phone { get; set; }
 
-        // 銀行帳戶資訊
+        // Bank account information
         public string? BankName { get; set; }
         public string? BankCode { get; set; }
         public string? AccountName { get; set; }
         public string? AccountNumber { get; set; }
 
-        // 退貨資訊
+        // Return information
         public string? ContactName { get; set; }
         public string? ContactPhone { get; set; }
         public string? ReturnAddress { get; set; }
@@ -155,7 +155,7 @@ namespace Team.API.Models.DTOs
         public string? ZipCode { get; set; }
     }
 
-    // 擴展方法
+    // Mapping extensions
     public static class VendorMappingExtensions
     {
         public static VendorInfoDto ToDto(this Seller seller)
