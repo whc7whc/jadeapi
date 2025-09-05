@@ -243,7 +243,57 @@ namespace Team.API
             // 啟用 Authentication 和 Authorization 中介軟體
             app.UseAuthentication();
             app.UseAuthorization();
-       
+
+            // 🏠 添加根路徑路由 - 提供 API 歡迎頁面
+            app.MapGet("/", () =>
+            {
+                var welcomeInfo = new
+                {
+                    message = "🎉 Jade 電商 API 服務",
+                    version = "1.0.0",
+                    environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production",
+                    timestamp = DateTime.UtcNow,
+                    status = "✅ 運行正常",
+                    endpoints = new
+                    {
+                        swagger = "/swagger",
+                        health = "/api/health",
+                        detailedHealth = "/api/health/detailed",
+                        auth = "/api/auth",
+                        products = "/api/products",
+                        members = "/api/members",
+                        carts = "/api/carts",
+                        checkout = "/api/checkout"
+                    },
+                    documentation = new
+                    {
+                        swagger_ui = "訪問 /swagger 查看完整 API 文檔",
+                        health_check = "訪問 /api/health 檢查服務狀態",
+                        frontend_url = "https://moonlit-klepon-a78f8c.netlify.app"
+                    }
+                };
+                
+                return Results.Ok(welcomeInfo);
+            })
+            .WithName("Welcome")
+            .WithDisplayName("API 歡迎頁面")
+            .WithDescription("顯示 API 服務資訊和可用端點");
+
+            // 🚀 添加快速健康檢查路由
+            app.MapGet("/status", () =>
+            {
+                return Results.Ok(new
+                {
+                    status = "healthy",
+                    timestamp = DateTime.UtcNow,
+                    uptime = Environment.TickCount64,
+                    environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"
+                });
+            })
+            .WithName("QuickStatus")
+            .WithDisplayName("快速狀態檢查")
+            .WithDescription("快速檢查 API 服務是否正常運行");
+
             app.MapControllers();
             app.Run();
         }
