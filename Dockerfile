@@ -1,9 +1,9 @@
-# Railway optimized Dockerfile for .NET 8 API
+﻿# Railway optimized Dockerfile for .NET 8 API
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Set globalization to invariant mode to avoid locale issues
-ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+# 🔧 關閉 globalization-invariant 模式以支援完整文化功能
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 
 # Copy project file and restore
 COPY Team.API/Team.API.csproj Team.API/
@@ -18,8 +18,17 @@ RUN dotnet publish -c Release -o /app/publish --no-restore
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
-# Set environment for Railway
-ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+# 🔧 安裝 ICU 套件以支援完整國際化
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    icu-devtools \
+    libicu-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 🔧 設定環境變數支援完整文化
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 # Copy published app
