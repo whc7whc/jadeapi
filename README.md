@@ -1,58 +1,58 @@
-# ??? Team API - �q�ӫ�ݪA��
+# JadeTeam API - 電商後端服務
 
-�o�O�@�ӥ\�৹�㪺 .NET 8 Web API �M�סA���q�ӥ��x���ѫ�ݪA�ȡA�䴩�ʪ����B���b�B�|���t�ΡB�u�f�鵥�֤ߥ\��C
+這是一個功能完整的 .NET 8 Web API 專案，為電商平台提供後端服務，支援購物車、結帳、會員系統、優惠券等核心功能。
 
-## ? �D�n�\��
+## ? 主要功能
 
-- ?? **�|���t��** - ���U�B�n�J�BJWT �{��
-- ?? **�ʪ���** - �ӫ~�[�J�B�����B�ƶq�վ�
-- ?? **���b�t��** - ���㪺���b�y�{�A�䴩�u�f��M�I��
-- ??? **�u�f��t��** - �馩�X���ҩM�޲z
-- ?? **�I�ƨt��** - �|���I�Ʋֿn�M�覩
-- ?? **�q��޲z** - �q��إߡB���A�l��
-- ?? **���y��X** - ��ɤ�I��X
-- ?? **�Ϥ��W��** - Cloudinary �����x�s
-- ?? **�l��A��** - SMTP �l��q��
+- ?? **會員系統** - 註冊、登入、JWT 認證
+- ?? **購物車** - 商品加入、移除、數量調整
+- ?? **結帳系統** - 完整的結帳流程，支援優惠券和點數
+- ??? **優惠券系統** - 折扣碼驗證和管理
+- ?? **點數系統** - 會員點數累積和抵扣
+- ?? **訂單管理** - 訂單建立、狀態追蹤
+- ?? **金流整合** - 綠界支付整合
+- ?? **圖片上傳** - Cloudinary 雲端儲存
+- ?? **郵件服務** - SMTP 郵件通知
 
-## ?? �ֳt�}�l
+## ?? 快速開始
 
-### ���a�}�o
+### 本地開發
 
-1. **�J���M��**
+1. **克隆專案**
    ```bash
    git clone <your-repo-url>
    cd Team.API
    ```
 
-2. **�٭�M��**
+2. **還原套件**
    ```bash
    dotnet restore
    ```
 
-3. **�]�w��Ʈw�s��**
-   ��s `appsettings.Development.json` �����s���r��
+3. **設定資料庫連接**
+   更新 `appsettings.Development.json` 中的連接字串
 
-4. **�B��M��**
+4. **運行專案**
    ```bash
    dotnet run
    ```
 
-5. **�X�� API**
+5. **訪問 API**
    - API: `https://localhost:7106`
    - Swagger: `https://localhost:7106/swagger`
 
-## ?? ���ݳ��p
+## ?? 雲端部署
 
-### �@�䳡�p�� Railway
+### 一鍵部署到 Railway
 
-1. **���e�N�X�� GitHub**
-2. **�s�� Railway**
-   - �X�� [Railway.app](https://railway.app)
-   - �Ыطs���بós�� GitHub �ܮw
-3. **�t�m�����ܼ�** (�Ѧ� `DEPLOYMENT_GUIDE.md`)
-4. **�۰ʳ��p����**
+1. **推送代碼到 GitHub**
+2. **連接 Railway**
+   - 訪問 [Railway.app](https://railway.app)
+   - 創建新項目並連接 GitHub 倉庫
+3. **配置環境變數** (參考 `DEPLOYMENT_GUIDE.md`)
+4. **自動部署完成**
 
-### �ֳt���ճ��p
+### 快速測試部署
 
 **Windows:**
 ```bash
@@ -65,12 +65,12 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
-## ?? ���Ұt�m
+## ?? 環境配置
 
-### ���n�����ܼ�
+### 必要環境變數
 
 ```env
-# ��Ʈw
+# 資料庫
 ConnectionStrings__DefaultConnection=your_database_connection
 
 # JWT
@@ -82,34 +82,34 @@ CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 
-# �l��A��
+# 郵件服務
 SMTP_USER=your_email
 SMTP_PASS=your_password
 ```
 
-## ?? API ����
+## ?? API 文檔
 
-���p��i�q�L�H�U���I�X�ݡG
+部署後可通過以下端點訪問：
 
-- **���d�ˬd**: `GET /health`
-- **API ����**: `GET /swagger`
-- **�|�� API**: `GET /api/members`
-- **�ʪ��� API**: `GET /api/cart`
-- **���b API**: `GET /api/checkout`
+- **健康檢查**: `GET /health`
+- **API 文檔**: `GET /swagger`
+- **會員 API**: `GET /api/members`
+- **購物車 API**: `GET /api/cart`
+- **結帳 API**: `GET /api/checkout`
 
-## ?? �e�ݾ�X
+## ?? 前端整合
 
-�� API �w�t�m CORS �H�䴩�H�U�e�ݡG
-- `https://moonlit-klepon-a78f8c.netlify.app` (�z�� Vue.js �@�~��)
-- `http://localhost:3000` (���a�}�o)
+此 API 已配置 CORS 以支援以下前端：
+- `https://moonlit-klepon-a78f8c.netlify.app` (您的 Vue.js 作品集)
+- `http://localhost:3000` (本地開發)
 
-### �e�ݨϥνd��
+### 前端使用範例
 
 ```javascript
-// �]�w API ��¦ URL
+// 設定 API 基礎 URL
 const API_BASE_URL = 'https://your-api.railway.app'
 
-// �|���n�J
+// 會員登入
 const login = async (email, password) => {
   const response = await fetch(`${API_BASE_URL}/api/members/login`, {
     method: 'POST',
@@ -120,53 +120,53 @@ const login = async (email, password) => {
 }
 ```
 
-## ??? �޳N�[�c
+## ??? 技術架構
 
-- **�ج[**: ASP.NET Core 8.0
-- **��Ʈw**: Azure SQL Database
-- **�{��**: JWT Bearer Token
-- **�Ϥ��x�s**: Cloudinary
-- **�l��A��**: Gmail SMTP
-- **��I**: ��� ECPay
-- **���p**: Docker + Railway
+- **框架**: ASP.NET Core 8.0
+- **資料庫**: Azure SQL Database
+- **認證**: JWT Bearer Token
+- **圖片儲存**: Cloudinary
+- **郵件服務**: Gmail SMTP
+- **支付**: 綠界 ECPay
+- **部署**: Docker + Railway
 
-## ?? �M�׵��c
+## ?? 專案結構
 
 ```
 Team.API/
-�u�w�w Controllers/          # API ���
-�u�w�w Models/              # ��Ƽҫ�
-�u�w�w Services/            # �~���޿�A��
-�u�w�w DTOs/               # ��ƶǿ骫��
-�u�w�w Payments/           # ��I��X
-�u�w�w wwwroot/            # �R�A�ɮ�
-�|�w�w Program.cs          # ���ε{���i�J�I
+├── Controllers/          # API 控制器
+├── Models/              # 資料模型
+├── Services/            # 業務邏輯服務
+├── DTOs/               # 資料傳輸物件
+├── Payments/           # 支付整合
+├── wwwroot/            # 靜態檔案
+└── Program.cs          # 應用程式進入點
 ```
 
-## ?? �w����
+## ?? 安全性
 
-- ? JWT �{�ұ��v
-- ? HTTPS �j��ϥ�
-- ? CORS ���O�@
-- ? ��J����
-- ? SQL �`�J���@
-- ? �����ܼƫO�@�ӷP��T
+- ? JWT 認證授權
+- ? HTTPS 強制使用
+- ? CORS 跨域保護
+- ? 輸入驗證
+- ? SQL 注入防護
+- ? 環境變數保護敏感資訊
 
-## ?? �ʱ��P��x
+## ?? 監控與日誌
 
-- ���ε{�����d�ˬd���I
-- ���c�Ƥ�x�O��
-- ���~�B�z�M�^��
-- �į�ʱ�
+- 應用程式健康檢查端點
+- 結構化日誌記錄
+- 錯誤處理和回報
+- 效能監控
 
-## ?? �^�m
+## ?? 貢獻
 
-�w�ﴣ�� Issue �M Pull Request�I
+歡迎提交 Issue 和 Pull Request！
 
-## ?? ���v
+## ?? 授權
 
-���M�׶ȨѾǲߩM�@�~���i�ܨϥΡC
+此專案僅供學習和作品集展示使用。
 
 ---
 
-**?? �� API �w�ǳƦn���z���q�ӫe�ݴ��ѱj�j����ݤ䴩�I**
+**?? 此 API 已準備好為您的電商前端提供強大的後端支援！**
