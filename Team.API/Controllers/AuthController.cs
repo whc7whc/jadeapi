@@ -41,89 +41,107 @@ namespace Team.API.Controllers
         [HttpPost("send-code")]
         public async Task<IActionResult> SendVerificationCode([FromBody] EmailDto dto)
         {
-            // Email 格式檢查
-            if (!new EmailAddressAttribute().IsValid(dto.Email))
-                return BadRequest("Email 格式不正確");
+            try
+            {
+                // Email 格式檢查
+                if (!new EmailAddressAttribute().IsValid(dto.Email))
+                    return BadRequest("Email 格式不正確");
 
-            // 檢查是否已註冊
-            if (_context.Members.Any(m => m.Email == dto.Email))
-                return BadRequest("Email 已被使用");
+                // 檢查是否已註冊
+                if (_context.Members.Any(m => m.Email == dto.Email))
+                    return BadRequest("Email 已被使用");
 
-            // 防濫用：檢查 1 分鐘內是否已寄送
-            var recentCode = await _context.VerificationCodes
-                .Where(v => v.ContactInfo == dto.Email && v.CreatedAt > DateTime.Now.AddMinutes(-1))
-                .FirstOrDefaultAsync();
+                // 防濫用：檢查 1 分鐘內是否已寄送
+                var recentCode = await _context.VerificationCodes
+                    .Where(v => v.ContactInfo == dto.Email && v.CreatedAt > DateTime.Now.AddMinutes(-1))
+                    .FirstOrDefaultAsync();
 
-            if (recentCode != null)
-                return BadRequest("請稍後再試，1 分鐘內只能寄送一次驗證碼");
+                if (recentCode != null)
+                    return BadRequest("請稍後再試，1 分鐘內只能寄送一次驗證碼");
 
-            // 產生驗證碼並寄信
-            await GenerateAndSendVerificationCode(null, dto.Email);
+                // 產生驗證碼並寄信（這裡可能會出錯）
+                await GenerateAndSendVerificationCode(null, dto.Email);
 
-            return Ok("驗證碼已寄出");
+                return Ok("驗證碼已寄出");
+            }
+            catch (Exception ex)
+            {
+                // 建議你有 logger 的話記錄下來，像這樣：
+                // _logger.LogError(ex, "發送驗證碼時發生錯誤");
+
+                return StatusCode(500, "伺服器錯誤，請稍後再試。");
+            }
         }
 
         // 2. 註冊（驗證碼 + 密碼）
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterWithCodeDto dto)
         {
-            // ✅ 檢查密碼一致性
-            if (dto.Password != dto.ConfirmPassword)
-                return BadRequest("密碼與確認密碼不一致");
-
-            // 檢查是否已註冊
-            if (_context.Members.Any(m => m.Email == dto.Email))
-                return BadRequest("Email 已被註冊");
-
-            // 驗證驗證碼
-            var codeRecord = await _context.VerificationCodes
-                .Where(v => v.ContactInfo == dto.Email && v.Code == dto.Code && !v.IsUsed && v.ExpiresAt > DateTime.Now)
-                .OrderByDescending(v => v.CreatedAt)
-                .FirstOrDefaultAsync();
-
-            if (codeRecord == null)
-                return BadRequest("驗證碼無效或已過期");
-
-            // 建立會員
-            var member = new Member
+            try
             {
-                Email = dto.Email,
-                PasswordHash = HashPassword(dto.Password),
-                RegisteredVia = "email",
+                // ✅ 檢查密碼一致性
+                if (dto.Password != dto.ConfirmPassword)
+                    return BadRequest("密碼與確認密碼不一致");
 
-                IsEmailVerified = true,
-                IsActive = true,
-                Level = 1,
-                Role = false,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
-            };
+                // 檢查是否已註冊
+                if (_context.Members.Any(m => m.Email == dto.Email))
+                    return BadRequest("Email 已被註冊");
 
-            _context.Members.Add(member);
-            await _context.SaveChangesAsync(); // 先保存會員以獲得ID
+                // 驗證驗證碼
+                var codeRecord = await _context.VerificationCodes
+                    .Where(v => v.ContactInfo == dto.Email && v.Code == dto.Code && !v.IsUsed && v.ExpiresAt > DateTime.Now)
+                    .OrderByDescending(v => v.CreatedAt)
+                    .FirstOrDefaultAsync();
 
-            // 創建對應的MemberStat記錄
-            var memberStat = new MemberStat
+                if (codeRecord == null)
+                    return BadRequest("驗證碼無效或已過期");
+
+                // 建立會員
+                var member = new Member
+                {
+                    Email = dto.Email,
+                    PasswordHash = HashPassword(dto.Password),
+                    RegisteredVia = "email",
+
+                    IsEmailVerified = true,
+                    IsActive = true,
+                    Level = 1,
+                    Role = false,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+
+                _context.Members.Add(member);
+                await _context.SaveChangesAsync(); // 先保存會員以獲得ID
+
+                // 創建對應的MemberStat記錄
+                var memberStat = new MemberStat
+                {
+                    MemberId = member.Id,
+                    CurrentLevelId = 1,
+                    TotalSpent = 0,
+                    TotalPoints = 0,
+                    UpdatedAt = DateTime.Now
+                };
+                _context.MemberStats.Add(memberStat);
+
+                // 驗證碼標記為已使用
+                codeRecord.IsUsed = true;
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    Message = "註冊成功",
+                    MemberId = member.Id,
+                    Email = member.Email,
+                    Role = member.Role
+                });
+            }
+            catch (Exception ex)
             {
-                MemberId = member.Id,
-                CurrentLevelId = 1, // 預設銅牌會員
-                TotalSpent = 0,
-                TotalPoints = 0,
-                UpdatedAt = DateTime.Now
-            };
-            _context.MemberStats.Add(memberStat);
-
-            // 驗證碼標記為已使用
-            codeRecord.IsUsed = true;
-            await _context.SaveChangesAsync();
-            // 修改這裡，回傳與登入 API 一致的資料結構
-            return Ok(new
-            {
-                Message = "註冊成功",
-                MemberId = member.Id,
-                Email = member.Email,
-                Role = member.Role
-            });
+                // _logger.LogError(ex, "註冊時發生錯誤");
+                return StatusCode(500, "註冊失敗，請稍後再試。");
+            }
         }
 
 
