@@ -34,12 +34,12 @@ namespace Team.API
             builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
             // Gmail SMTP 設定
-            builder.Services.AddSingleton(new SmtpEmailService(
-                smtpHost: "smtp.gmail.com",
-                smtpPort: 587,
-                smtpUser: "tainanjade@gmail.com",      
-                smtpPass: "izkb nhjp ilvm tmbi"   
-            ));
+            //builder.Services.AddSingleton(new SmtpEmailService(
+            //    smtpHost: "smtp.gmail.com",
+            //    smtpPort: 587,
+            //    smtpUser: "tainanjade@gmail.com",      
+            //    smtpPass: "izkb nhjp ilvm tmbi"   
+            //));
 
             //Google Authentication 註冊服務
             builder.Services.AddScoped<JwtService>();
